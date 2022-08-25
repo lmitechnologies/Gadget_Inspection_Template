@@ -1,0 +1,22 @@
+{% extends "inspection/base.html" %}
+{% block content %}
+
+{% load static %}
+
+<div class=config-input_text>
+    <!-- <form method="POST" action="{% url 'inspection:pipeline_config' %}"> 
+        {% csrf_token %}
+        {{ form_choose_pipeline.as_p }}
+        <input type="submit" class="config-button" name="form_type" value="Choose Pipeline">
+    </form> -->
+
+    <form method="POST" action="{% url 'inspection:pipeline_config' %}">
+            {% csrf_token %}
+            {{ form_change_pipeline.as_p }}
+            <input type="submit" class="config-button" name="form_type" value="Change Pipeline Parameters">
+    </form>
+    
+</div>
+
+
+{% endblock %}

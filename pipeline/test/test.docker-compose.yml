@@ -1,0 +1,28 @@
+version: "3.9"
+services:
+  pipeline_unit_test:
+    container_name: pipeline_unit_test
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+    build: 
+      args: 
+        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      context: .
+      dockerfile: ./test.dockerfile
+    volumes:
+      - ./pipeline:/home/gadget/pipeline/
+      - ./data:/home/gadget/pipeline/data
+    command: >
+      bash -c "ls data && python3 pipeline_class.py"
+    #stdin_open: true # docker run -i
+    #tty: true        # docker run -t
+
+
+

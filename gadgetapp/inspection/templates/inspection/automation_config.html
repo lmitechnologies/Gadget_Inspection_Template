@@ -1,0 +1,13 @@
+{% extends "inspection/base.html" %}
+{% block content %}
+
+{% load static %}
+
+<div class=config-input_text>
+        <form method="POST" action="{% url 'inspection:automation_config' %}">
+                {% csrf_token %}
+                {{ form_change_automation.as_p }}
+                <input type="submit" style="visibility: visible;" class="config-button" name="form_type" value="Change Automation Parameters">
+        </form>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+# docker-compose -f ./docker-compose.test.yml --env-file ../.env up --build -d
+
+version: "3.9"
+services:
+  db:
+    env_file:
+      - ../postgres/postgres.env
+    image: postgres:12.10-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  gadgetapp:
+    env_file:
+      - ../postgres/postgres.env
+      - ./gadgetapp.env
+    build:
+      context: .
+      args:
+        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      dockerfile: gadgetapp.dockerfile
+    restart: unless-stopped
+    command: /bin/bash init_django_project.bash
+    volumes:
+      - static_volume:/gadgetapp/staticfiles
+      - image_archive:/gadgetapp/image_archive
+    expose:
+      - 8000
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  nginx:
+    build: 
+      context: ../nginx
+      dockerfile: nginx.dockerfile
+      args:
+        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - static_volume:/gadgetapp/staticfiles
+    depends_on:
+      gadgetapp: 
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -O /dev/null http://localhost || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+  offline_test:
+    env_file:
+      - ../postgres/postgres.env
+    build:
+      args:
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      context: .
+      dockerfile: ./offline_test/offline_test.dockerfile
+    restart: unless-stopped  
+    volumes:
+      - image_archive:/app/image_archive
+    command: python3 offline_test_django.py
+    depends_on:
+      nginx:
+        condition: service_healthy
+    
+volumes:
+  postgres_db:
+  image_archive:
+  static_volume:

@@ -1,0 +1,162 @@
+/* ----------------  Main ----------------- */
+.content {
+    max-width: 1548px;
+    margin: auto;
+}
+
+#site {
+    display: grid;
+    grid-template-columns: 380px 568px 300px 300px;
+    grid-template-rows: 82px 126px 506px 63px 63px 134px;
+
+    /* grid-template-areas:
+        "title title title title"
+        "logo info_top figs_c1 figs_c2"
+        "config image figs_c1 figs_c2"
+        "config info_bottom figs_c1 figs_c2"
+        "tabs info_bottom figs_c1 figs_c2"
+        "terminal terminal terminal play"; */
+
+    grid-template-areas:
+        "title title title title"
+        "logo image image figs_c1"
+        "config image image figs_c1"
+        "config image image figs_c1"
+        "tabs info_bottom info_bottom info_bottom"
+        "terminal terminal terminal play";
+    
+    grid-gap: 5px
+}
+
+.grid-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#title-container{
+    grid-area: title;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+#info_top-container{
+    grid-area: info_top;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "grade score";
+}
+
+#grade-container{
+    grid-area: grade;
+}
+
+#score-container{
+    grid-area: score;
+}
+
+#logo-container{
+    grid-area: logo;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+#config-container{
+    grid-area: config;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+#tab-container{
+    grid-area: tabs;
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    grid-column-gap: 10px;
+}
+
+#led-container{
+    grid-area: terminal;
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    border: 1px solid rgba(255, 255, 255, 0.5); 
+
+}
+
+/* ----------------  Runtime Images ----------------- */
+#runtime-image-container{
+    grid-area: image;
+    /* display: grid;
+    grid-template-rows: repeat(3,1fr); */
+    border: 1px solid rgba(255, 255, 255, 0.5); 
+}
+
+/* ----------------  Bottom Info  ----------------- */
+#info_bottom-container{
+  grid-area: info_bottom;
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+}
+
+#info_bottom_text_container{
+  grid-column:1/4;
+}
+
+#info_bottom_button_container{
+  grid-column:4/5;
+}
+
+/* ----------------  Play Button  ----------------- */
+#play-container{
+    grid-area: play;
+    text-align: center;
+}
+
+/* ----------------  Runtime Charts Inside Pane  ----------------- */
+#inside-charts-container{
+    grid-area: figs_c1;
+    display: grid;
+    grid-template-rows: repeat(3,1fr);
+    grid-row-gap: 5px;
+    /* border: 1px solid rgba(255, 255, 255, 0.5); */
+    
+}
+
+#param_0_plot-container {
+    grid-row: 1/2;
+    background-color: #1A1A1A;
+}
+
+#param_1_plot-container {
+    grid-row: 2/3;
+    background-color: #1A1A1A;
+}
+
+#param_2_plot-container {
+    grid-row: 3/4;
+    background-color: #1A1A1A;
+}
+
+/* ----------------  Runtime Charts outside Pane  ----------------- */
+
+/*
+
+#outside-charts-container{
+    grid-area: figs_c2;
+    display: grid;
+    grid-template-rows: repeat(3,1fr);
+    grid-row-gap: 5px;
+}
+
+#param_3_plot-container {
+    grid-row: 1/2;
+    background-color: #1A1A1A;
+}
+
+#param_4_plot-container {
+    grid-row: 2/3;
+    background-color: #1A1A1A;
+}
+
+#param_5_plot-container {
+    grid-row: 3/4;
+    background-color: #1A1A1A;
+}
+*/
+
