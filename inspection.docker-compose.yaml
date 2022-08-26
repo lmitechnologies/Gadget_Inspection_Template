@@ -171,6 +171,8 @@ services:
       dockerfile: pipeline.arm.dockerfile
     image: nordson_pipeline:${PACKAGE_VER}
     restart: unless-stopped
+    environment:
+      - GPU_PLATFORM=${GPU_PLATFORM}
     env_file:
       - ./pipeline/pipeline.env
     volumes:
