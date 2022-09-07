@@ -40,7 +40,11 @@ for index in range(len(INSPECTION_RESULT_KEYS)):
     if not os.path.isdir(path_i):
         logging.info(f'Creating media/runtime directory: {path_i}')
         os.makedirs(path_i)
-
+    path_i=os.path.join(RUNTIME_MEDIA_PATH,INSPECTION_RESULT_KEYS[index]['sensor_topic'])
+    if not os.path.isdir(path_i):
+        logging.info(f'Creating media/runtime directory: {path_i}')
+        os.makedirs(path_i)
+        
 # import abstract syntax trees to parse kwargs database fields
 import ast
 
