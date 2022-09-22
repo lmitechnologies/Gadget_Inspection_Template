@@ -17,7 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 
 #import models
-from inspection.models import ConfigUI, UserSensorSelector, UserSensorConfig, UserPipelineConfig, UserAutomationConfig, SystemState
+from inspection.models import ConfigUI, UserSensorSelector, UserSensorConfig, UserPipelineSelector, UserPipelineConfig, UserAutomationConfig, SystemState
 from inspection.models import AVAILABLE_DECISIONS, INSPECTION_RESULT_KEYS, CHART_KEYS
 
 from configs.models import AutomationConfig, PipelineConfig, SensorConfig
@@ -25,7 +25,7 @@ from inspection_events.models import PipelineInspectionEventLatest, InspectionEv
 from runtime.models import RuntimeStatusLatest
 
 #import forms
-from .forms import ChangeAutomationForm, ChangePipelineForm, ChooseSensorForm, ChangeSensorForm
+from .forms import ChangeAutomationForm, ChoosePipelineForm, ChangePipelineForm, ChooseSensorForm, ChangeSensorForm
 
 RUNTIME_MEDIA_PATH='/gadgetapp/staticfiles/inspection/media/runtime'
 NGINX_MEDIA_PATH='../../static/inspection/media/runtime'
@@ -414,6 +414,15 @@ def views_pipeline_config(request):
     title = ui.title
     # check request.method to see if user is posting new data
     if request.method == "POST":
+        if request.POST.get("form_type") == "Choose Pipeline":
+            # get current sensor
+            pipeline_selector = get_object_or_404(UserPipelineSelector, pk=1)
+            # choose new pipeline
+            form = ChoosePipelineForm(request.POST, instance=pipeline_selector)
+            if form.is_valid():
+                # commit new pipeline selection
+                pipeline_selector = form.save(commit=False)
+                pipeline_selector.save()
         if request.POST.get("form_type") == "Change Pipeline Parameters":
             # get current pipeline configs
             user_pipeline_configs=get_object_or_404(UserPipelineConfig,pk=1)
@@ -424,7 +433,8 @@ def views_pipeline_config(request):
                 user_pipeline_configs = form.save(commit=False)
                 user_pipeline_configs.save()
                 # get system config data and map new configs from user data
-                pipeline_configs=get_object_or_404(PipelineConfig)
+                pipeline_selector = get_object_or_404(UserPipelineSelector, pk=1)
+                pipeline_configs = pipeline_selector.current_pipeline
                 custom=pipeline_configs.custom
                 field_names=[f.name for f in user_pipeline_configs._meta.get_fields()]
                 for field in field_names[1:]:
@@ -435,7 +445,10 @@ def views_pipeline_config(request):
         if request.POST.get("form_type") == "":
             pass
 
-    pipeline_configs=get_object_or_404(PipelineConfig)
+    # get current pipeline
+    pipeline_selector = get_object_or_404(UserPipelineSelector, pk=1)
+    pipeline_configs = pipeline_selector.current_pipeline
+    # get user pipeline configs
     user_pipeline_configs=get_object_or_404(UserPipelineConfig,pk=1)
     field_names=[f.name for f in user_pipeline_configs._meta.get_fields()]
     jsonfields=pipeline_configs.custom
@@ -446,16 +459,16 @@ def views_pipeline_config(request):
             logging.warning(f'Config {field} not supported by pipeline service.')
     user_pipeline_configs.save()
     # initialize forms with database settings
+    form_choose_pipeline = ChoosePipelineForm(instance=pipeline_selector)
     form_change_pipeline = ChangePipelineForm(instance=user_pipeline_configs)
 
     # get current UI configs
     ui = get_object_or_404(ConfigUI, pk=1)
-
     systemstate=get_object_or_404(SystemState)
     is_running=systemstate.running
 
     # pass forms/data to html
-    context = {'title': title, 'form_change_pipeline':form_change_pipeline,
+    context = {'title': title, 'form_choose_pipeline': form_choose_pipeline,'form_change_pipeline':form_change_pipeline,
                'ui': ui, 'is_running': is_running}
 
     return render(request, 'inspection/pipeline_config.html', context)

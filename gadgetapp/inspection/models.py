@@ -23,12 +23,12 @@ AVAILABLE_DECISIONS=available_decisions
 
 # Inspection events that the Gadget App uses to update display
 INSPECTION_RESULT_KEYS={   
-    0:{'service_type':'pipeline','instance_name':'automate-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-emulator/0'}
+    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-gocator/0'}
 }
 
 # Mapping of inspection events to Charts
 CHART_KEYS={
-    0:{'charts':[0,1,2],'chart_type':[3,2,1],'plot_update':[0,1,0]}    }
+    0:{'charts':[0,1],'chart_type':[1,2],'plot_update':[0,1]}    }
 
 
 class ConfigUI(models.Model):
@@ -39,8 +39,6 @@ class ConfigUI(models.Model):
     name = models.TextField(default="UI Configs",)
     title=models.CharField(max_length=100,)
     media_path_0=models.TextField(default='',)
-    media_path_1=models.TextField(default='',)
-    media_path_2=models.TextField(default='',)
     count = models.IntegerField(blank=True, default=0)
 
     media_choices=[(0,'Image'),(1,'Point Cloud')]
@@ -74,15 +72,6 @@ class ConfigUI(models.Model):
     plot_1_ylabel=models.CharField(max_length=128,default='y',)
     plot_1_misc=models.TextField(blank=True, default='',)
 
-    plot_2=models.IntegerField(choices=plot_options,default=0,)
-    plot_2_update=models.IntegerField(choices=update_options,default=0,)
-    plot_2_buffer=models.IntegerField(default=25,)
-    plot_2_xinit=models.CharField(max_length=3,default='nan',)
-    plot_2_yinit=models.CharField(max_length=3,default='nan',)
-    plot_2_xlabel=models.CharField(max_length=128,default='x',)
-    plot_2_ylabel=models.CharField(max_length=128,default='y',)
-    plot_2_misc=models.TextField(blank=True, default='',)
-
 
     def __str__(self):
         return self.name
@@ -92,26 +81,28 @@ class UserSensorSelector(models.Model):
     current_sensor = models.ForeignKey(SensorConfig, default=None, blank=False, null=False, on_delete=models.PROTECT,)
 
 class UserSensorConfig(models.Model):
-    trigger_type_choices = [(False, 'External'), (True, 'Time Based')]
-    timed_trigger_mode = models.BooleanField(choices=trigger_type_choices, default=False)
-    trigger_delay=models.IntegerField(default=0.0)
-    exposure_time=models.FloatField(default=2.0)
-    gain=models.FloatField(default=1.0)
+    trigger_type_choices = [(False, 'For False'), (True, 'For True')]
+    sensor_param_1 = models.CharField(max_length=256,default="sensor param 1 value")
+    sensor_param_2=models.IntegerField(default=0.0)
+    sensor_param_3=models.BooleanField(choices=trigger_type_choices, default=False)
 #--
 class UserPipelineSelector(models.Model):
-    current_pipeline = models.ForeignKey(PipelineConfig, default=None, blank=True, null=True, on_delete=models.SET_NULL,)
+    current_pipeline = models.ForeignKey(PipelineConfig, default=None, blank=False, null=False, on_delete=models.PROTECT,)
 
 class UserPipelineConfig(models.Model):
-    padim_thres_z=models.FloatField(default=20)
+    trigger_type_choices = [(False, 'For False'), (True, 'For True')]
+    pipeline_param_1 = models.CharField(max_length=256,default="pipeline param 1 value")
+    pipeline_param_2=models.IntegerField(default=0.0)
+    pipeline_param_3=models.BooleanField(choices=trigger_type_choices, default=False)
 #--
 class UserAutomationSelector(models.Model):
     current_automation = models.ForeignKey(AutomationConfig, default=None, blank=True, null=True, on_delete=models.SET_NULL,)
 
 class UserAutomationConfig(models.Model):
-    user_ID=models.CharField(max_length=256,default="Anomymous User")
-    batch_ID=models.CharField(max_length=256,default="Unspecified Batch")
-    line_speed=models.IntegerField(default=300)
-    mark_defect=models.BooleanField(blank=True, default=True)
+    trigger_type_choices = [(False, 'For False'), (True, 'For True')]
+    automation_param_1 = models.CharField(max_length=256,default="automation param 1 value")
+    automation_param_2=models.IntegerField(default=0.0)
+    automation_param_3=models.BooleanField(choices=trigger_type_choices, default=False)
 #--
 class SystemState(models.Model):
     running=models.BooleanField(default=False)

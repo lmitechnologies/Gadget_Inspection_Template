@@ -116,25 +116,6 @@
                         </script>
                     </div>
 
-                    <div id="param_2_plot-container" >
-                        <canvas id=param_2_plot></canvas>
-                        <script type='module'>
-                            // initialize plot 2
-                            import{init_plot} from "{% static 'inspection/init_ui.js' %}"
-                            var parent_div_object = document.querySelector('#param_2_plot-container');
-                            var canvas_object = document.querySelector('#param_2_plot');
-                            if (true) {
-                                console.log('Initialize plot 2.');
-                                var plot_i = '{{ ui.plot_2 }}';
-                                var buffer = '{{ ui.plot_2_buffer | escapejs }}';
-                                var xinit = '{{ ui.plot_2_xinit | escapejs }}';
-                                var yinit = '{{ ui.plot_2_yinit | escapejs }}';
-                                var xlabel = '{{ ui.plot_2_xlabel | escapejs }}';
-                                var ylabel = '{{ ui.plot_2_ylabel | escapejs }}';
-                                init_plot(parent_div_object,canvas_object,parseInt(plot_i),parseInt(buffer),parseFloat(xinit),parseFloat(yinit),xlabel,ylabel);
-                            }
-                        </script>
-                    </div>
                 </div>
                 <!-- <div id="outside-charts-container">
                     <div id="param_3_plot-container" >

@@ -37,33 +37,32 @@ class Command(BaseCommand):
                 return
 
 
-        sensor = SensorConfig(instance_name= "gadget-sensor-gocator",instance= 0)
-        sensor.save()
+        sensor_config = SensorConfig(instance_name= "gadget-sensor-gocator",instance= 0)
+        sensor_config.save()  
+        user_sensor_config=UserSensorConfig()
+        user_sensor_config.save()
+        UserSensorSelector(current_sensor=sensor_config).save()
         
-        UserSensorSelector(current_sensor=sensor).save()
-        UserSensorConfig().save()
-
-        pipeline_config_0 = PipelineConfig(instance_name = "automate-pipeline",instance = 0)
+        pipeline_config = PipelineConfig(instance_name= "gadget-pipeline",instance= 0)
+        pipeline_config.save() 
         user_pipeline_config=UserPipelineConfig()
-        self.create_custom(pipeline_config_0,user_pipeline_config)
-        pipeline_config_0.save()
         user_pipeline_config.save()
+        self.create_custom(pipeline_config,user_pipeline_config)
+        UserPipelineSelector(current_pipeline=pipeline_config).save()
 
-        automation_config=AutomationConfig(instance_name="automate-automation",instance=0)
-        user_automation_config=UserAutomationConfig()
-        self.create_custom(automation_config,user_automation_config)
+        automation_config=AutomationConfig(instance_name="gadget-automation",instance=0)
         automation_config.save()
+        user_automation_config=UserAutomationConfig()
         user_automation_config.save()
-
-
+        self.create_custom(automation_config,user_automation_config)
+        
         ui_config=ConfigUI(
-            title='Automate 2022', \
-            info_display_2_label='Total Defect Count:',\
+            title='New Gadget Application', \
+            info_display_2_label='Total Inspection Count:',\
             media_type=0, \
 
-            plot_0=3, plot_0_xlabel='Defect Score', plot_0_ylabel='Occurances', \
-            plot_1=2, plot_1_yinit=0, plot_1_update=1, plot_1_xlabel=','.join(AVAILABLE_DECISIONS[1:]), plot_1_ylabel='Total Defects', \
-            plot_2=1, plot_2_yinit=0, plot_2_xinit=0, plot_2_xlabel='Acquistion Event', plot_2_ylabel='Defect Event')
+            plot_0=2, plot_0_yinit=0, plot_0_update=1, plot_0_xlabel=','.join(AVAILABLE_DECISIONS[1:]), plot_0_ylabel='Total Inspection Events', \
+            plot_1=1, plot_1_yinit=0, plot_1_xinit=0, plot_1_xlabel='Acquistion Event', plot_1_ylabel='Inspection Event')
         ui_config.save()
 
         runtimestatuslatest_sensor0=RuntimeStatusLatest(

@@ -2,14 +2,29 @@
 from tkinter import Widget
 from django import forms
 
-from inspection.models import UserSensorSelector, UserSensorConfig, UserAutomationConfig, UserPipelineConfig
+from inspection.models import UserSensorSelector, UserSensorConfig, UserAutomationConfig, UserPipelineSelector, UserPipelineConfig
+
+class ChoosePipelineForm(forms.ModelForm):
+    # Meta tells Django what database elements/fields to reference
+    class Meta:
+        # database element
+        model = UserPipelineSelector
+        # exposed fields
+        fields=('current_pipeline',)
+        labels={'current_pipeline':'Available Pipelines'}
+        widgets = {'current_pipeline': forms.Select(attrs={'class': 'config-input_field'}),}
 
 class ChangePipelineForm(forms.ModelForm):
     class Meta:
         model = UserPipelineConfig
-        fields = ('padim_thres_z',)
-        labels = {'padim_thres_z': 'Anomaly Threshold',}
-        widgets = {'padim_thres_z': forms.TextInput(attrs={'class': 'config-input_field'}),}
+        fields = ('pipeline_param_1','pipeline_param_2','pipeline_param_3')
+        labels = {'pipeline_param_1': 'Pipeline Param 1','pipeline_param_2': 'Pipeline Param 2','pipeline_param_3': 'Pipeline Param 3',}
+        CHOICES = [(True, 'For True'), (False, 'For False')]
+        widgets = {
+            'pipeline_param_1': forms.TextInput(attrs={'class': 'config-input_field'}),
+            'pipeline_param_2': forms.NumberInput(attrs={'class': 'config-input_field'}),
+            'pipeline_param_3': forms.RadioSelect(choices=CHOICES),
+        }
 
 class ChooseSensorForm(forms.ModelForm):
     # Meta tells Django what database elements/fields to reference
@@ -22,33 +37,25 @@ class ChooseSensorForm(forms.ModelForm):
         widgets = {'current_sensor': forms.Select(attrs={'class': 'config-input_field'}),}
 
 class ChangeSensorForm(forms.ModelForm):
-    
     class Meta:
-        trigger_type_choices = [(False, 'External'), (True, 'Time Based')]
-        model=UserSensorConfig
-        fields=('timed_trigger_mode','gain','exposure_time',)
-        labels={'timed_trigger_mode':'Trigger Mode','gain':'Gain','exposure_time':'Exposure Time'}
-        widgets={
-            'timed_trigger_mode': forms.Select(choices=trigger_type_choices, attrs={'class': 'config-input_field'}),
-            'gain': forms.NumberInput(attrs={'class': 'config-input_field'}),
-            'exposure': forms.NumberInput(attrs={'class': 'config-input_field'}),
-            }
+        model = UserSensorConfig
+        fields = ('sensor_param_1','sensor_param_2','sensor_param_3')
+        labels = {'sensor_param_1': 'Sensor Param 1','sensor_param_2': 'Sensor Param 2','sensor_param_3': 'Sensor Param 3',}
+        CHOICES = [(True, 'For True'), (False, 'For False')]
+        widgets = {
+            'sensor_param_1': forms.TextInput(attrs={'class': 'config-input_field'}),
+            'sensor_param_2': forms.NumberInput(attrs={'class': 'config-input_field'}),
+            'sensor_param_3': forms.RadioSelect(choices=CHOICES),
+        }
   
 class ChangeAutomationForm(forms.ModelForm):
     class Meta:
         model = UserAutomationConfig
-        fields = ('user_ID','batch_ID','line_speed','mark_defect')
-        labels = {
-            'user_ID':'User ID',
-            'batch_ID':'Batch ID',
-            'line_speed':'Line Speed (units)',
-            'mark_defect':'Mark Defect',
-        }
-        CHOICES = [(True, 'YES'), (False, 'NO')]
+        fields = ('automation_param_1','automation_param_2','automation_param_3')
+        labels = {'automation_param_1': 'Pipeline Param 1','automation_param_2': 'Pipeline Param 2','automation_param_3': 'Pipeline Param 3',}
+        CHOICES = [(True, 'For True'), (False, 'For False')]
         widgets = {
-            'user_ID': forms.TextInput(attrs={'class': 'config-input_field'}),
-            'batch_ID': forms.TextInput(attrs={'class': 'config-input_field'}),
-            'line_speed': forms.NumberInput(attrs={'class': 'config-input_field'}),
-            'mark_defect': forms.RadioSelect(choices=CHOICES),
+            'automation_param_1': forms.TextInput(attrs={'class': 'config-input_field'}),
+            'automation_param_2': forms.NumberInput(attrs={'class': 'config-input_field'}),
+            'automation_param_3': forms.RadioSelect(choices=CHOICES),
         }
-
