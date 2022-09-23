@@ -10,7 +10,7 @@ from configs.models import AutomationConfig, SensorConfig, PipelineConfig
 from inspection_events.models import InspectionEvent
 from runtime.models import RuntimeStatusLatest
 
-from inspection.models import AVAILABLE_DECISIONS
+from inspection.models import AVAILABLE_DECISIONS, CHART_KEYS
 
 ALREADY_LOADED_ERRROR_MESSAGE = """
 If you need to reinitialize data, first delete the db.sqlite3 file, then rerun 
@@ -37,7 +37,7 @@ class Command(BaseCommand):
                 return
 
 
-        sensor_config = SensorConfig(instance_name= "gadget-sensor-gocator",instance= 0)
+        sensor_config = SensorConfig(instance_name= "gadget-sensor-avt",instance= 0)
         sensor_config.save()  
         user_sensor_config=UserSensorConfig()
         user_sensor_config.save()
@@ -58,16 +58,15 @@ class Command(BaseCommand):
         
         ui_config=ConfigUI(
             title='New Gadget Application', \
-            info_display_2_label='Total Inspection Count:',\
+            info_display_2_label='Total Inspection Count:', \
             media_type=0, \
-
-            plot_0=2, plot_0_yinit=0, plot_0_update=1, plot_0_xlabel=','.join(AVAILABLE_DECISIONS[1:]), plot_0_ylabel='Total Inspection Events', \
-            plot_1=1, plot_1_yinit=0, plot_1_xinit=0, plot_1_xlabel='Acquistion Event', plot_1_ylabel='Inspection Event')
+            plot_0=1, plot_0_yinit=0, plot_0_update=0, plot_0_xinit=0, plot_0_xlabel='Acquistion Event', plot_0_ylabel='Inspection Event', \
+            plot_1=2, plot_1_yinit=0, plot_1_update=1, plot_1_xlabel=','.join(AVAILABLE_DECISIONS[1:]), plot_1_ylabel='Total Inspection Events')
         ui_config.save()
 
         runtimestatuslatest_sensor0=RuntimeStatusLatest(
             service_type='sensor',
-            instance_name="gadget-sensor-gocator",
+            instance_name="gadget-sensor-avt",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',
@@ -77,7 +76,7 @@ class Command(BaseCommand):
 
         runtimestatuslatest_pipeline=RuntimeStatusLatest(
             service_type='pipeline',
-            instance_name="automate-pipeline",
+            instance_name="gadget-pipeline",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',
@@ -87,7 +86,7 @@ class Command(BaseCommand):
 
         runtimestatuslatest_automation=RuntimeStatusLatest(
             service_type='automation',
-            instance_name="automate-automation",
+            instance_name="gadget-automation",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',
@@ -97,7 +96,7 @@ class Command(BaseCommand):
 
         runtimestatuslatest_cloud=RuntimeStatusLatest(
             service_type='platform',
-            instance_name="automate-goFactory",
+            instance_name="gadget-goFactory",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',
