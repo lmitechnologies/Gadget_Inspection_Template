@@ -53,7 +53,7 @@ class ModelPipeline:
         """
         pass
 
-    def predict(self, input_py: str, configs: dict, results_storage_path: str) -> dict:
+    def predict(self, input_image: str, configs: dict, results_storage_path: str) -> dict:
         pass
 
 
