@@ -1,5 +1,6 @@
 version: "3.9"
 services:
+  # ---------- platform ----------   
   db:
     hostname: gadget-db
     container_name: gadget-db
@@ -151,6 +152,7 @@ services:
       gadgetapp: 
         condition: service_healthy
 
+  # ---------- inspection ----------   
   pipeline:
     hostname: gadget-pipeline
     container_name: gadget-pipeline
@@ -168,8 +170,8 @@ services:
       args:
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
-      dockerfile: pipeline.arm.dockerfile
-    image: nordson_pipeline:${PACKAGE_VER}
+      dockerfile: pipeline.dockerfile
+    image: pipeline:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - GPU_PLATFORM=${GPU_PLATFORM}
@@ -194,7 +196,7 @@ services:
         DOCKER_PLATFORM: ${DOCKER_PLATFORM}
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
-    image: nordson_automation:${PACKAGE_VER}
+    image: automation:${PACKAGE_VER}
     restart: unless-stopped
     env_file:
       - ./automation/automation.env
