@@ -21,9 +21,18 @@ function init_2D(canvas_object, image_path) {
     var border = 2;
 
     // fit image onto canvas
-    var scale = datasource.height / canvas_object.height;
-    if (canvas_object.height / scale > canvas_object.height) {
-      scale = datasource.width / canvas_object.width;
+    var scale_0 = 1.0;
+    var scale_1 = 1.0;
+    if (datasource.height>=datasource.width) {
+      scale_0 = datasource.height / canvas_object.height;
+      if (datasource.width/scale_0>canvas_object.width) {
+        scale_1 = datasource.width / scale_0 / canvas_object.width;
+      }
+    } else {
+      scale_0=datasource.width / canvas_object.width;
+      if (datasource.height/scale_0>canvas_object.height) {
+        scale_1 = datasource.height / scale_0 / canvas_object.height;
+      }
     }
     
     // don't rotate the logo, otherwise rotate the image by 90 degrees
@@ -43,8 +52,8 @@ function init_2D(canvas_object, image_path) {
       // // rotate the image by 90 degrees
       // ctx.rotate(Math.PI / 2);
     // }
-    var imgWidth = datasource.width / scale-border;
-    var imgHeight = datasource.height / scale-border;
+    var imgWidth = datasource.width/scale_0/scale_1 -border;
+    var imgHeight = datasource.height/scale_0/scale_1 -border;
     ctx.drawImage(
       datasource,
       -(imgWidth / 2),
