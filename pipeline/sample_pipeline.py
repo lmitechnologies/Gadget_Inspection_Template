@@ -35,17 +35,10 @@ class ModelPipeline:
         """
         class_map: the class id -> class name
         """
-        def convert_key_to_int(dt):
-            """
-            convert the class map <id, class name> to integer class id
-            """
-            new_dt = {int(k):dt[k] for k in dt}
-            return new_dt
-
         self.yolov5_configs = {}
         self.yolov5_configs['engine_path'] = os.path.realpath(os.path.expandvars(kwargs.get('yolov5_engine_file',"")))
         self.yolov5_configs['plugin_path'] = os.path.realpath(os.path.expandvars(kwargs.get('yolov5_plugin_file',"")))
-        self.yolov5_configs['class_map'] = convert_key_to_int(kwargs.get('yolov5_class_map', {}))
+        self.yolov5_configs['class_map'] = utils.convert_key_to_int(kwargs.get('yolov5_class_map', {}))
         
         self.yolov5_configs['conf_thres'] = {
             'knot':kwargs.get('confidence_knot',0.5),
@@ -55,10 +48,11 @@ class ModelPipeline:
         self.rcnn_configs = {}
         self.rcnn_configs['engine_path'] = os.path.realpath(os.path.expandvars(kwargs.get('rcnn_engine_file',"")))
         self.rcnn_configs['plugin_path'] = os.path.realpath(os.path.expandvars(kwargs.get('rcnn_plugin_file',"")))
-        self.rcnn_configs['class_map'] = convert_key_to_int(kwargs.get('rcnn_class_map', {}))
+        self.rcnn_configs['class_map'] = utils.convert_key_to_int(kwargs.get('rcnn_class_map', {}))
         
         self.rcnn_configs['conf_thres'] = {
             'wane':kwargs.get('confidence_wane',0.5),
+            'knot':1.1, # disable knot detection
         }
         self.rcnn_configs['iou_thres'] = kwargs.get('rcnn_iou_threshold',0.4)
         self.rcnn_configs['mask_edge_length'] = kwargs.get('rcnn_mask_edge_length',14)
@@ -161,6 +155,8 @@ class ModelPipeline:
 
     def postprocess(self, input_images, obj_det_dict1, obj_det_dict2, operators_yolo, operators_mask, mask_thres):
         """
+        convert to original image coordinates
+        convert masks to vertices
         plot predictions on input image
         """
         scores_yolo = obj_det_dict1[0]['scores']
@@ -188,7 +184,25 @@ class ModelPipeline:
                     classes_mask[j], scores_mask[j]
                 ),
             )
-        return annotated_images
+        
+        # convert mask to vertices
+        result_contours = []
+        for i,mask in enumerate(masks):
+            x1,y1,x2,y2 = map(int,boxes_mask[i])
+            mask = cv2.resize(np.array(mask),(x2-x1,y2-y1))
+            mask = (mask>mask_thres[classes_mask[i]])
+            h,w = y2-y1,x2-x1 # pad to the edges
+            canvas = np.zeros((h,w),dtype=np.uint8)
+            canvas[mask] = np.uint8(255)
+            contours,_ = cv2.findContours(canvas,mode=cv2.RETR_EXTERNAL,method=cv2.CHAIN_APPROX_SIMPLE)
+            for contour in contours:
+                cont_size=contour.shape[0]
+                xval = contour.reshape((cont_size,2))[:,0] + x1
+                yval = contour.reshape((cont_size,2))[:,1] + y1
+                xy = [[x,y] for x,y in zip(xval,yval)]
+                result_contours.append(xy)
+        #annotated_images[0] = cv2.polylines(annotated_images[0], [np.array(pts,dtype=np.int) for pts in result_contours],isClosed=1, color=(0,0,0),thickness=2)
+        return annotated_images,result_contours
 
 
     def predict(self, input_image: str, configs: dict, results_storage_path: str) -> dict:
@@ -221,8 +235,9 @@ class ModelPipeline:
         iou_thres1 = configs.get('yolov5_iou_threshold', self.yolov5_configs['iou_thres'])
         iou_thres2 = configs.get('rcnn_iou_threshold', self.rcnn_configs['iou_thres'])
         if self.models and input_images:
-            _, obj_det_dict1, proc_time_dict1, errors1 = self.models['yolov5'].infer(images_yolo, conf_thres, iou_thres1)
-            _, obj_det_dict2, proc_time_dict2, errors2 = self.models['rcnn'].infer(images_mask, conf_thres, iou_thres2)
+            obj_det_dict1, proc_time_dict1, errors1 = self.models['yolov5'].infer(images_yolo, conf_thres, iou_thres1)
+            conf_thres['knot'] = 1.1 # disable knot detection
+            obj_det_dict2, proc_time_dict2, errors2 = self.models['rcnn'].infer(images_mask, conf_thres, iou_thres2)
             errors += errors1+errors2
         else:
             errors.append('failed to load pipeline model(s)')
@@ -236,13 +251,12 @@ class ModelPipeline:
         start_time = time.time() 
         if self.models and input_images:
             try:
-                annotated_images = self.postprocess(
+                annotated_images,result_contours = self.postprocess(
                     input_images, obj_det_dict1, obj_det_dict2, operators_yolo, operators_mask, conf_thres
                     )
             except Exception as e:
                 self.logger.error(traceback.format_exc())
-                self.logger.error(f'Exception in file: {os.path.basename(input_image)}')
-                exit()
+                self.logger.error(f'Exception in Postprocess')
         postprocess_time = time.time() - start_time
 
         # gather time info
@@ -267,79 +281,43 @@ class ModelPipeline:
                 np.save(annotated_image_path,img)
         image_save_time = time.time() - start_time
         total_time = image_load_time + pipeline_time + image_save_time
+        
+        result_dict = {
+                'file_path': input_image,
+                'automation_keys': [],
+                'factory_keys': [],
+                'errors': errors,
+                'image_load_time': image_load_time,
+                'preprocess_time': preprocess_time,
+                'inference_time': inference_time,
+                'postprocess_time': postprocess_time,
+                'image_save_time': image_save_time,
+                'total_proc_time': total_time
+            }
 
         if self.models and input_images:
             defect_list = obj_det_dict1[0]['classes']+obj_det_dict2[0]['classes']
-            result_dict = {
-                'automation_decision': None,
-                'defect_list': defect_list,
-                'annotated_image': annotated_image_path,
-                'results': {
-                    'yolo_boxes': obj_det_dict1[0]['boxes'],
-                    'yolo_scores': obj_det_dict1[0]['scores'],
-                    'yolo_classes': obj_det_dict1[0]['classes'],
-                    'maskrcnn_boxes': obj_det_dict2[0]['boxes'],
-                    'maskrcnn_scores': obj_det_dict2[0]['scores'],
-                    'maskrcnn_classes': obj_det_dict2[0]['classes'],
-                    'maskrcnn_masks': obj_det_dict2[0]['masks'],
-                },
-                'errors': errors,
-            }
+            result_dict['automation_keys'] = ['yolo_boxes','yolo_scores','yolo_classes','maskrcnn_masks','maskrcnn_scores','maskrcnn_classes']
+            result_dict['factory_keys'] = ['yolo_boxes','yolo_scores','yolo_classes','maskrcnn_masks','maskrcnn_scores','maskrcnn_classes','total_proc_time']
+            #result_dict['defect_list'] = defect_list
+            result_dict['file_path'] = annotated_image_path
+            result_dict['yolo_boxes'] = obj_det_dict1[0]['boxes']
+            result_dict['yolo_scores'] = obj_det_dict1[0]['scores']
+            result_dict['yolo_classes'] = obj_det_dict1[0]['classes']
+            #result_dict['maskrcnn_boxes'] = obj_det_dict2[0]['boxes']
+            result_dict['maskrcnn_masks'] = result_contours
+            result_dict['maskrcnn_scores'] = obj_det_dict2[0]['scores']
+            result_dict['maskrcnn_classes'] = obj_det_dict2[0]['classes']
+            result_dict['errors'] = errors
+                
             self.logger.info(f'[FILE INFO]: {os.path.basename(input_image)}')
-            # self.logger.info(f'Decision: {decision}')
             self.logger.info(f'defect list: {defect_list}')
             self.logger.info(f'[FILE INFO]: annotated_im_path {annotated_image_path}')
             self.logger.info(f'[TIME INFO]: image_load:{image_load_time:.4f}, preprocess:{preprocess_time:.4f}, inference:{inference_time:.4f}, ' +
                 f'postprocess:{postprocess_time:.4f}, image_save:{image_save_time:.4f}, total:{total_time:.4f}\n')
-        else:
-            result_dict = {
-                'automation_decision': None,
-                'defect_list': None,
-                'annotated_image': '',
-                'results': {},
-                'errors': errors,
-            }
-        time_dict = {                
-            'image_load_time': image_load_time,
-            'preprocess_time': preprocess_time,
-            'inference_time': inference_time,
-            'postprocess_time': postprocess_time,
-            'image_save_time': image_save_time,
-            'total_proc_time': total_time
-            }
-        result_dict.update(time_dict)
         return result_dict
 
 if __name__ == '__main__':
-    def get_img_path_batches(batch_size, img_dir, fmt='png'):
-        ret = []
-        batch = []
-        cnt_images = 0
-        for root, dirs, files in os.walk(img_dir):
-            for name in files:
-                if name.find(f'.{fmt}')==-1:
-                    continue
-                if len(batch) == batch_size:
-                    ret.append(batch)
-                    batch = []
-                batch.append(os.path.join(root, name))
-                cnt_images += 1
-        print(f'loaded {cnt_images} files')
-        if len(batch) > 0:
-            ret.append(batch)
-        return ret
-    
-    def load_pipeline_def(filepath):
-        with open(filepath) as f:
-            dt_all = json.load(f)
-            l = dt_all['configs_def']
-            kwargs = {}
-            for dt in l:
-                kwargs[dt['name']] = dt['default_value']
-        return kwargs
-    
-    #-------------------------------------------------------------
-    
     logger = logging.getLogger()
     logging.basicConfig()
     logger.setLevel(logging.DEBUG)
@@ -348,7 +326,7 @@ if __name__ == '__main__':
     os.environ['PIPELINE_SERVER_SETTINGS_MODELS_ROOT'] = './pipeline/trt_engines/arm'
     pipeline_def_file = './pipeline/pipeline_def.json'
     
-    kwargs = load_pipeline_def(pipeline_def_file)
+    kwargs = utils.load_pipeline_def(pipeline_def_file)
     pipeline = ModelPipeline(**kwargs)
     
     logger.info('start loading the pipeline...')
@@ -356,14 +334,14 @@ if __name__ == '__main__':
     pipeline.warm_up()
 
     #test on object detection training data 640x640
-    image_dir = './data/2022-08-03_npy'
+    image_dir = './data/test_images'
     output_dir = './data/outputs'
 
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
 
-    image_path_batches = get_img_path_batches(BATCH_SIZE, image_dir, fmt='npy')
+    image_path_batches = utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt='npy')
     for batch in image_path_batches:
         for image_path in batch:
             pipeline.predict(image_path, configs={'test_mode':True}, results_storage_path=output_dir)
