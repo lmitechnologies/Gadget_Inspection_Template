@@ -26,6 +26,11 @@ from rcnn import RCNNTRT
 import utils
 
 
+PAD_W,PAD_H = 1600,480
+RESIZE_RATE_YOLO = 0.6
+RESIZE_RATE_MASK = 0.4
+
+
 class ModelPipeline:
 
     logger = logging.getLogger()
@@ -114,30 +119,12 @@ class ModelPipeline:
             dummy_inputs = list(self.models[model_name].get_raw_image_zeros())
             self.logger.info(f'warming up {model_name} on dummy inputs with the size of {dummy_inputs[0].shape}')
             self.models[model_name].infer(dummy_inputs)
-            
-            
-    def decision_func(self, boxes, classes, im=None, tolerance=3):
-        """
-        get the trigger start positions and end positions
-        Args:
-            boxes (list): a list of [x1,x2,y1,y2]
-            classes (list): a list of class names
-            im (np.array, optional): the numpy array of the input image. Defaults to None.
-            tolerance (int, optional): the tolerance between the gaps of two bboxes. Any boxes whose distance is less than tolerance will be merged to one. Defaults to 5.
-        Returns:
-            results (list): a list of pairs [st_pos, end_pos]
-        """
-        pass
 
 
     def preprocess(self, input_images:list):
         """
         pad and resize images
         """
-        PAD_W,PAD_H = 1600,480
-        RESIZE_RATE_YOLO = 0.6
-        RESIZE_RATE_MASK = 0.4
-
         images_yolo,images_mask = [],[]
         # need this to revert back to original image coordinates
         operators_yolo, operators_mask = {},{} 
