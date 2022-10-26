@@ -76,7 +76,7 @@ services:
     command: /bin/bash init_django_project.bash
     volumes:
       - static_volume:/gadgetapp/staticfiles
-      - image_archive:/gadgetapp/image_archive
+      - inline-storage:/gadgetapp/image_archive
     ports:
       - 8085:8000
     depends_on:
@@ -132,7 +132,9 @@ services:
     env_file:
       - ./gadget-platform/data_manager.env
     volumes:
-      - image_archive:/home/gadget/workspace/image_archive
+      - data-manager-storage:/app/data/internal
+      - inline-storage:/app/data/inline
+      - offline-storage:/app/data/offline
     network_mode:
       'host'
     depends_on:
@@ -147,7 +149,7 @@ services:
     env_file:
       - ./gadget-platform/system_monitor.env
     volumes:
-      - image_archive:/home/gadget/workspace/image_archive
+      - inline-storage:/app/data/inline
     depends_on:
       gadgetapp: 
         condition: service_healthy
@@ -179,7 +181,7 @@ services:
       - ./pipeline/pipeline.env
     volumes:
       - ./pipeline/:/home/gadget/workspace/pipeline
-      - image_archive:/home/gadget/workspace/image_archive
+      - inline-storage:/app/data/inline
     depends_on:
       gadgetapp: 
         condition: service_healthy
@@ -215,8 +217,8 @@ services:
     env_file:
       - ./sensor/avt_camera_0.env
     volumes:
-      - test_images:/home/gadget/workspace/test_images
-      - image_archive:/home/gadget/workspace/image_archive
+      - ${PWD}/data/test_images:/home/gadget/workspace/test_images
+      - inline-storage:/app/data/inline
     depends_on:
       nginx: 
         condition: service_healthy
@@ -233,10 +235,12 @@ services:
       - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_HOST=db-nginx
       - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_PORT=8090
       - MQTT_BRIDGE_SETTINGS_S3_INTEGRATOR_HOST=gadget-s3-integrator
+      - MQTT_BRIDGE_SETTINGS_LOG_COLLECTOR_HOST=gadget-log-collector
       - MQTT_BRIDGE_SETTINGS_BROKER_AUTH_USERNAME=root
       - MQTT_BRIDGE_SETTINGS_BROKER_AUTH_PASSWORD=um-@cU_-ZNa7zy_dmNcf
     volumes:
-      - image_archive:/app/data
+      - inline-storage:/app/data/inline
+      - offline-storage:/app/data/offline
     depends_on:
       gadgetapp: 
         condition: service_healthy
@@ -254,8 +258,8 @@ services:
       - MINIO_HOST=${FACTORY_HOST}
       - VAULT_TOKEN=${VAULT_TOKEN} 
     volumes:
-      - image_archive:/tmp/s3files
-
+      - offline-storage:/tmp/s3files
+  
   gadget-log-collector:
     hostname: gadget-log-collector
     container_name: gadget-log-collector
@@ -264,24 +268,18 @@ services:
     ports:
       - 7771:7770
     volumes:
-      - image_archive:/tmp/s3files
+      - offline-storage:/tmp/s3files
       - /var/log/journal:/var/log/hostjournal:ro
   
 volumes:
-  image_archive:
-    name: image_archive
+  data-manager-storage:
+  offline-storage:     
+  inline-storage:
     driver: local
     driver_opts:
       o: bind
       type: none
-      device: ${PWD}/data/image_archive
-  test_images:
-    name: test_images
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: ${PWD}/data/test_images
+      device: /mnt/gadget-inline
   postgres_db:
     name: postgres_db
   static_volume:
