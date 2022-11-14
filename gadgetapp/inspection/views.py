@@ -149,6 +149,21 @@ def set_xy(chart_type,update_option,decision,index,err_dist=None):
         decision: single decision string
         index: sensor topic ID
     '''
+    # split the decision string to get each defect
+    # TODO: handle multiple defect, currently only captures first
+    if type(current_decision_try)==list:
+        current_decision_try = ",".join(current_decision_try)
+    logging.info(f'Current decision list: {current_decision_try}')
+    if type(current_decision_try)==str:
+        try:
+            # get first defect in the string
+            current_decision_try=current_decision_try.split(',')[0]
+            logging.info(f'Choosing {current_decision_try} from current decision list.')
+        except:
+            # if doesn't exist, then return default defect=none
+            current_decision_try=AVAILABLE_DECISIONS[0]
+            logging.warning(f'Empty decision list, choosing default decision: {current_decision_try}.')
+
     if chart_type==1:
         if update_option==0:
             x=new_data_counter[index]
