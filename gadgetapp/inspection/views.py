@@ -156,7 +156,7 @@ def set_xy(chart_type,update_option,decision,index,err_dist=None):
                 y=AVAILABLE_DECISIONS.index(decision)
             except:
                 if isinstance(decision, float) or isinstance(decision, int):
-                    y=round(decision, 1)
+                    y=round(decision, 2)
                 else:
                     logging.warning(f'Decision: {decision} not being tracked. Setting to 0.')
                     y=0
