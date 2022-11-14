@@ -245,12 +245,12 @@ def ui_update(request):
 
             # set values in inspection dict
             if (query_success):
-                # get the decison from the json field, if decision field is supported
+                # get the decision from the json field, if decision field is supported
                 try:
                     # current_decision_try=current_inspection.context['results']['obj_det_classes']
                     current_decision_try=(current_inspection.context[CHART_KEYS[index]['plot_y_key'][0]], current_inspection.context[CHART_KEYS[index]['plot_y_key'][1]])
                 except:
-                    logging.warning(f'Key error for decision JSON field: {index} {e} {CHART_KEYS[index]}. Assigned default decison: {AVAILABLE_DECISIONS[0]}')
+                    logging.warning(f'Key error for decision JSON field: {index} {CHART_KEYS[index]}. Assigned default decision: {AVAILABLE_DECISIONS[0]}')
                     current_decision_try=(AVAILABLE_DECISIONS[0], 0)
 
                 # split the decision string to get each defect
