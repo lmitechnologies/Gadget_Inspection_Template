@@ -39,12 +39,13 @@ class ChooseSensorForm(forms.ModelForm):
 class ChangeSensorForm(forms.ModelForm):
     class Meta:
         model = UserSensorConfig
-        fields = ('exposure_time','gain')
-        labels = {'exposure_time': 'Exposure time','gain': 'Sensor gain',}
+        fields = ('sensor_param_1','sensor_param_2','sensor_param_3')
+        labels = {'sensor_param_1': 'Sensor Param 1','sensor_param_2': 'Sensor Param 2','sensor_param_3': 'Sensor Param 3',}
         CHOICES = [(True, 'For True'), (False, 'For False')]
         widgets = {
-            'exposure_time': forms.NumberInput(attrs={'class': 'config-input_field'}),
-            'gain': forms.NumberInput(attrs={'class': 'config-input_field'}),
+            'sensor_param_1': forms.TextInput(attrs={'class': 'config-input_field'}),
+            'sensor_param_2': forms.NumberInput(attrs={'class': 'config-input_field'}),
+            'sensor_param_3': forms.RadioSelect(choices=CHOICES),
         }
   
 class ChangeAutomationForm(forms.ModelForm):
