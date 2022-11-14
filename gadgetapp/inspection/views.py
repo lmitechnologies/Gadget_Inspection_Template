@@ -155,8 +155,11 @@ def set_xy(chart_type,update_option,decision,index,err_dist=None):
             try:
                 y=AVAILABLE_DECISIONS.index(decision)
             except:
-                logging.warning(f'Decision: {decision} not being tracked. Setting to 0.')
-                y=0
+                if isinstance(decision, float) or isinstance(decision, int):
+                    y=round(decision, 1)
+                else:
+                    logging.warning(f'Decision: {decision} not being tracked. Setting to 0.')
+                    y=0
         elif update_option==1:
             x,y=None,None
             raise Exception(f'Charting Option {chart_type},{update_option} not supported.')
