@@ -28,7 +28,7 @@ INSPECTION_RESULT_KEYS={
 
 # Mapping of inspection events to Charts
 CHART_KEYS={
-    0:{'charts':[0,1],'chart_type':[1,2],'plot_update':[0,1]}    }
+    0:{'charts':[0,1],'chart_type':[1,2],'plot_update':[0,1],'plot_y_key':['decision', 'decision']}    }
 
 
 class ConfigUI(models.Model):

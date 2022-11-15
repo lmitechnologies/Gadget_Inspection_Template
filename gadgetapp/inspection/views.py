@@ -149,14 +149,32 @@ def set_xy(chart_type,update_option,decision,index,err_dist=None):
         decision: single decision string
         index: sensor topic ID
     '''
+    # split the decision string to get each defect
+    # TODO: handle multiple defect, currently only captures first
+    if type(decision)==list:
+        decision = ",".join(decision)
+    logging.info(f'Current decision list: {decision}')
+    if type(decision)==str:
+        try:
+            # get first defect in the string
+            decision=decision.split(',')[0]
+            logging.info(f'Choosing {decision} from current decision list.')
+        except:
+            # if doesn't exist, then return default defect=none
+            decision=AVAILABLE_DECISIONS[0]
+            logging.warning(f'Empty decision list, choosing default decision: {decision}.')
+
     if chart_type==1:
         if update_option==0:
             x=new_data_counter[index]
             try:
                 y=AVAILABLE_DECISIONS.index(decision)
             except:
-                logging.warning(f'Decision: {decision} not being tracked. Setting to 0.')
-                y=0
+                if isinstance(decision, float) or isinstance(decision, int):
+                    y=round(decision, 2)
+                else:
+                    logging.warning(f'Decision: {decision} not being tracked. Setting to 0.')
+                    y=0
         elif update_option==1:
             x,y=None,None
             raise Exception(f'Charting Option {chart_type},{update_option} not supported.')
@@ -227,26 +245,17 @@ def ui_update(request):
 
             # set values in inspection dict
             if (query_success):
-                # get the decison from the json field, if decision field is supported
+                # get the decision from the json field, if decision field is supported
                 try:
                     # current_decision_try=current_inspection.context['results']['obj_det_classes']
-                    current_decision_try=current_inspection.context['decision']
+                    current_decision_try=(current_inspection.context[CHART_KEYS[index]['plot_y_key'][0]], current_inspection.context[CHART_KEYS[index]['plot_y_key'][1]])
                 except:
-                    logging.warning(f'Key error for decision JSON field. "decision" does not exist. Assigned default decison: {AVAILABLE_DECISIONS[0]}')
-                    current_decision_try=AVAILABLE_DECISIONS[0]
+                    logging.warning(f'Key error for decision JSON field: {index} {CHART_KEYS[index]}. Assigned default decision: {AVAILABLE_DECISIONS[0]}')
+                    current_decision_try=(AVAILABLE_DECISIONS[0], 0)
+
                 # split the decision string to get each defect
                 # TODO: handle multiple defect, currently only captures first
-                if type(current_decision_try)==list:
-                    current_decision_try = ",".join(current_decision_try)
-                logging.info(f'Current decision list: {current_decision_try}')
-                try:
-                    # get first defect in the string
-                    current_decision_try=current_decision_try.split(',')[0]
-                    logging.info(f'Choosing {current_decision_try} from current decision list.')
-                except:
-                    # if doesn't exist, then return default defect=none
-                    current_decision_try=AVAILABLE_DECISIONS[0]
-                    logging.warning(f'Empty decision list, choosing default decision: {current_decision_try}.')
+
                 try:
                     current_err_dist_try=current_inspection.context['results']['err_dist']
                 except:
@@ -268,7 +277,7 @@ def ui_update(request):
                 plot_y=[]
                 # format data for chart updates
                 for cnt,val in enumerate(CHART_KEYS[index]['chart_type']):
-                    x,y=set_xy(val,CHART_KEYS[index]['plot_update'][cnt],current_decision,index,err_dist=current_err_dist)
+                    x,y=set_xy(val,CHART_KEYS[index]['plot_update'][cnt],current_decision[cnt],index,err_dist=current_err_dist)
                     plot_x.append(x)
                     plot_y.append(y)
                 inspection_dict[str(index)]['plot_x']=plot_x
