@@ -3,10 +3,6 @@
         {
             "name": "engine_file",
             "default_value": "${PIPELINE_SERVER_SETTINGS_MODELS_ROOT}"
-        },
-        {
-            "name":"class_map",
-            "default_value": {"0":"decision_1", "1":"decision_2", "2":"decision_3"}
         }
     ]
 }

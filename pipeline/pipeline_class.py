@@ -31,7 +31,6 @@ class ModelPipeline:
         """
         self.configs = {}
         self.configs['engine_path'] = os.path.realpath(os.path.expandvars(kwargs.get('engine_file',"")))
-        self.configs['class_map'] = {int(k):v for k,v in kwargs.get('class_map', {}).items()}
         pass # add your code here ...
         
         
