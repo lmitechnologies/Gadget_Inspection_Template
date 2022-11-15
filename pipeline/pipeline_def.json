@@ -1,5 +1,12 @@
 {
     "configs_def":[
-
+        {
+            "name": "engine_file",
+            "default_value": "${PIPELINE_SERVER_SETTINGS_MODELS_ROOT}"
+        },
+        {
+            "name":"class_map",
+            "default_value": {"0":"your-class1", "1":"your-class2"}
+        }
     ]
 }
