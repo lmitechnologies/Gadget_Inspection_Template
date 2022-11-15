@@ -6,7 +6,7 @@
         },
         {
             "name":"class_map",
-            "default_value": {"0":"your-class1", "1":"your-class2"}
+            "default_value": {"0":"decision_1", "1":"decision_2", "2":"decision_3"}
         }
     ]
 }
