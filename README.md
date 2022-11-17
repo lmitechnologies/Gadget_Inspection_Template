@@ -2,7 +2,7 @@
 
 The gadget is made up of several docker containers. To run it you will need to have docker and docker-compose installed on your machine.
 
-The containers definition and configuration is done in a docker-compose yaml file, by default named inspection.docker-compose.yaml. In that file you'll find all the containers that make up the gadget. For organization sake they are put into three categories. Platform services make up the underlying components of the gadget that are consistent though out applications. Inspection services are configurable for a specific application and do the work of actually implementing the inspection. GoFactory services allow connection to the a GoFactory instance either running in the cloud or on prem.
+The containers definition and configuration is done in a docker-compose yaml file, by default named inspection.docker-compose.yaml. In that file you'll find all the containers that make up the gadget. For organization sake they are put into three categories. Platform services make up the underlying components of the gadget that are consistent though out applications. Inspection services are configurable for a specific application and do the work of actually implementing the inspection. GoFactory services allow connection to the a GoFactory instance either running in the cloud on prem.
 
 - Platform
   - Postgres Database
@@ -89,7 +89,7 @@ By default the Gadget services expect the it the use the host **api-gateway** an
 
 Along with messages, it is important that images can get communicated between services. The sensor needs to be able to send the image it receives to the pipeline, the data, the Gadget App needs access to the annotated pipeline result, the data manager needs access to all images so it can clean up old files and the GoFactory services need access to all images so it can send them to GoFactory.
 
-This communication is done using docker volumes. Specifically two volumes **inline-storage** and **offline-storage**. These volumes are mounted to the relevant containers. **inline-storage** is used for image communication between the sensor, pipeline, and gadget app. **inline-storage** is intended to be kept small, the images inside don't exist for very long. **offline-storage** is where images are archived. It is the data manager's responsibility to move images from **inline-storage** to **offline-storage**. GoFactory services are only interested in archived images so they need the **offline-storage** volume mounted.
+This communication is done using docker volumes. Specifically two volumes **inline-storage** and **offline-storage**. These volumes are mounted to the relevant containers. **inline-storage** is used for image communication between the sensor, pipeline, and gadget app. **inline-storage** is intended to be kept small, the images inside don't exist for very long. **offline-storage** is where images are archived. It si the data manager's responsibility to move images from **inline-storage** to **offline-storage**. GoFactory services are only interested in archived images so they need the **offline-storage** volume mounted.
 
 The volumes need to be mounted to a specific location inside the container for the service to have access to them. By default this location is **/app/data** (with one exception). This is fine as long as the container definition include something like this:
 
@@ -134,11 +134,11 @@ and this to the API Gateway's container definition:
 
 This maps the external port on the host network to the internal port inside the docker-compose network.
 
-If the ports 8080, 5000, or 5001 are already used on the machine you can update the external port to something like
+If the ports 8080, 5000, or 5001 are already used on the machine you can update the  external port to something like
 
     - 8090:8080
 
-Inside the container, it will still listen on port 8080 but everything outside the container can communicate to it using port 8090.
+Inside the container, the it will still listening on port 8080 but everything outside the container can communicate to it using port 8090.
 
 Update the Database API and Data Broker ports for relevant services using the env variables **DATABASE_API_PORT**, **DATA_BROKER_SUB_PORT**, and **DATA_BROKER_PUB_PORT**.
 
@@ -208,29 +208,29 @@ or the container can be given the path to a .env file that where the variables a
 
 ## Controlling the Gadget
 
-To build all the custom containers, run the command:
+To build all the custom containers run the command:
 
     docker-compose -f inspection.docker-compose.yaml build
 
-To Start the gadget, run the command:
+To Start the gadget run the command:
 
     docker-compose -f inspection.docker-compose.yaml up -d
 
 The -f specifies the docker-compose file name, and -d brings the containers up in detached mode and is optional.
 
-Once it's running, to view all the containers, run the command:
+Once it's running, to view all the containers run the command:
 
     docker ps
 
-To view the logs of the whole system, run:
+To view the logs of the whole system run:
 
     docker-compose -f inspection.docker-compose.yaml logs
 
-To view the logs of a specific container, run:
+To view the logs of a specific container run:
 
     docker logs <container-name>
   
-To stop the Gadget, run the command:
+To stop the Gadget run the command:
 
     docker-compose -f inspection.docker-compose.yaml down
 
