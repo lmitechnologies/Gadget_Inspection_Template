@@ -22,35 +22,20 @@ services:
     env_file:
       - ./postgres/postgres.env
       - ./gadgetapp/gadgetapp.env
-    volumes:
-      - db_static_volume:/home/gadget/staticfiles
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     depends_on:
       db:
         condition: service_healthy
         
   api-gateway:
     container_name: gadget-api-gateway
-    build: 
-      context: ./db_nginx
-      dockerfile: nginx.dockerfile
-      args:
-        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/nginx:${PACKAGE_VER}
     restart: unless-stopped
     ports:
       - 8080:8080
-    healthcheck:
-      test: ["CMD-SHELL", "wget -O /dev/null http://localhost:8080 || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
     depends_on:
-      database-api: 
+      gadget-database-api: 
         condition: service_healthy
+      
   gadgetapp:
     container_name: gadget-gadgetapp
     env_file:
@@ -161,7 +146,7 @@ services:
     env_file:
       - ./pipeline/pipeline.env
     volumes:
-      - ./pipeline/:/home/gadget/workspace/pipeline
+      - ./pipeline/:/home/gadget/pipeline
       - inline-storage:/app/data/inline
     depends_on:
       api-gateway: 
@@ -188,7 +173,8 @@ services:
       api-gateway: 
         condition: service_healthy
 
-  gocator:
+  avt-camera:
+    container_name: gadget-sensor-avt
     network_mode: host 
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
@@ -211,7 +197,7 @@ services:
       - MQTT_BRIDGE_SETTINGS_CLIENT_ID=${FACTORY_CLIENT_ID}
       - MQTT_BRIDGE_SETTINGS_BROKER_HOSTNAME=${FACTORY_HOST}
       - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_HOST=api-gateway
-      - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_PORT=8080
+      - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_PORT=8090
       - MQTT_BRIDGE_SETTINGS_S3_INTEGRATOR_HOST=gadget-s3-integrator
       - MQTT_BRIDGE_SETTINGS_LOG_COLLECTOR_HOST=gadget-log-collector
       - MQTT_BRIDGE_SETTINGS_BROKER_AUTH_USERNAME=root
