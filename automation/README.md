@@ -1,6 +1,6 @@
 # Automation
 
-The Gadget's automation service is a custom container that allows the Gadget to communicate with the outside world. It interprets decisions from the model pipeline and sends the needed messages out. Because each inspection application is different and may need to communicate with anything using any protocol the implementation of the automation class is custom. The automation server is the base which the service is build on. The automation server takes as inputs two files, an automation class python file and an automation configs json file. It takes both those files, adds the configs to the database and uses the custom code in the automation class to send messages to an automation machine. The automation server is given these files through env variables **AUTOMATION_PATH** (the absolute path to the folder inside the container that holds the files), **AUTOMATION_CLASS** (the file and class name the automation server uses to import the automation class), and **AUTOMATION_DEFINITION_JSON** (the name of the JSON file).
+The Gadget's automation service is a custom container that allows the Gadget to communicate with the outside world. It interprets decisions from the model pipeline and sends the needed messages out. Because each inspection application has different requirements the implementation of the automation class is custom. The automation server is the base which the service is build on. The automation server takes as inputs two files, an automation class python file and an automation configs json file. It takes both those files, adds the configs to the database and uses the custom code in the automation class to send messages to an automation machine. The automation server is given these files through env variables **AUTOMATION_PATH** (the absolute path to the folder inside the container that holds the files), **AUTOMATION_CLASS** (the file and class name the automation server uses to import the automation class), and **AUTOMATION_DEFINITION_JSON** (the name of the JSON file).
 
 ## Automation Class
 
@@ -10,7 +10,7 @@ The automation server API is a list of methods that the automation class must im
   - Establishes connection the automation machine. Doesn't take any arguments and returns nothing. It is the automation class's responsibility to store any connection obj needed.
 - def disconnect(self) -> None:
   - Disconnects from the automation machine. Doesn't take any arguments and returns nothing. It is the automation class's responsibility to clean up everything
-- def is_connected
+- def is_connected -> bool:
   - Checks if connection is still active. Doesn't take any arguments returns a bool. True if connection is still good, false otherwise.
 - def decision_mapping(self, mgs: str) -> Tuple[str, List[str]]
   - Translates the model pipeline result to an automation *action*. Takes as an argument a string representation of gadget_core pipeline message. Returns a tuple, a string representing the *action* and a list of strings representing any metadata associated with the action.
@@ -69,13 +69,13 @@ The value associated with the key *handler* must be a method defined in the auto
 
 ## Dockerfile
 
-Because this is a custom container a custom dockerfile must be created too. By default the automation service definition inside the inspection.docker-compose.yaml looks for a file named automation.dockerfile. If the file name is changed the docker-compose must be updated.
+Because this is a custom container, a custom dockerfile must be created too. By default the automation service definition inside the inspection.docker-compose.yaml looks for a file named automation.dockerfile. If the file name is changed, the docker-compose must be updated.
 
 The dockerfile that comes standard with the template shouldn't need to be updated much. It extends a python base image, sets up the environment, installs all the gadget code, and installs all the python packages listed in automation_requirements.txt. If the automation class needs a python package, pymodbus for example, include it in the automation_requirements.txt file and it will be installed when the image is build.
 
 ## Mounting Folders
 
-As mentioned before, the automation server is given the path to a folder that contains the automation class and JSON file. For this to work those files must exist inside the container. By default in the automation service definition in inspection.docker-compose.yaml, the automation folder is mounted into the container
+As mentioned before, the automation server is given the path to a folder that contains the automation class and JSON file. For this to work, those files must exist inside the container. By default in the automation service definition in inspection.docker-compose.yaml, the automation folder is mounted into the container
 
     volumes:
       - ./automation:/home/gadget/automation
