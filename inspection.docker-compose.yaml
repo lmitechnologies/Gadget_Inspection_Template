@@ -51,7 +51,7 @@ services:
     volumes:
       - db_static_volume:/home/staticfiles
     depends_on:
-      gadget-database-api: 
+      database-api: 
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -O /dev/null http://localhost:8090 || exit 1"]
@@ -208,20 +208,19 @@ services:
       nginx: 
         condition: service_healthy
 
-  avt-camera:
-    hostname: gadget-sensor-avt
-    container_name: gadget-sensor-avt
+  gocator:
     network_mode: host 
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_avt:${PACKAGE_VER}
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
     env_file:
-      - ./sensor/avt_camera_0.env
+      - ./sensor/sensor_gocator.env
     volumes:
       - ${PWD}/data/test_images:/home/gadget/workspace/test_images
       - inline-storage:/app/data/inline
     depends_on:
       nginx: 
         condition: service_healthy
+
 
   #---------- gofactory ----------   
   gadget-mqtt-bridge:

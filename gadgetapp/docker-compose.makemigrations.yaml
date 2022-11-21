@@ -1,0 +1,15 @@
+
+version: "3.9"
+
+services:
+  gadgetapp:
+    build:
+      context: .
+      args:
+        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      dockerfile: gadgetapp.dockerfile
+    command: python ./mounted/manage.py makemigrations
+    volumes:
+      - ./:/gadgetapp/mounted
