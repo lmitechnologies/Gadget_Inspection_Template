@@ -16,19 +16,20 @@ from configs.models import AutomationConfig, SensorConfig, PipelineConfig
 # except:
 #     raise(f'Pipeline config file {path_to_pipeline_configs} not found.')
 
+# Inspection events that the Gadget App uses to update display
+
+INSPECTION_RESULT_KEYS={   
+    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-gocator/0'}
+}
+
+
 available_decisions=['decision_1','decision_2','decision_3']
 available_decisions.insert(0,'none')
 AVAILABLE_DECISIONS=available_decisions
 
-
-# Inspection events that the Gadget App uses to update display
-INSPECTION_RESULT_KEYS={   
-    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-avt/0'}
-}
-
 # Mapping of inspection events to Charts
 CHART_KEYS={
-    0:{'charts':[0,1],'chart_type':[1,2],'plot_update':[0,1],'plot_y_key':['decision', 'decision']}    }
+    0:{'charts':[0,1],'chart_type':[1,2],'plot_update':[0,1],'plot_y_key':['decision', 'decision']}}
 
 
 class ConfigUI(models.Model):
