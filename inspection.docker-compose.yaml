@@ -2,7 +2,6 @@ version: "3.9"
 services:
   # ---------- platform ----------   
   db:
-    hostname: gadget-db
     container_name: gadget-db
     env_file:
       - ./postgres/postgres.env
@@ -16,16 +15,13 @@ services:
       timeout: 5s
       retries: 5
 
-  gadget-database-api:
-    hostname: gadget-database-api
+  database-api:
     container_name: gadget-database-api
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/database_api:${PACKAGE_VER}
     restart: unless-stopped
     env_file:
       - ./postgres/postgres.env
       - ./gadgetapp/gadgetapp.env
-    ports:
-      - 8080:8080
     volumes:
       - db_static_volume:/home/gadget/staticfiles
     healthcheck:
@@ -37,9 +33,8 @@ services:
       db:
         condition: service_healthy
         
-  db-nginx:
-    hostname: gadget-nginx-db
-    container_name: gadget-nginx-db
+  api-gateway:
+    container_name: gadget-api-gateway
     build: 
       context: ./db_nginx
       dockerfile: nginx.dockerfile
@@ -47,20 +42,16 @@ services:
         DOCKER_PLATFORM: ${DOCKER_PLATFORM}
     restart: unless-stopped
     ports:
-      - 8090:8090
-    volumes:
-      - db_static_volume:/home/staticfiles
-    depends_on:
-      gadget-database-api: 
-        condition: service_healthy
+      - 8080:8080
     healthcheck:
-      test: ["CMD-SHELL", "wget -O /dev/null http://localhost:8090 || exit 1"]
+      test: ["CMD-SHELL", "wget -O /dev/null http://localhost:8080 || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 5
-      
+    depends_on:
+      database-api: 
+        condition: service_healthy
   gadgetapp:
-    hostname: gadget-gadgetapp
     container_name: gadget-gadgetapp
     env_file:
       - ./postgres/postgres.env
@@ -80,7 +71,7 @@ services:
     ports:
       - 8085:8000
     depends_on:
-      gadget-database-api:
+      api-gateway:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000"]
@@ -89,7 +80,6 @@ services:
       retries: 5
   
   nginx:
-    hostname: gadget-nginx
     container_name: gadget-nginx
     build: 
       context: ./nginx
@@ -111,7 +101,6 @@ services:
       retries: 5
 
   data-broker:
-    hostname: gadget-data-broker
     container_name: gadget-data-broker
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/zmq_broker:${PACKAGE_VER}
     restart: unless-stopped
@@ -121,11 +110,10 @@ services:
     env_file:
       - ./gadget-platform/data_broker.env 
     depends_on:
-      gadgetapp: 
+      api-gateway: 
         condition: service_healthy
   
   data-manager:
-    hostname: gadget-data-manager
     container_name: gadget-data-manager
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/data_manager:${PACKAGE_VER}
     restart: unless-stopped
@@ -135,14 +123,11 @@ services:
       - data-manager-storage:/app/data/internal
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline
-    network_mode:
-      'host'
     depends_on:
-      gadgetapp: 
+      api-gateway: 
         condition: service_healthy
   
   system-monitor:
-    hostname: gadget-system-monitor
     container_name: gadget-system-monitor
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/system_monitor:${PACKAGE_VER}
     restart: unless-stopped
@@ -151,12 +136,11 @@ services:
     volumes:
       - inline-storage:/app/data/inline
     depends_on:
-      gadgetapp: 
+      api-gateway: 
         condition: service_healthy
 
   # ---------- inspection ----------   
   pipeline:
-    hostname: gadget-pipeline
     container_name: gadget-pipeline
     command: gadget_pipeline_server
     deploy:
@@ -166,7 +150,6 @@ services:
               - driver: nvidia
                 count: 1
                 capabilities: [gpu]
-    network_mode: host
     build: 
       context: ./pipeline
       args:
@@ -175,19 +158,16 @@ services:
       dockerfile: pipeline.dockerfile
     image: pipeline:${PACKAGE_VER}
     restart: unless-stopped
-    environment:
-      - GPU_PLATFORM=${GPU_PLATFORM}
     env_file:
       - ./pipeline/pipeline.env
     volumes:
       - ./pipeline/:/home/gadget/workspace/pipeline
       - inline-storage:/app/data/inline
     depends_on:
-      gadgetapp: 
+      api-gateway: 
         condition: service_healthy
 
   automation:
-    hostname: gadget-automation
     container_name: gadget-automation
     command: gadget_automation_server
     network_mode: "host"
@@ -205,11 +185,10 @@ services:
     volumes:
       - ./automation:/home/gadget/automation
     depends_on:
-      nginx: 
+      api-gateway: 
         condition: service_healthy
 
   avt-camera:
-    hostname: gadget-sensor-avt
     container_name: gadget-sensor-avt
     network_mode: host 
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_avt:${PACKAGE_VER}
@@ -220,20 +199,19 @@ services:
       - ${PWD}/data/test_images:/home/gadget/workspace/test_images
       - inline-storage:/app/data/inline
     depends_on:
-      nginx: 
+      api-gateway: 
         condition: service_healthy
 
   #---------- gofactory ----------   
   gadget-mqtt-bridge:
-    hostname: gadget-mqtt-bridge
     container_name: gadget-mqtt-bridge
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - MQTT_BRIDGE_SETTINGS_CLIENT_ID=${FACTORY_CLIENT_ID}
       - MQTT_BRIDGE_SETTINGS_BROKER_HOSTNAME=${FACTORY_HOST}
-      - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_HOST=db-nginx
-      - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_PORT=8090
+      - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_HOST=api-gateway
+      - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_PORT=8080
       - MQTT_BRIDGE_SETTINGS_S3_INTEGRATOR_HOST=gadget-s3-integrator
       - MQTT_BRIDGE_SETTINGS_LOG_COLLECTOR_HOST=gadget-log-collector
       - MQTT_BRIDGE_SETTINGS_BROKER_AUTH_USERNAME=root
@@ -242,11 +220,10 @@ services:
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline
     depends_on:
-      gadgetapp: 
+      api-gateway: 
         condition: service_healthy
     
   gadget-s3-integrator:
-    hostname: gadget-s3-integrator
     container_name: gadget-s3-integrator
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/s3_integrator:${PACKAGE_VER}
     restart: unless-stopped
@@ -261,7 +238,6 @@ services:
       - offline-storage:/tmp/s3files
   
   gadget-log-collector:
-    hostname: gadget-log-collector
     container_name: gadget-log-collector
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/log_collector:${PACKAGE_VER}
     restart: unless-stopped
