@@ -1,5 +1,32 @@
 {
     "configs_def":[
-
+        {
+            "name": "engine_file",
+            "default_value": "${PIPELINE_SERVER_SETTINGS_MODELS_ROOT}"
+        },
+        {
+            "name":"class_map",
+            "default_value": {"0":"leg"}
+        },
+        {
+            "name":"class_map_keypoints",
+            "default_value": {"0":"hoof", "1":"aitch-bone", "2":"joint"}
+        },
+        {
+            "name": "confidence_leg",
+            "default_value": 0.5
+        },
+        {
+            "name": "confidence_hoof",
+            "default_value": 0.5
+        },
+        {
+            "name": "confidence_aitch-bone",
+            "default_value": 0.5
+        },
+        {
+            "name": "confidence_joint",
+            "default_value": 0.5
+        }
     ]
 }

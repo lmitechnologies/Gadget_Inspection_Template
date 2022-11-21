@@ -37,7 +37,7 @@ class Command(BaseCommand):
                 return
 
 
-        sensor_config = SensorConfig(instance_name= "gadget-sensor-gocator",instance= 0)
+        sensor_config = SensorConfig(instance_name= "gadget-sensor-avt",instance= 0)
         sensor_config.save()  
         user_sensor_config=UserSensorConfig()
         user_sensor_config.save()
@@ -60,13 +60,13 @@ class Command(BaseCommand):
             title='New Gadget Application', \
             info_display_2_label='Total Inspection Count:', \
             media_type=0, \
-            plot_0=CHART_KEYS[0]['chart_type'][0], plot_0_yinit=0, plot_0_update=CHART_KEYS[0]['plot_update'][0], plot_0_xinit=0, plot_0_xlabel='Acquistion Event', plot_0_ylabel='Inspection Event', \
-            plot_1=CHART_KEYS[0]['chart_type'][1], plot_1_yinit=0, plot_1_update=CHART_KEYS[0]['plot_update'][1], plot_1_xlabel=','.join(AVAILABLE_DECISIONS[1:]), plot_1_ylabel='Total Inspection Events')
+            plot_0=CHART_KEYS[0]['chart_type'][0], plot_0_yinit=0, plot_0_update=CHART_KEYS[0]['plot_update'][0], plot_0_xinit=0, plot_0_xlabel='Acquistion Event', plot_0_ylabel='Inspection Confidence', \
+            plot_1=CHART_KEYS[0]['chart_type'][1], plot_1_yinit=0, plot_1_update=CHART_KEYS[0]['plot_update'][1], plot_1_xlabel=','.join(AVAILABLE_DECISIONS[1:]), plot_1_ylabel='Leg Slope')
         ui_config.save()
 
         runtimestatuslatest_sensor0=RuntimeStatusLatest(
             service_type='sensor',
-            instance_name="gadget-sensor-gocator",
+            instance_name="gadget-sensor-avt",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',

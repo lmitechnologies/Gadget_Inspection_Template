@@ -16,20 +16,20 @@ from configs.models import AutomationConfig, SensorConfig, PipelineConfig
 # except:
 #     raise(f'Pipeline config file {path_to_pipeline_configs} not found.')
 
-# Inspection events that the Gadget App uses to update display
-
-INSPECTION_RESULT_KEYS={   
-    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-gocator/0'}
-}
-
-
-available_decisions=['decision_1','decision_2','decision_3']
+available_decisions=['leg']
 available_decisions.insert(0,'none')
 AVAILABLE_DECISIONS=available_decisions
 
+
+# Inspection events that the Gadget App uses to update display
+INSPECTION_RESULT_KEYS={   
+    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-avt/0'}
+}
+
 # Mapping of inspection events to Charts
 CHART_KEYS={
-    0:{'charts':[0,1],'chart_type':[1,2],'plot_update':[0,1],'plot_y_key':['decision', 'decision']}}
+    0:{'charts':[0,1],'chart_type':[1,1],'plot_update':[0,0],'plot_y_key':['confidence', 'slope']    }
+}
 
 
 class ConfigUI(models.Model):
@@ -82,19 +82,15 @@ class UserSensorSelector(models.Model):
     current_sensor = models.ForeignKey(SensorConfig, default=None, blank=False, null=False, on_delete=models.PROTECT,)
 
 class UserSensorConfig(models.Model):
-    trigger_type_choices = [(False, 'For False'), (True, 'For True')]
-    sensor_param_1 = models.CharField(max_length=256,default="sensor param 1 value")
-    sensor_param_2=models.IntegerField(default=0.0)
-    sensor_param_3=models.BooleanField(choices=trigger_type_choices, default=False)
+    exposure_time=models.FloatField(default=200.0)
+    gain=models.FloatField(default=20.0)
+
 #--
 class UserPipelineSelector(models.Model):
     current_pipeline = models.ForeignKey(PipelineConfig, default=None, blank=False, null=False, on_delete=models.PROTECT,)
 
 class UserPipelineConfig(models.Model):
-    trigger_type_choices = [(False, 'For False'), (True, 'For True')]
-    pipeline_param_1 = models.CharField(max_length=256,default="pipeline param 1 value")
-    pipeline_param_2=models.IntegerField(default=0.0)
-    pipeline_param_3=models.BooleanField(choices=trigger_type_choices, default=False)
+    confidence_leg=models.FloatField(default=0.5)
 #--
 class UserAutomationSelector(models.Model):
     current_automation = models.ForeignKey(AutomationConfig, default=None, blank=True, null=True, on_delete=models.SET_NULL,)

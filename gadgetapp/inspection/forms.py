@@ -17,13 +17,10 @@ class ChoosePipelineForm(forms.ModelForm):
 class ChangePipelineForm(forms.ModelForm):
     class Meta:
         model = UserPipelineConfig
-        fields = ('pipeline_param_1','pipeline_param_2','pipeline_param_3')
-        labels = {'pipeline_param_1': 'Pipeline Param 1','pipeline_param_2': 'Pipeline Param 2','pipeline_param_3': 'Pipeline Param 3',}
-        CHOICES = [(True, 'For True'), (False, 'For False')]
+        fields = ('confidence_leg',)
+        labels = {'confidence_leg': 'Leg confidence',}
         widgets = {
-            'pipeline_param_1': forms.TextInput(attrs={'class': 'config-input_field'}),
-            'pipeline_param_2': forms.NumberInput(attrs={'class': 'config-input_field'}),
-            'pipeline_param_3': forms.RadioSelect(choices=CHOICES),
+            'confidence_leg': forms.NumberInput(attrs={'class': 'config-input_field'}),
         }
 
 class ChooseSensorForm(forms.ModelForm):
@@ -39,13 +36,12 @@ class ChooseSensorForm(forms.ModelForm):
 class ChangeSensorForm(forms.ModelForm):
     class Meta:
         model = UserSensorConfig
-        fields = ('sensor_param_1','sensor_param_2','sensor_param_3')
-        labels = {'sensor_param_1': 'Sensor Param 1','sensor_param_2': 'Sensor Param 2','sensor_param_3': 'Sensor Param 3',}
+        fields = ('exposure_time','gain')
+        labels = {'exposure_time': 'Exposure time','gain': 'Sensor gain',}
         CHOICES = [(True, 'For True'), (False, 'For False')]
         widgets = {
-            'sensor_param_1': forms.TextInput(attrs={'class': 'config-input_field'}),
-            'sensor_param_2': forms.NumberInput(attrs={'class': 'config-input_field'}),
-            'sensor_param_3': forms.RadioSelect(choices=CHOICES),
+            'exposure_time': forms.NumberInput(attrs={'class': 'config-input_field'}),
+            'gain': forms.NumberInput(attrs={'class': 'config-input_field'}),
         }
   
 class ChangeAutomationForm(forms.ModelForm):

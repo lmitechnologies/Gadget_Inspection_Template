@@ -42,6 +42,7 @@ class AutomationClass():
     def decision_mapping(self, msg: str) -> Tuple[str, List[str]]:
         pass
 
+    # to PLC - Program Logic Controller
     def send_action(self, action: str, aux_info: List[str]) -> bool:
         pass
 

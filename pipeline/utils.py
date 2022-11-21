@@ -214,6 +214,7 @@ def get_img_path_batches(batch_size, img_dir, fmt='png'):
     return ret
 
 
+
 def load_pipeline_def(filepath):
     with open(filepath) as f:
         dt_all = json.load(f)
