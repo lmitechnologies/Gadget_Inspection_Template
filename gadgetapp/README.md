@@ -7,6 +7,7 @@ The Gadget App is connected to the rest of the system through the postgres datab
 Out of the box, the Gadget App comes configured for a single sensor, single pipeline system. It has one canvas and two charts. To connect it to a Gadget some changes will have to be made to these files:
 
 - models.py
+- views.py
 - forms.py
 - init_db.py
 
