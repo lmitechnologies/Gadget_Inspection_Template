@@ -198,7 +198,7 @@ services:
       - ${PWD}/data/test_images:/home/gadget/workspace/test_images
       - inline-storage:/app/data/inline
     depends_on:
-      nginx: 
+      api-gateway: 
         condition: service_healthy
 
 
