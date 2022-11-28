@@ -17,7 +17,7 @@ Most of the the changes will be done in models.py. As mentioned previously, the 
         0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-gocator/0'}
     }
 
-With this the Gadget App knows that it's looking for inspection events from the model pipeline service *gadget-pipeline* instance 0 that came from the sensor topic *sensor/gadget-sensor-gocator/0*. If any of those things have changed it will need to be updated here.
+With this, the Gadget App knows that it's looking for inspection events from the model pipeline service *gadget-pipeline* instance 0 that came from the sensor topic *sensor/gadget-sensor-gocator/0*. If any of those things have changed it will need to be updated here.
 
 The inspection event has two things the Gadget App cares about. The path to an annotated image and a dictionary of key value pairs. The image path it uses to display the annotated image on the canvas and the values in the dictionary it uses to update the charts.
 
@@ -83,7 +83,7 @@ forms.py:
                 'pipeline_param_3': forms.RadioSelect(choices=CHOICES),
             }
 
-For this example, lets update pipeline configs to expose confidence level. To do that the models.py would be updated to this:
+For this example, lets update pipeline configs to expose confidence level. To do that, the models.py would be updated to this:
 
     class UserPipelineConfig(models.Model):
         confidence = models.FloatField(default=0.5)
@@ -111,7 +111,7 @@ Updating models.py won't have any effect unless the changes to the models are se
 
 ## Initialize the Database
 
-The Gadget App relies on information from in the database from the other services in the Gadget. If that information isn't there the Gadget App will run init_db.py to initialize the database. It will need to create instances of sensor, pipeline, and automation configs for each instance of each of those services in the system. The instance names must also match the instance names of the services. It wil also need create instances of runtime status for each of the services. By default, it is setup to initialize a single sensor/pipeline gadget. Using a Gocator and with the pipeline and automation service name set to *gadget-pipeline* and *gadget-automation*. If those names change or there are more sensors/pipelines added to the system those will have to be added.
+The Gadget App relies on information from in the database from the other services in the Gadget. If that information isn't there the Gadget App will run init_db.py to initialize the database. It will need to create instances of sensor, pipeline, and automation configs for each instance of each of those services in the system. The instance names must also match the instance names of the services. It wil also need create instances of runtime status for each of the services. By default, it is setup to initialize a single sensor/pipeline gadget. Using a Gocator and with the pipeline and automation service name set to *gadget-pipeline* and *gadget-automation*. If those names change, or there are more sensors/pipelines added, it will have to be updated.
 
 ## Runtime Status
 
