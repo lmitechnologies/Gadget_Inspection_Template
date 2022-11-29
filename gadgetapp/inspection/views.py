@@ -8,6 +8,7 @@ import time
 import glob
 import random
 import string
+from PIL import Image
 
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse
@@ -23,6 +24,8 @@ from inspection.models import AVAILABLE_DECISIONS, INSPECTION_RESULT_KEYS, CHART
 from configs.models import AutomationConfig, PipelineConfig, SensorConfig
 from inspection_events.models import PipelineInspectionEventLatest, InspectionEvent
 from runtime.models import RuntimeStatusLatest
+from gadget_core.data.gadget_image import GadgetImage
+
 
 #import forms
 from .forms import ChangeAutomationForm, ChoosePipelineForm, ChangePipelineForm, ChooseSensorForm, ChangeSensorForm
@@ -112,8 +115,8 @@ def clean_media_dir():
             os.remove(os.path.join(RUNTIME_MEDIA_PATH,file))
 
 def convert_2_png(raw_media_path):
-    npy_path=os.path.join(GADGET_APP_IMAGE_ARCHIVE_PATH,raw_media_path)
-    fname=raw_media_path.replace('.npy','.png')
+    img_path=os.path.join(GADGET_APP_IMAGE_ARCHIVE_PATH,raw_media_path)
+    fname=raw_media_path.replace('.gadget2d.pickle','.png')
     # create random file name
     # frandom=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))+'.png'
     fpath_gadget=os.path.join(RUNTIME_MEDIA_PATH,fname)
@@ -124,8 +127,11 @@ def convert_2_png(raw_media_path):
     if convert_file:
         logging.info(f'PNG file does not exist.  Creating file {fpath_gadget}')
         t0=time.time() 
-        image=np.load(npy_path)
-        cv2.imwrite(fpath_gadget,image)
+        gadget_image = GadgetImage.load(img_path)
+        image = gadget_image.visualize()
+        image.save(fpath_gadget)
+        #image=np.load(npy_path)
+        #cv2.imwrite(fpath_gadget,image)
         tf=time.time()
         logging.info(f'PNG save time for file {fname}:{tf-t0}')
         logging.info(f'Removing old files from media runtime directory.')
