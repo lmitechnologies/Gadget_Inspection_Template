@@ -50,7 +50,7 @@ class Command(BaseCommand):
         self.create_custom(pipeline_config,user_pipeline_config)
         UserPipelineSelector(current_pipeline=pipeline_config).save()
 
-        automation_config=AutomationConfig(instance_name="gadget-automation",instance=0)
+        automation_config=AutomationConfig(instance_name="gadget-automation-server",instance=0)
         automation_config.save()
         user_automation_config=UserAutomationConfig()
         user_automation_config.save()
@@ -86,7 +86,7 @@ class Command(BaseCommand):
 
         runtimestatuslatest_automation=RuntimeStatusLatest(
             service_type='automation',
-            instance_name="gadget-automation",
+            instance_name="gadget-automation-server",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',
