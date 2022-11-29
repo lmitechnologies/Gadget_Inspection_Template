@@ -1,5 +1,6 @@
 # jetpack 4.5
-FROM  nvcr.io/nvidia/l4t-ml:r32.5.0-py3
+ARG DOCKER_PLATFORM=${DOCKER_PLATFORM}
+FROM --platform=${DOCKER_PLATFORM} python:3.6.12-buster
 
 # Argument defition corresponding to Docker Compose
 ARG PACKAGE_VER

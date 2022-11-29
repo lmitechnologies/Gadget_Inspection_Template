@@ -119,7 +119,7 @@ services:
     env_file:
       - ./gadget-platform/system_monitor.env
     volumes:
-      - inline-storage:/app/data/inline
+      - inline-storage:/app/data
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -138,6 +138,7 @@ services:
     build: 
       context: ./pipeline
       args:
+        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
       dockerfile: pipeline.dockerfile
@@ -147,7 +148,7 @@ services:
       - ./pipeline/pipeline.env
     volumes:
       - ./pipeline/:/home/gadget/pipeline
-      - inline-storage:/app/data/inline
+      - inline-storage:/app/data
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -174,63 +175,64 @@ services:
         condition: service_healthy
 
   gocator:
+    container_name: gadget-gocator
     network_mode: host 
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
     env_file:
       - ./sensor/sensor_gocator.env
     volumes:
-      - ${PWD}/data/test_images:/home/gadget/workspace/test_images
-      - inline-storage:/app/data/inline
+      - ./sensor/test_images:/home/gadget/workspace/test_images
+      - inline-storage:/app/data
     depends_on:
       nginx: 
         condition: service_healthy
 
 
   #---------- gofactory ----------   
-  gadget-mqtt-bridge:
-    container_name: gadget-mqtt-bridge
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
-    restart: unless-stopped
-    environment:
-      - MQTT_BRIDGE_SETTINGS_CLIENT_ID=${FACTORY_CLIENT_ID}
-      - MQTT_BRIDGE_SETTINGS_BROKER_HOSTNAME=${FACTORY_HOST}
-      - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_HOST=api-gateway
-      - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_PORT=8090
-      - MQTT_BRIDGE_SETTINGS_S3_INTEGRATOR_HOST=gadget-s3-integrator
-      - MQTT_BRIDGE_SETTINGS_LOG_COLLECTOR_HOST=gadget-log-collector
-      - MQTT_BRIDGE_SETTINGS_BROKER_AUTH_USERNAME=root
-      - MQTT_BRIDGE_SETTINGS_BROKER_AUTH_PASSWORD=um-@cU_-ZNa7zy_dmNcf
-    volumes:
-      - inline-storage:/app/data/inline
-      - offline-storage:/app/data/offline
-    depends_on:
-      api-gateway: 
-        condition: service_healthy
+  # gadget-mqtt-bridge:
+  #   container_name: gadget-mqtt-bridge
+  #   image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
+  #   restart: unless-stopped
+  #   environment:
+  #     - CLIENT_ID=${FACTORY_CLIENT_ID}
+  #     - BROKER_HOSTNAME=${FACTORY_HOST}
+  #     - SYSTEM_DATABASE_API_HOST=api-gateway
+  #     - SYSTEM_DATABASE_API_PORT=8090
+  #     - S3_INTEGRATOR_HOST=gadget-s3-integrator
+  #     - LOG_COLLECTOR_HOST=gadget-log-collector
+  #     - BROKER_AUTH_USERNAME=root
+  #     - BROKER_AUTH_PASSWORD=um-@cU_-ZNa7zy_dmNcf
+  #   volumes:
+  #     - inline-storage:/app/data/inline
+  #     - offline-storage:/app/data/offline
+  #   depends_on:
+  #     api-gateway: 
+  #       condition: service_healthy
     
-  gadget-s3-integrator:
-    container_name: gadget-s3-integrator
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/s3_integrator:${PACKAGE_VER}
-    restart: unless-stopped
-    ports:
-      - 7778:7777
-    environment:
-      - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
-      - STORAGE_PROFILE=${STORAGE_PROFILE}
-      - MINIO_HOST=${FACTORY_HOST}
-      - VAULT_TOKEN=${VAULT_TOKEN} 
-    volumes:
-      - offline-storage:/tmp/s3files
+  # gadget-s3-integrator:
+  #   container_name: gadget-s3-integrator
+  #   image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/s3_integrator:${PACKAGE_VER}
+  #   restart: unless-stopped
+  #   ports:
+  #     - 7778:7777
+  #   environment:
+  #     - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
+  #     - STORAGE_PROFILE=${STORAGE_PROFILE}
+  #     - MINIO_HOST=${FACTORY_HOST}
+  #     - VAULT_TOKEN=${VAULT_TOKEN} 
+  #   volumes:
+  #     - offline-storage:/tmp/s3files
   
-  gadget-log-collector:
-    container_name: gadget-log-collector
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/log_collector:${PACKAGE_VER}
-    restart: unless-stopped
-    ports:
-      - 7771:7770
-    volumes:
-      - offline-storage:/tmp/s3files
-      - /var/log/journal:/var/log/hostjournal:ro
+  # gadget-log-collector:
+  #   container_name: gadget-log-collector
+  #   image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/log_collector:${PACKAGE_VER}
+  #   restart: unless-stopped
+  #   ports:
+  #     - 7771:7770
+  #   volumes:
+  #     - offline-storage:/tmp/s3files
+  #     - /var/log/journal:/var/log/hostjournal:ro
   
 volumes:
   data-manager-storage:
