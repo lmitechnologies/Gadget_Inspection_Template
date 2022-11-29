@@ -37,13 +37,13 @@ class AutomationClass():
         pass 
 
     def is_connected(self) -> bool:
-        pass
+        return True
     
     def decision_mapping(self, msg: str) -> Tuple[str, List[str]]:
-        pass
+        return "", [""]
 
     def send_action(self, action: str, aux_info: List[str]) -> bool:
-        pass
+        return True
 
     
 
