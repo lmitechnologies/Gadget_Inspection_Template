@@ -16,3 +16,6 @@ RUN pip install gadget_api_inspection_events==$PACKAGE_VER --extra-index-url $PY
 RUN pip install gadget_api_runtime==$PACKAGE_VER --extra-index-url $PYPI_SERVER 
 
 COPY . /gadgetapp/
+
+HEALTHCHECK --interval=10s --timeout=10s --retries=5 --start-period=15s \
+    CMD curl -f http://localhost:8000

@@ -3,25 +3,15 @@ services:
   # ---------- platform ----------   
   db:
     container_name: gadget-db
-    env_file:
-      - ./postgres/postgres.env
-    image: postgres:12.10-alpine
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/postgres:${PACKAGE_VER}
     restart: unless-stopped
     volumes:
       - postgres_db:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   database-api:
     container_name: gadget-database-api
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/database_api:${PACKAGE_VER}
     restart: unless-stopped
-    env_file:
-      - ./postgres/postgres.env
-      - ./gadgetapp/gadgetapp.env
     depends_on:
       db:
         condition: service_healthy
@@ -38,9 +28,6 @@ services:
       
   gadgetapp:
     container_name: gadget-gadgetapp
-    env_file:
-      - ./postgres/postgres.env
-      - ./gadgetapp/gadgetapp.env
     build:
       context: ./gadgetapp
       args:
@@ -58,16 +45,11 @@ services:
     depends_on:
       api-gateway:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
   
   nginx:
     container_name: gadget-nginx
     build: 
-      context: ./nginx
+      context: ./gadgetapp
       dockerfile: nginx.dockerfile
       args:
         DOCKER_PLATFORM: ${DOCKER_PLATFORM}
@@ -79,11 +61,6 @@ services:
     depends_on:
       gadgetapp: 
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -O /dev/null http://localhost || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
 
   data-broker:
     container_name: gadget-data-broker
@@ -92,8 +69,6 @@ services:
     ports:
       - 5000:5000
       - 5001:5001
-    env_file:
-      - ./gadget-platform/data_broker.env 
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -102,8 +77,12 @@ services:
     container_name: gadget-data-manager
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/data_manager:${PACKAGE_VER}
     restart: unless-stopped
-    env_file:
-      - ./gadget-platform/data_manager.env
+    environment:
+      - INLINE_CAPACITY_METRIC=max-content-size
+      - INLINE_CAPACITY_THRESHOLD="0.5 GB"
+      - OFFLINE_CAPACITY_METRIC=min-storage-free
+      - OFFLINE_CAPACITY_THRESHOLD="50 GB"
+      - TZ=utc
     volumes:
       - data-manager-storage:/app/data/internal
       - inline-storage:/app/data/inline
@@ -116,8 +95,6 @@ services:
     container_name: gadget-system-monitor
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/system_monitor:${PACKAGE_VER}
     restart: unless-stopped
-    env_file:
-      - ./gadget-platform/system_monitor.env
     volumes:
       - inline-storage:/app/data
     depends_on:
@@ -144,8 +121,14 @@ services:
       dockerfile: pipeline.dockerfile
     image: pipeline:${PACKAGE_VER}
     restart: unless-stopped
-    env_file:
-      - ./pipeline/pipeline.env
+    environment:
+      - DATA_BROKER_SUB_TOPICS=sensor/gadget-sensor-gocator/0
+      - MODELS_ROOT=/home/gadget/pipeline/models
+      - PIPELINE_PATH=/home/gadget/pipeline
+      - PIPELINE_CLASS=pipeline_class.ModelPipeline
+      - PIPELINE_DEFINITION_JSON=pipeline_def.json
+      - PASS_THROUGH_ENABLED=True
+      - TZ=utc
     volumes:
       - ./pipeline/:/home/gadget/pipeline
       - inline-storage:/app/data
@@ -166,8 +149,14 @@ services:
         PYPI_SERVER: ${PYPI_SERVER}
     image: automation:${PACKAGE_VER}
     restart: unless-stopped
-    env_file:
-      - ./automation/automation.env
+    environment:
+      - DATABASE_API_HOST=127.0.0.1
+      - DATA_BROKER_HOST=127.0.0.1
+      - DATA_BROKER_SUB_TOPICS=pipeline/gadget-pipeline/0
+      - AUTOMATION_PATH=/home/gadget/automation/
+      - AUTOMATION_CLASS=automation_class.AutomationClass
+      - AUTOMATION_DEFINITION_JSON=automation_class_def.json
+      - TZ=utc
     volumes:
       - ./automation:/home/gadget/automation
     depends_on:
@@ -179,8 +168,13 @@ services:
     network_mode: host 
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
-    env_file:
-      - ./sensor/sensor_gocator.env
+    environment:
+      - DATABASE_API_HOST=127.0.0.1
+      - DATA_BROKER_HOST=127.0.0.1
+      - CAM_IP=10.11.1.19
+      - START=True
+      - EMULATION_ENABLED=True
+      - TZ=utc
     volumes:
       - ./sensor/test_images:/home/gadget/workspace/test_images
       - inline-storage:/app/data
@@ -190,17 +184,13 @@ services:
 
 
   #---------- gofactory ----------   
-  gadget-mqtt-bridge:
+  mqtt-bridge:
     container_name: gadget-mqtt-bridge
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - CLIENT_ID=${FACTORY_CLIENT_ID}
       - BROKER_HOSTNAME=${FACTORY_HOST}
-      - SYSTEM_DATABASE_API_HOST=api-gateway
-      - SYSTEM_DATABASE_API_PORT=8090
-      - S3_INTEGRATOR_HOST=gadget-s3-integrator
-      - LOG_COLLECTOR_HOST=gadget-log-collector
       - BROKER_AUTH_USERNAME=root
       - BROKER_AUTH_PASSWORD=um-@cU_-ZNa7zy_dmNcf
     volumes:
@@ -210,7 +200,7 @@ services:
       api-gateway: 
         condition: service_healthy
     
-  gadget-s3-integrator:
+  s3-integrator:
     container_name: gadget-s3-integrator
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/s3_integrator:${PACKAGE_VER}
     restart: unless-stopped
@@ -224,7 +214,7 @@ services:
     volumes:
       - offline-storage:/tmp/s3files
   
-  gadget-log-collector:
+  log-collector:
     container_name: gadget-log-collector
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/log_collector:${PACKAGE_VER}
     restart: unless-stopped
@@ -247,5 +237,3 @@ volumes:
     name: postgres_db
   static_volume:
     name: static_volume
-  db_static_volume:
-    name: db_static_volume
