@@ -23,7 +23,7 @@ AVAILABLE_DECISIONS=available_decisions
 
 # Inspection events that the Gadget App uses to update display
 INSPECTION_RESULT_KEYS={   
-    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-avt/0'}
+    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-gocator/0'}
 }
 
 # Mapping of inspection events to Charts

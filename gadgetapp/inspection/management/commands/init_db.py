@@ -66,7 +66,7 @@ class Command(BaseCommand):
 
         runtimestatuslatest_sensor0=RuntimeStatusLatest(
             service_type='sensor',
-            instance_name="gadget-sensor-avt",
+            instance_name="gadget-sensor-gocator",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',
