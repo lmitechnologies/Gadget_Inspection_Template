@@ -219,6 +219,7 @@ services:
     volumes:
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline
+      - trasfer-storage:/app/data/transfer
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -235,7 +236,7 @@ services:
       - MINIO_HOST=${FACTORY_HOST}
       - VAULT_TOKEN=${VAULT_TOKEN} 
     volumes:
-      - offline-storage:/tmp/s3files
+      - trasfer-storage:/app/data/transfer
   
   gadget-log-collector:
     container_name: gadget-log-collector
@@ -244,8 +245,8 @@ services:
     ports:
       - 7771:7770
     volumes:
-      - offline-storage:/tmp/s3files
       - /var/log/journal:/var/log/hostjournal:ro
+      - trasfer-storage:/app/data/transfer
   
 volumes:
   data-manager-storage:
@@ -256,6 +257,7 @@ volumes:
       o: bind
       type: none
       device: /mnt/gadget-inline
+  trasfer-storage:
   postgres_db:
     name: postgres_db
   static_volume:

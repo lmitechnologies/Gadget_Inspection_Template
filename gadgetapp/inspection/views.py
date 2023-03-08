@@ -8,6 +8,7 @@ import time
 import glob
 import random
 import string
+from pathlib import Path
 
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, Http404, HttpResponseRedirect, JsonResponse
@@ -15,6 +16,8 @@ from django.core import serializers
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+
+from gadget_core.data.gadget_image import GadgetImage
 
 #import models
 from inspection.models import ConfigUI, UserSensorSelector, UserSensorConfig, UserPipelineSelector, UserPipelineConfig, UserAutomationConfig, SystemState
@@ -112,8 +115,8 @@ def clean_media_dir():
             os.remove(os.path.join(RUNTIME_MEDIA_PATH,file))
 
 def convert_2_png(raw_media_path):
-    npy_path=os.path.join(GADGET_APP_IMAGE_ARCHIVE_PATH,raw_media_path)
-    fname=raw_media_path.replace('.npy','.png')
+    image_path=os.path.join(GADGET_APP_IMAGE_ARCHIVE_PATH,raw_media_path)
+    fname=raw_media_path.replace('.gadget2d.pickle','.png')
     # create random file name
     # frandom=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))+'.png'
     fpath_gadget=os.path.join(RUNTIME_MEDIA_PATH,fname)
@@ -122,20 +125,17 @@ def convert_2_png(raw_media_path):
     convert_file=False if (fpath_gadget in files) else True
     # write the file if it doesn't exist
     if convert_file:
-        logging.info(f'PNG file does not exist.  Creating file {fpath_gadget}')
         t0=time.time() 
-        image=np.load(npy_path)
-        cv2.imwrite(fpath_gadget,image)
+        path = Path(image_path)
+        gimage = GadgetImage.load(path)
+        image = gimage.visualize()
+        image.save(fpath_gadget)
         tf=time.time()
-        logging.info(f'PNG save time for file {fname}:{tf-t0}')
-        logging.info(f'Removing old files from media runtime directory.')
         for file in files:
             os.remove(file)
-    else:
-        logging.info(f'PNG file {fname} already exists.  Skipping generation.')
-
+   
     fpath_nginx=os.path.join(NGINX_MEDIA_PATH,fname)
-    return fpath_nginx    
+    return fpath_nginx      
 
 
 def set_xy(chart_type,update_option,decision,index,err_dist=None):
