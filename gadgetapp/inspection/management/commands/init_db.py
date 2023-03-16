@@ -37,7 +37,7 @@ class Command(BaseCommand):
                 return
 
 
-        sensor_config = SensorConfig(instance_name= "gadget-sensor-avt",instance= 0)
+        sensor_config = SensorConfig(instance_name= "gadget-sensor-gocator",instance= 0)
         sensor_config.save()  
         user_sensor_config=UserSensorConfig()
         user_sensor_config.save()
@@ -66,7 +66,7 @@ class Command(BaseCommand):
 
         runtimestatuslatest_sensor0=RuntimeStatusLatest(
             service_type='sensor',
-            instance_name="gadget-sensor-avt",
+            instance_name="gadget-sensor-gocator",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',

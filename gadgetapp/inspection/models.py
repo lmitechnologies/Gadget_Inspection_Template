@@ -4,26 +4,13 @@ from django.db import models
 
 from configs.models import AutomationConfig, SensorConfig, PipelineConfig
 
-
-# TODO:Available decisions from model pipeline
-# path_to_pipeline_configs=os.environ.get('PATH_TO_PIPELINE_CONFIGS','../pipeline/pipeline_def.json')
-# try:
-#     with open(path_to_pipeline_configs,'r') as f:
-#         pipeline_configs=json.load(f)
-#     mykeys=[kvp['name'] for kvp in pipeline_configs['configs_def']]
-#     index=mykeys.index('yolov5_class_map')
-#     available_decisions=list(pipeline_configs['configs_def'][index]['default_value'].values())
-# except:
-#     raise(f'Pipeline config file {path_to_pipeline_configs} not found.')
-
-available_decisions=['decision_1','decision_2','decision_3']
+available_decisions=['0','1','2', '3', '4', '5', '6', '7', '8', '9', '10']
 available_decisions.insert(0,'none')
 AVAILABLE_DECISIONS=available_decisions
 
-
 # Inspection events that the Gadget App uses to update display
 INSPECTION_RESULT_KEYS={   
-    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-avt/0'}
+    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-gocator/0'}
 }
 
 # Mapping of inspection events to Charts

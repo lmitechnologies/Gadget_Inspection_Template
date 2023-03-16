@@ -61,20 +61,22 @@ t0=t0.replace(tzinfo=pytz.UTC)
 persistent_timestamp=[t0 for i in range(len(INSPECTION_RESULT_KEYS))]
 new_data_counter=[0 for i in range(len(INSPECTION_RESULT_KEYS))]
 
-def get_category(current_defect):
+def get_category(current_decision):
     # classes_available=defect_list.split(",")
     try: 
-        defect_ID=AVAILABLE_DECISIONS.index(current_defect)
-        logging.info(f'Defect: {current_defect} maps to ID: {defect_ID}')
+        # convert decision to same type as AVAILABLE_DECISIONS
+        current_decision = type(AVAILABLE_DECISIONS[1])(current_decision)
+        decision_ID=AVAILABLE_DECISIONS.index(current_decision)
+        logging.info(f'Decision: {current_decision} maps to ID: {decision_ID}')
     except:
-        logging.warning(f'Decision: {current_defect} not being tracked. Setting to 0.')
-        defect_ID=0
+        logging.warning(f'Decision: {current_decision} not being tracked. Setting to 0.')
+        decision_ID=0
     plot_y=[0]*( len(AVAILABLE_DECISIONS) -1 )
-    if defect_ID==0:
+    if decision_ID==0:
         return plot_y
     else:
         plot_i_y=plot_y
-        plot_i_y[defect_ID-1]=1
+        plot_i_y[decision_ID-1]=1
         return plot_i_y
 
 def query_inspection_events_table(index):
@@ -168,6 +170,8 @@ def set_xy(chart_type,update_option,decision,index,err_dist=None):
         if update_option==0:
             x=new_data_counter[index]
             try:
+                logging.info(f"Available decisions: {AVAILABLE_DECISIONS}")
+                logging.info(f"Decision: {decision}, Type: {type(decision)}")
                 y=AVAILABLE_DECISIONS.index(decision)
             except:
                 if isinstance(decision, float) or isinstance(decision, int):

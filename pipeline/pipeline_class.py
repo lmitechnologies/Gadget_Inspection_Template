@@ -10,14 +10,8 @@ this pipeline class, needs to have the following methods:
     predict
 """
 
-import os
-import time
-import shutil
-import collections
 import numpy as np
-import cv2
 import logging
-import traceback
 
 
 

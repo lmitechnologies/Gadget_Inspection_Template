@@ -1,6 +1,5 @@
-# jetpack 4.5
-FROM  nvcr.io/nvidia/l4t-ml:r32.5.0-py3
-
+# CHANGE PARENT IMAGE TO MEET MODEL NEEDS
+FROM  python:3.8.12-buster
 # Argument defition corresponding to Docker Compose
 ARG PACKAGE_VER
 ARG PYPI_SERVER

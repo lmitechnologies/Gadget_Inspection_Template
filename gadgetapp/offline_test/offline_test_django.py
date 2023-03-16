@@ -26,7 +26,7 @@ from configs.models import AutomationConfig, SensorConfig, PipelineConfig
 from inspection_events.models import PipelineInspectionEventLatest, InspectionEvent
 from runtime.models import RuntimeStatusLatest
 
-dsts=['/app/image_archive/pipeline/gadget-pipeline/0/sensor/gadget-sensor-avt/0']
+dsts=['/app/image_archive/pipeline/gadget-pipeline/0/sensor/gadget-sensor-gocator/0']
 
 for dst in dsts:
     if not os.path.exists(dst):

@@ -37,11 +37,11 @@ The pipeline folder consists of the followings:
 
 ```
 **pipeline_class.py**: the implementation of the pipeline class. There are several required functions to be implemented. Check the details in the section - [Pipeline API](#pipeline-api).  
-**pipeline.env**: the environmental file used by the docker container. Below is the content of the environmental file. `PIPELINE_SERVER_INSTANCE_NUMBER` is the instance index of the pipeline (default to 0). `PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS` is the subscriber topic. It currently subscribes to the AVT camera. Modify it if other type of sensors is used. `PIPELINE_SERVER_SETTINGS_MODELS_ROOT` is the path to the trained models.
+**pipeline.env**: the environmental file used by the docker container. Below is the content of the environmental file. `PIPELINE_SERVER_INSTANCE_NUMBER` is the instance index of the pipeline (default to 0). `PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS` is the subscriber topic. It currently subscribes to the gocator sensor. Modify it if other type of sensors is used. `PIPELINE_SERVER_SETTINGS_MODELS_ROOT` is the path to the trained models.
 ```bash
 # these settings are usually changed according to your application
 PIPELINE_SERVER_INSTANCE_NUMBER=0
-PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/gadget-sensor-avt/0
+PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/gadget-sensor-gocator/0
 PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/workspace/pipeline/models
 # the following settings shouldn't be changed often
 PIPELINE_SERVER_INSTANCE_NAME=gadget-pipeline
