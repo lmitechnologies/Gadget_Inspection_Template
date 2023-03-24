@@ -1,6 +1,5 @@
 import {update_line} from './update_plots.js'
 import {update_bar} from './update_plots.js'
-import {update_hist} from './update_plots.js'
 import {update_2D} from './update_media.js';
 import {update_3D} from './update_media.js';
 
@@ -33,15 +32,15 @@ function get_app_data() {
                 ready_sensor=data.state_dict.sensor_state[sc];
                 update_LED(led_sensor,ready_sensor);
             }
-            // pipeline
-            var pipeline_state_array=data.state_dict.pipeline_state;
-            var n_pipelines=pipeline_state_array.length;
-            var led_pipeline;
-            var ready_pipeline;
-            for (let sc=0; sc<n_pipelines; sc++) {
-                led_pipeline=document.querySelector('#ready_pipeline_'+sc);
-                ready_pipeline=data.state_dict.pipeline_state[sc];
-                update_LED(led_pipeline,ready_pipeline);
+            // model
+            var ready_model_array=data.state_dict.pipeline_state;
+            var n_pipelines=ready_model_array.length;
+            var led_model;
+            var ready_model
+            for (let pc=0; pc<n_pipelines; pc++) {
+                led_model=document.querySelector('#ready_model_'+pc);
+                ready_model=data.state_dict.pipeline_state[pc];
+                update_LED(led_model,ready_model);
             }
             // automation
             var led_automation=document.querySelector('#ready_automation');
@@ -149,7 +148,13 @@ function update_ui_information(info_display_0_value, info_display_1_value, info_
 function update_ui_plots(canvas_ID,chart_option,plot_update,x,y)
 {
     var canvas=document.querySelector('#param_'+canvas_ID+'_plot');
-    plot_selector(canvas,chart_option,plot_update,x,y);
+    if(x.length == y.length){
+        for (let i = 0; i < x.length; i++){
+            plot_selector(canvas,chart_option,plot_update,x[i],y[i]);
+        }
+    } else {
+        console.log("X and Y values don't match. Ignoring chart update")
+    }
 }
     
 
@@ -163,9 +168,6 @@ function plot_selector(canvas, plot_option, plot_update, plot_x, plot_y) {
             break;
         case 2:
             update_bar(canvas,plot_update,plot_y);
-            break;
-        case 3:
-            update_hist(canvas,plot_x,plot_y);
             break;
     }
 }

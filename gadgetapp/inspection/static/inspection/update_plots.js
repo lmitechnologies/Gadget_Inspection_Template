@@ -36,24 +36,3 @@ function update_bar(canvas_object,plot_update,plot_y) {
     }
 }
 export {update_bar}
-
-function update_hist(canvas_object,plot_x,plot_y) {
-    var chart_hist=canvas_object.data; 
-    // remove old labels, data
-    chart_hist.data.labels.pop();
-    chart_hist.data.datasets.pop();  
-    var newDataset = { 
-        label: 'Error Histogram',
-        data: plot_y,
-        backgroundColor: 'green',
-    };
-
-    plot_x = plot_x.map(function(each_element){
-        return Number(each_element.toPrecision(2));
-    });
-
-    chart_hist.data.labels=plot_x;
-    chart_hist.data.datasets.push(newDataset);
-    chart_hist.update()
-}
-export {update_hist}
