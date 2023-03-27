@@ -34,7 +34,7 @@ from .forms import ChangeAutomationForm, ChoosePipelineForm, ChangePipelineForm,
 
 RUNTIME_MEDIA_PATH='/gadgetapp/staticfiles/inspection/media/runtime'
 NGINX_MEDIA_PATH='../../static/inspection/media/runtime'
-NGINX_LABEL_PATH='../../static/inspection/media/reference_image'
+NGINX_LABEL_PATH='../../static/inspection/media'
 GADGET_APP_IMAGE_ARCHIVE_PATH='/mnt/gadget-inline'
 REFERENCE_IMAGES_BASE="/gadgetapp"
 MEDIA_BUFFER=20
