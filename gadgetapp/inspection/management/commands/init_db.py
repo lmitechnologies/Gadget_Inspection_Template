@@ -4,13 +4,13 @@ import datetime
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
 
-from inspection.models import UserSensorSelector, UserSensorConfig, UserPipelineSelector, UserPipelineConfig, UserAutomationSelector, UserAutomationConfig, ConfigUI, SystemState
+from inspection.models import UserSensorSelector, UserSensorConfig, UserPipelineSelector, UserPipelineConfig, UserAutomationSelector, UserAutomationConfig, ConfigUI, SystemState, AvailableModels
 
 from configs.models import AutomationConfig, SensorConfig, PipelineConfig
 from inspection_events.models import InspectionEvent
 from runtime.models import RuntimeStatusLatest
 
-from inspection.models import AVAILABLE_DECISIONS, CHART_KEYS
+from inspection.models import AVAILABLE_DECISIONS
 
 ALREADY_LOADED_ERRROR_MESSAGE = """
 If you need to reinitialize data, first delete the db.sqlite3 file, then rerun 
@@ -35,33 +35,86 @@ class Command(BaseCommand):
                 print('Inspection data already initialized.  Exiting.')
                 print(ALREADY_LOADED_ERRROR_MESSAGE)
                 return
-
-
-        sensor_config = SensorConfig(instance_name= "gadget-sensor-gocator",instance= 0)
-        sensor_config.save()  
-        user_sensor_config=UserSensorConfig()
-        user_sensor_config.save()
-        UserSensorSelector(current_sensor=sensor_config).save()
         
-        pipeline_config = PipelineConfig(instance_name= "gadget-pipeline",instance= 0)
-        pipeline_config.save() 
-        user_pipeline_config=UserPipelineConfig()
-        user_pipeline_config.save()
-        self.create_custom(pipeline_config,user_pipeline_config)
-        UserPipelineSelector(current_pipeline=pipeline_config).save()
+        available_model_0 = AvailableModels(pipeline="pipeline/pipeline/0", model_type="annomoly", model_name="2023-02-05", model_path="${PIPELINE_SERVER_SETTINGS_MODELS_ROOT}")
+        available_model_0.save()
+        available_model_1 = AvailableModels(pipeline="pipeline/pipeline/1", model_type="annomoly", model_name="2023-02-05", model_path="${PIPELINE_SERVER_SETTINGS_MODELS_ROOT}")
+        available_model_1.save()
+        available_model_2 = AvailableModels(pipeline="pipeline/pipeline/2", model_type="annomoly", model_name="2023-02-05", model_path="${PIPELINE_SERVER_SETTINGS_MODELS_ROOT}")
+        available_model_2.save()
+        available_model_3 = AvailableModels(pipeline="pipeline/pipeline/3", model_type="annomoly", model_name="2023-02-05", model_path="${PIPELINE_SERVER_SETTINGS_MODELS_ROOT}")
+        available_model_3.save()
+        available_model_4 = AvailableModels(pipeline="pipeline/pipeline/4", model_type="annomoly", model_name="2023-02-05", model_path="${PIPELINE_SERVER_SETTINGS_MODELS_ROOT}")
+        available_model_4.save()
 
-        automation_config=AutomationConfig(instance_name="gadget-automation",instance=0)
-        automation_config.save()
+
+        sensor0_config = SensorConfig(instance_name= "gadget-sensor-gocator",instance= 0)
+        sensor0_config.save()
+        sensor1_config = SensorConfig(instance_name= "gadget-sensor-gocator",instance= 1)
+        sensor1_config.save()
+        sensor2_config = SensorConfig(instance_name= "gadget-sensor-avt",instance= 0)
+        user_sensor2 = UserSensorConfig(instance_name= "gadget-sensor-avt",instance= 0)
+        self.create_custom(sensor2_config, user_sensor2)
+        user_sensor2.save()
+        sensor2_config.save()
+        
+        sensor3_config = SensorConfig(instance_name = "gadget-sensor-avt",instance = 1)
+        user_sensor3 = UserSensorConfig(instance_name= "gadget-sensor-avt",instance= 1)
+        self.create_custom(sensor3_config, user_sensor3)
+        user_sensor3.save()
+        sensor3_config.save()
+        sensor4_config = SensorConfig(instance_name = "gadget-sensor-avt",instance = 2)
+        user_sensor4 = UserSensorConfig(instance_name= "gadget-sensor-avt",instance= 2)
+        self.create_custom(sensor4_config, user_sensor2)
+        user_sensor4.save()
+        sensor4_config.save()
+
+        pipeline0_config = PipelineConfig(instance_name = "pipeline",instance = 0)
+        user_pipeline0_config=UserPipelineConfig(instance_name= "pipeline",instance = 0)
+        self.create_custom(pipeline0_config,user_pipeline0_config)
+        pipeline0_config.save()
+        user_pipeline0_config.save()
+
+        pipeline1_config = PipelineConfig(instance_name = "pipeline",instance = 1)
+        user_pipeline1_config=UserPipelineConfig(instance_name = "pipeline",instance = 1)
+        self.create_custom(pipeline1_config,user_pipeline1_config)
+        pipeline1_config.save()
+        user_pipeline1_config.save()
+        
+        pipeline2_config = PipelineConfig(instance_name = "pipeline",instance = 2)
+        user_pipeline2_config=UserPipelineConfig(instance_name = "pipeline",instance = 2)
+        self.create_custom(pipeline2_config,user_pipeline2_config)
+        pipeline2_config.save()
+        user_pipeline2_config.save()
+
+        pipeline3_config = PipelineConfig(instance_name = "pipeline",instance = 3)
+        user_pipeline3_config=UserPipelineConfig(instance_name = "pipeline",instance = 3)
+        self.create_custom(pipeline3_config,user_pipeline3_config)
+        pipeline3_config.save()
+        user_pipeline3_config.save()
+
+        pipeline4_config = PipelineConfig(instance_name = "pipeline",instance = 4)
+        user_pipeline4_config=UserPipelineConfig(instance_name = "pipeline",instance = 4)
+        self.create_custom(pipeline4_config,user_pipeline3_config)
+        pipeline4_config.save()
+        user_pipeline4_config.save()
+        
+        automation_config=AutomationConfig(instance_name="automation",instance=0)
         user_automation_config=UserAutomationConfig()
-        user_automation_config.save()
         self.create_custom(automation_config,user_automation_config)
-        
+        automation_config.save()
+        user_automation_config.save()
+
         ui_config=ConfigUI(
-            title='New Gadget Application', \
-            info_display_2_label='Total Inspection Count:', \
+            title='Huhtumaki | Pilot System | Egg Carton Inspection', \
+            info_display_2_label='Total Defect Count:',\
             media_type=0, \
-            plot_0=CHART_KEYS[0]['chart_type'][0], plot_0_yinit=0, plot_0_update=CHART_KEYS[0]['plot_update'][0], plot_0_xinit=0, plot_0_xlabel='Acquistion Event', plot_0_ylabel='Inspection Event', \
-            plot_1=CHART_KEYS[0]['chart_type'][1], plot_1_yinit=0, plot_1_update=CHART_KEYS[0]['plot_update'][1], plot_1_xlabel=','.join(AVAILABLE_DECISIONS[1:]), plot_1_ylabel='Total Inspection Events')
+            plot_0=1, plot_0_yinit=0, plot_0_xinit=0, plot_0_xlabel='Acquistion Event', plot_0_ylabel='Defect Event', \
+            plot_1=1, plot_1_yinit=0, plot_1_xinit=0, plot_1_xlabel='Acquistion Event', plot_1_ylabel='Defect Event', \
+            plot_2=1, plot_2_yinit=0, plot_2_xinit=0, plot_2_xlabel='Acquistion Event', plot_2_ylabel='Defect Event', \
+            plot_3=1, plot_3_yinit=0, plot_3_xinit=0, plot_3_xlabel='Acquistion Event', plot_3_ylabel='Defect Event', \
+            plot_4=1, plot_4_yinit=0, plot_4_xinit=0, plot_4_xlabel='Acquistion Event', plot_4_ylabel='Defect Event', \
+            gocator_0_url='http://192.168.1.10', gocator_1_url='http://192.168.1.11')
         ui_config.save()
 
         runtimestatuslatest_sensor0=RuntimeStatusLatest(
@@ -74,19 +127,100 @@ class Command(BaseCommand):
         )
         runtimestatuslatest_sensor0.save()
 
-        runtimestatuslatest_pipeline=RuntimeStatusLatest(
+        runtimestatuslatest_sensor1=RuntimeStatusLatest(
+            service_type='sensor',
+            instance_name="gadget-sensor-gocator",
+            instance=1,
+            report_time=datetime.datetime.utcnow(),
+            state='STOPPED',
+            diagnostics={}
+        )
+        runtimestatuslatest_sensor1.save()
+
+
+        runtimestatuslatest_sensor2=RuntimeStatusLatest(
+        service_type='sensor',
+            instance_name="gadget-sensor-gocator",
+            instance=2,
+            report_time=datetime.datetime.utcnow(),
+            state='STOPPED',
+            diagnostics={}
+        )
+        runtimestatuslatest_sensor2.save()
+
+        runtimestatuslatest_sensor3=RuntimeStatusLatest(
+            service_type='sensor',
+            instance_name="gadget-sensor-gocator",
+            instance=3,
+            report_time=datetime.datetime.utcnow(),
+            state='STOPPED',
+            diagnostics={}
+        )
+        runtimestatuslatest_sensor3.save()
+
+        runtimestatuslatest_sensor4=RuntimeStatusLatest(
+            service_type='sensor',
+            instance_name="gadget-sensor-gocator",
+            instance=4,
+            report_time=datetime.datetime.utcnow(),
+            state='STOPPED',
+            diagnostics={}
+        )
+        runtimestatuslatest_sensor4.save()
+
+        runtimestatuslatest_pipeline0=RuntimeStatusLatest(
             service_type='pipeline',
-            instance_name="gadget-pipeline",
+            instance_name="pipeline",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',
             diagnostics={}
         )
-        runtimestatuslatest_pipeline.save()
+        runtimestatuslatest_pipeline0.save()
+
+        runtimestatuslatest_pipeline1=RuntimeStatusLatest(
+            service_type='pipeline',
+            instance_name="pipeline",
+            instance=1,
+            report_time=datetime.datetime.utcnow(),
+            state='STOPPED',
+            diagnostics={}
+        )
+        runtimestatuslatest_pipeline1.save()
+
+        runtimestatuslatest_pipeline2=RuntimeStatusLatest(
+            service_type='pipeline',
+            instance_name="pipeline",
+            instance=2,
+            report_time=datetime.datetime.utcnow(),
+            state='STOPPED',
+            diagnostics={}
+        )
+        runtimestatuslatest_pipeline2.save()
+
+        runtimestatuslatest_pipeline3=RuntimeStatusLatest(
+            service_type='pipeline',
+            instance_name="pipeline",
+            instance=3,
+            report_time=datetime.datetime.utcnow(),
+            state='STOPPED',
+            diagnostics={}
+        )
+        runtimestatuslatest_pipeline3.save()
+
+        runtimestatuslatest_pipeline4=RuntimeStatusLatest(
+            service_type='pipeline',
+            instance_name="pipeline",
+            instance=4,
+            report_time=datetime.datetime.utcnow(),
+            state='STOPPED',
+            diagnostics={}
+        )
+        runtimestatuslatest_pipeline4.save()
 
         runtimestatuslatest_automation=RuntimeStatusLatest(
             service_type='automation',
-            instance_name="gadget-automation",
+            instance_name="automation",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',
@@ -96,7 +230,7 @@ class Command(BaseCommand):
 
         runtimestatuslatest_cloud=RuntimeStatusLatest(
             service_type='platform',
-            instance_name="gadget-goFactory",
+            instance_name="mqtt_bridge",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',

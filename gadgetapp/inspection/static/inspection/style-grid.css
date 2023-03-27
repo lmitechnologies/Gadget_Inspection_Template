@@ -1,13 +1,13 @@
 /* ----------------  Main ----------------- */
 .content {
-    max-width: 1548px;
+    max-width: 1848px;
     margin: auto;
 }
 
 #site {
     display: grid;
-    grid-template-columns: 380px 568px 300px 300px;
-    grid-template-rows: 82px 126px 506px 63px 63px 134px;
+    grid-template-columns: 380px 568px 300px 300px 315px;
+    grid-template-rows: 126px 120px 63px 506px 63px 63px 63px 150px;
 
     /* grid-template-areas:
         "title title title title"
@@ -18,12 +18,14 @@
         "terminal terminal terminal play"; */
 
     grid-template-areas:
-        "title title title title"
-        "logo image image figs_c1"
-        "config image image figs_c1"
-        "config image image figs_c1"
-        "tabs info_bottom info_bottom info_bottom"
-        "terminal terminal terminal play";
+        "logo title title title none"
+        "image image image image figs_c1"
+        "image image image image figs_c1"
+        "image image image image figs_c1"
+        "image image image image figs_c1"
+        "image image image image figs_c1"
+        "tabs info_bottom info_bottom info_bottom reset"
+        "terminal terminal terminal terminal play";
     
     grid-gap: 5px
 }
@@ -34,8 +36,32 @@
     justify-content: center;
 }
 
+.grid-item-canvas {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.5); 
+}
+
+.grid-item-config {
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.5); 
+}
+
+.grid-item-left {
+    display: flex;
+    align-items: center;
+    justify-content: left;
+}
+
 #title-container{
     grid-area: title;
+    /* border: 1px solid rgba(255, 255, 255, 0.5); */
+}
+
+#job-container{
+    grid-area: job;
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
@@ -56,7 +82,7 @@
 
 #logo-container{
     grid-area: logo;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    /* border: 1px solid rgba(255, 255, 255, 0.5); */
 }
 
 #config-container{
@@ -69,6 +95,7 @@
     display: grid;
     grid-template-columns: repeat(3,1fr);
     grid-column-gap: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.5); 
 }
 
 #led-container{
@@ -82,24 +109,32 @@
 /* ----------------  Runtime Images ----------------- */
 #runtime-image-container{
     grid-area: image;
-    /* display: grid;
-    grid-template-rows: repeat(3,1fr); */
+    display: grid;
+    grid-template-rows: repeat(2,1fr);
+    grid-template-columns: repeat(3,1fr);
     border: 1px solid rgba(255, 255, 255, 0.5); 
 }
 
 /* ----------------  Bottom Info  ----------------- */
 #info_bottom-container{
   grid-area: info_bottom;
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  /* display: grid;
+  grid-template-columns: repeat(4,1fr); */
 }
 
-#info_bottom_text_container{
+/* #info_bottom_text_container{
   grid-column:1/4;
 }
 
 #info_bottom_button_container{
   grid-column:4/5;
+} */
+
+/* ----------------  Play Button  ----------------- */
+#reset-container{
+    grid-area: reset;
+    text-align: center;
 }
 
 /* ----------------  Play Button  ----------------- */
@@ -112,9 +147,9 @@
 #inside-charts-container{
     grid-area: figs_c1;
     display: grid;
-    grid-template-rows: repeat(2,1fr);
+    grid-template-rows: repeat(4,1fr);
     grid-row-gap: 5px;
-    /* border: 1px solid rgba(255, 255, 255, 0.5); */
+    border: 1px solid rgba(255, 255, 255, 0.5);
     
 }
 
@@ -130,6 +165,16 @@
 
 #param_2_plot-container {
     grid-row: 3/4;
+    background-color: #1A1A1A;
+}
+
+#param_3_plot-container {
+    grid-row: 4/5;
+    background-color: #1A1A1A;
+}
+
+#param_4_plot-container {
+    grid-row: 5/6;
     background-color: #1A1A1A;
 }
 

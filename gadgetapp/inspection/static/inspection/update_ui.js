@@ -1,11 +1,12 @@
 import {update_line} from './update_plots.js'
 import {update_bar} from './update_plots.js'
+import {update_hist} from './update_plots.js'
 import {update_2D} from './update_media.js';
 import {update_3D} from './update_media.js';
 
 window.onload=function() { 
     //https://www.w3schools.com/jsref/met_win_setinterval.asp
-    setInterval(function(){get_app_data()},500);
+    setInterval(function(){get_app_data()},1000);
 }
 
 //persistent data counter.
@@ -13,7 +14,7 @@ var MAX_DEPTH=10;
 var new_data_counter=new Array(MAX_DEPTH).fill(0);
 
 function get_app_data() {
-    //https://api.jquery.com/jquery.ajax/
+    //https://api.jquery.com/jquery.ajax/   
     var new_data=false;
     $.ajax({
         dataType: "json",
@@ -32,15 +33,15 @@ function get_app_data() {
                 ready_sensor=data.state_dict.sensor_state[sc];
                 update_LED(led_sensor,ready_sensor);
             }
-            // model
-            var ready_model_array=data.state_dict.pipeline_state;
-            var n_pipelines=ready_model_array.length;
-            var led_model;
-            var ready_model
-            for (let pc=0; pc<n_pipelines; pc++) {
-                led_model=document.querySelector('#ready_model_'+pc);
-                ready_model=data.state_dict.pipeline_state[pc];
-                update_LED(led_model,ready_model);
+            // pipeline
+            var pipeline_state_array=data.state_dict.pipeline_state;
+            var n_pipelines=pipeline_state_array.length;
+            var led_pipeline;
+            var ready_pipeline;
+            for (let sc=0; sc<n_pipelines; sc++) {
+                led_pipeline=document.querySelector('#ready_pipeline_'+sc);
+                ready_pipeline=data.state_dict.pipeline_state[sc];
+                update_LED(led_pipeline,ready_pipeline);
             }
             // automation
             var led_automation=document.querySelector('#ready_automation');
@@ -68,15 +69,25 @@ function get_app_data() {
                 }
                 if (new_data) 
                 {   
-                    // update Media
-                    var media_path=data.inspection_dict[sc].path;
-                    var media_type=parseInt(data.media_type);
-                    try {
+                    // only update Media if on main page
+                    if (window.location.href.match('inspection/sensor_config') == null && window.location.href.match('inspection/pipeline_config') == null){
+                        // update Media
+                        var media_path=data.inspection_dict[sc].path;
+                        var media_type=parseInt(data.media_type);
+                        try {
                             //update canvas
-                            update_ui_media(media_type,media_path,sc,current_count[sc]);
+                            update_ui_media(media_type,media_path,sc+1,current_count[sc]);
                         } catch (e) {
                             console.error(e);
                         }
+                        try {
+                            //update 
+                            update_canvas_border(sc+1, data.inspection_dict[sc].decision)
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                    
                     // update charts
                     var nchart;
                     var update_charts=true;
@@ -104,6 +115,17 @@ function get_app_data() {
                         update_ui_information(info_display_0_value, info_display_1_value, info_display_2_value);
                     } catch (e) {
                         console.error(e)
+                    }
+                }
+            }
+            if (window.location.href.match('inspection/sensor_config') == null && window.location.href.match('inspection/pipeline_config') == null){
+                var reference_path=data.reference_image;
+                if(reference_path != ''){
+                    try {
+                        //update canvas
+                        update_ui_media(0,reference_path,0,0);
+                    } catch (e) {
+                        console.error(e);
                     }
                 }
             }
@@ -148,13 +170,7 @@ function update_ui_information(info_display_0_value, info_display_1_value, info_
 function update_ui_plots(canvas_ID,chart_option,plot_update,x,y)
 {
     var canvas=document.querySelector('#param_'+canvas_ID+'_plot');
-    if(x.length == y.length){
-        for (let i = 0; i < x.length; i++){
-            plot_selector(canvas,chart_option,plot_update,x[i],y[i]);
-        }
-    } else {
-        console.log("X and Y values don't match. Ignoring chart update")
-    }
+    plot_selector(canvas,chart_option,plot_update,x,y);
 }
     
 
@@ -168,6 +184,9 @@ function plot_selector(canvas, plot_option, plot_update, plot_x, plot_y) {
             break;
         case 2:
             update_bar(canvas,plot_update,plot_y);
+            break;
+        case 3:
+            update_hist(canvas,plot_x,plot_y);
             break;
     }
 }
@@ -183,6 +202,17 @@ function update_ui_media(media_type,media_path,canvas_id,current_count) {
         case 1:
             update_3D(media_viewer,media_path,current_count);
             break;
+    }
+}
+
+function update_canvas_border(canvas_id, decision) {
+    var current_canvas_div = "#image-s" + canvas_id + "-container"
+    var div=document.querySelector(current_canvas_div);
+
+    if (decision == "PASS"){
+        div.style.borderColor = "green"; 
+    } else if (decision == "FAIL"){
+        div.style.borderColor = "red"; 
     }
 }
 

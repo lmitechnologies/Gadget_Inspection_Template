@@ -1,6 +1,6 @@
 version: "3.9"
 services:
-  # ---------- platform ----------   
+  # ---------- platform ---------- 
   db:
     container_name: gadget-db
     env_file:
@@ -43,6 +43,8 @@ services:
     restart: unless-stopped
     ports:
       - 8080:8080
+    volumes:
+      - db_static_volume:/home/staticfiles
     healthcheck:
       test: ["CMD-SHELL", "wget -O /dev/null http://localhost:8080 || exit 1"]
       interval: 10s
@@ -68,7 +70,7 @@ services:
     command: /bin/bash init_django_project.bash
     volumes:
       - static_volume:/gadgetapp/staticfiles
-      - inline-storage:/gadgetapp/image_archive
+      - inline-storage:/mnt/gadget-inline
     ports:
       - 8085:8000
     depends_on:
@@ -141,11 +143,9 @@ services:
         condition: service_healthy
 
   # ---------- inspection ----------   
-  pipeline:
-    hostname: gadget-pipeline-0
-    container_name: gadget-pipeline
+  pipeline_0:
+    container_name: gadget-pipeline-0
     command: gadget_pipeline_server
-    network_mode: host 
     deploy:
         resources:
           reservations:
@@ -162,7 +162,115 @@ services:
     image: pipeline:${PACKAGE_VER}
     restart: unless-stopped
     env_file:
-      - ./pipeline/pipeline.env
+      - ./pipeline/pipeline_0.env
+    volumes:
+      - ./pipeline/:/home/gadget/workspace/pipeline
+      - inline-storage:/app/data/inline
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
+  pipeline_1:
+    container_name: gadget-pipeline-1
+    command: gadget_pipeline_server
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+    build: 
+      context: ./pipeline
+      args:
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      dockerfile: pipeline.dockerfile
+    image: pipeline:${PACKAGE_VER}
+    restart: unless-stopped
+    env_file:
+      - ./pipeline/pipeline_1.env
+    volumes:
+      - ./pipeline/:/home/gadget/workspace/pipeline
+      - inline-storage:/app/data/inline
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
+  pipeline_2:
+    container_name: gadget-pipeline-2
+    command: gadget_pipeline_server
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+    build: 
+      context: ./pipeline
+      args:
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      dockerfile: pipeline.dockerfile
+    image: pipeline:${PACKAGE_VER}
+    restart: unless-stopped
+    env_file:
+      - ./pipeline/pipeline_2.env
+    volumes:
+      - ./pipeline/:/home/gadget/workspace/pipeline
+      - inline-storage:/app/data/inline
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
+  pipeline_3:
+    container_name: gadget-pipeline-3
+    command: gadget_pipeline_server
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+    build: 
+      context: ./pipeline
+      args:
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      dockerfile: pipeline.dockerfile
+    image: pipeline:${PACKAGE_VER}
+    restart: unless-stopped
+    env_file:
+      - ./pipeline/pipeline_3.env
+    volumes:
+      - ./pipeline/:/home/gadget/workspace/pipeline
+      - inline-storage:/app/data/inline
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
+  pipeline_4:
+    container_name: gadget-pipeline-4
+    command: gadget_pipeline_server
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+    build: 
+      context: ./pipeline
+      args:
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      dockerfile: pipeline.dockerfile
+    image: pipeline:${PACKAGE_VER}
+    restart: unless-stopped
+    env_file:
+      - ./pipeline/pipeline_4.env
     volumes:
       - ./pipeline/:/home/gadget/workspace/pipeline
       - inline-storage:/app/data/inline
@@ -188,24 +296,82 @@ services:
     volumes:
       - ./automation:/home/gadget/automation
     depends_on:
-      api-gateway: 
+      nginx: 
         condition: service_healthy
 
-  gocator:
-    hostname: gadget-sensor-gocator
-    container_name: gadget-sensor-gocator
+  gocator-0:
+    hostname: gadget-sensor-gocator-0
+    container_name: gadget-sensor-gocator-0
     network_mode: host 
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
     env_file:
-      - ./sensor/sensor_gocator.env
+      - ./sensor/sensor_gocator_0.env
     volumes:
-      - ${PWD}/data/test_images:/home/gadget/workspace/test_images
+      - ./data/test_images/gocator_0:/home/gadget/workspace/test_images
       - inline-storage:/app/data
     depends_on:
-      api-gateway: 
+      nginx: 
         condition: service_healthy
 
+  gocator-1:
+    hostname: gadget-sensor-gocator-1
+    container_name: gadget-sensor-gocator-1
+    network_mode: host 
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
+    restart: unless-stopped
+    env_file:
+      - ./sensor/sensor_gocator_1.env
+    volumes:
+      - ./data/test_images/gocator_1:/home/gadget/workspace/test_images
+      - inline-storage:/app/data
+    depends_on:
+      nginx: 
+        condition: service_healthy
+
+  gocator-2:
+    container_name: gadget-sensor-gocator-2
+    network_mode: host 
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
+    restart: unless-stopped
+    env_file:
+      - ./sensor/sensor_gocator_2.env
+    volumes:
+      - ./data/test_images/gocator_2:/home/gadget/workspace/test_images
+      - inline-storage:/app/data
+    depends_on:
+      nginx: 
+        condition: service_healthy
+  
+  gocator-3:
+    hostname: gadget-sensor-gocator-3
+    container_name: gadget-sensor-gocator-3
+    network_mode: host 
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
+    restart: unless-stopped
+    env_file:
+      - ./sensor/sensor_gocator_3.env
+    volumes:
+      - ./data/test_images/gocator_3:/home/gadget/workspace/test_images
+      - inline-storage:/app/data
+    depends_on:
+      nginx: 
+        condition: service_healthy
+
+  gocator-4:
+    hostname: gadget-sensor-gocator-4
+    container_name: gadget-sensor-gocator-4
+    network_mode: host 
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
+    restart: unless-stopped
+    env_file:
+      - ./sensor/sensor_gocator_4.env
+    volumes:
+      - ./data/test_images/gocator_4:/home/gadget/workspace/test_images
+      - inline-storage:/app/data
+    depends_on:
+      nginx: 
+        condition: service_healthy
 
   #---------- gofactory ----------   
   gadget-mqtt-bridge:
@@ -242,7 +408,7 @@ services:
       - VAULT_TOKEN=${VAULT_TOKEN} 
     volumes:
       - trasfer-storage:/app/data/transfer
-  
+
   gadget-log-collector:
     container_name: gadget-log-collector
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/log_collector:${PACKAGE_VER}
@@ -263,6 +429,13 @@ volumes:
       type: none
       device: /mnt/gadget-inline
   trasfer-storage:
+  test_images:
+    name: test_images
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ${PWD}/data/test_images
   postgres_db:
     name: postgres_db
   static_volume:

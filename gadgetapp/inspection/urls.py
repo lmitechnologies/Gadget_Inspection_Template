@@ -6,10 +6,13 @@ from . import views
 #application specific url patterns: inspection
 app_name = 'inspection'
 urlpatterns = [
-    path('',views.views_automation_config,name='automation_config'),  #IP address links to base index view
+    path('',views.views_main,name='main'),  #IP address links to base index view
+    path('main/',views.views_main,name='main'),
     path('sensor_config/',views.views_sensor_config,name='sensor_config'),
+    path('sensor_config/<int:instance>',views.views_sensor_config,name='sensor_config'),
     path('pipeline_config/',views.views_pipeline_config,name='pipeline_config'),
-    path('automation_config/',views.views_automation_config,name='automation_config'),
+    path('pipeline_config/<int:instance>',views.views_pipeline_config,name='pipeline_config'),
+    path('config_job',views.views_config_job,name='config_job'),
     path('start_stop/',views.toggle_start_stop,name='start_stop'),
     path('event_reset/',views.event_reset,name='event_reset'),
     path('ui_update/',views.ui_update,name='ui_update'),

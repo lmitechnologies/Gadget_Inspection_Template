@@ -2,21 +2,82 @@
 {% block content %}
 
 {% load static %}
-
-<div class=config-input_text>
-        <form method="POST" action="{% url 'inspection:sensor_config' %}"> 
-            {% csrf_token %}
-            {{ form_choose_sensor.as_p }}
-            <input type="submit" class="config-button" name="form_type" value="Choose Sensor">
-        </form>
-    
-        <form method="POST" action="{% url 'inspection:sensor_config' %}">
-            {% csrf_token %}
-            {{ form_change_sensor.as_p }}
-            <input type="submit" class="config-button" name="form_type" value="Change Sensor Parameters">
-        </form>
+<div id="image-s0-container" class="grid-item-config">
+    <h1 class=config-title_text>Config Job</h1>
+    <div class="grid-item">
+        <div class=config-input_text style="margin-top: -10px;">
+            <form method="POST" action="{% url 'inspection:config_job' %}"> 
+                {% csrf_token %}
+                {{ form_choose_job.as_p }}
+                <input type="submit" class="config-button" name="form_type" value="Load Job">
+                <input type="submit" class="config-button" style="margin-top: 1%" name="form_type" value="Update Job">
+            </form>
         
+            <form method="POST" action="{% url 'inspection:config_job' %}">
+                {% csrf_token %}
+                {{ form_create_new_job.as_p }}
+                <input type="submit" class="config-button" name="form_type" value="Create New Job">
+            </form>
+            
+        </div>
     </div>
+</div>
 
+<div id="image-s1-container" class="grid-item-config">
+    <h1 class=config-title_text>Gocator 0</h1>
+    <a href={{ui.gocator_0_url}} target="_blank">
+        <div class="grid-item">
+            <input id="gocator-0-button"  class="config-button" type="button"  value="Gocator HMI">
+        </div>
+    </a>
+</div>
+
+<div id="image-s2-container" class="grid-item-config">
+    <h1 class=config-title_text>Gocator 1</h1>
+    <a href={{ui.gocator_1_url}} target="_blank">
+        <div class="grid-item">
+            <input id="gocator-1-button"  class="config-button" type="button"  value="Gocator HMI">
+        </div>
+    </a>
+</div>
+
+<div id="image-s3-container" class="grid-item-config">
+    <h1 class=config-title_text>AVT 0</h1>
+    <div class="grid-item">
+        <div class=config-input_text>
+            <form method="POST" action="{% url 'inspection:sensor_config' 0 %}"> 
+                {% csrf_token %}
+                {{ form_change_sensor_0.as_p }}
+                <input type="submit" class="config-button" name="form_type" value="Change Sensor Parameters">
+            </form>        
+        </div>
+    </div>
+</div>
+
+<div id="image-s4-container" class="grid-item-config">
+    <h1 class=config-title_text>AVT 1</h1>
+    <div class="grid-item">
+        <div class=config-input_text>
+            <form method="POST" action="{% url 'inspection:sensor_config'  1 %}"> 
+                {% csrf_token %}
+                {{ form_change_sensor_1.as_p }}
+                <input type="submit" class="config-button" name="form_type" value="Change Sensor Parameters">
+            </form>        
+        </div>
+    </div>
+</div>
+
+<div id="image-s5-container" class="grid-item-config">
+    <h1 class=config-title_text>AVT 2</h1>
+    <div class="grid-item">
+        <div class=config-input_text>
+            <form method="POST" action="{% url 'inspection:sensor_config' 2 %}"> 
+                {% csrf_token %}
+                {{ form_change_sensor_2.as_p }}
+                <input type="submit" class="config-button" name="form_type" value="Change Sensor Parameters">
+            </form>        
+        </div>
+    </div>
+</div>
 
 {% endblock %}

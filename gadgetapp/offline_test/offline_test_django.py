@@ -26,12 +26,24 @@ from configs.models import AutomationConfig, SensorConfig, PipelineConfig
 from inspection_events.models import PipelineInspectionEventLatest, InspectionEvent
 from runtime.models import RuntimeStatusLatest
 
-dsts=['/app/image_archive/pipeline/gadget-pipeline/0/sensor/gadget-sensor-gocator/0']
+dsts=[
+    '/app/image_archive/pipeline/huhtumaki-pipeline/0/sensor/gadget-sensor-gocator/0',
+    '/app/image_archive/pipeline/huhtumaki-pipeline/0/sensor/gadget-sensor-avt/0',
+    '/app/image_archive/pipeline/huhtumaki-pipeline/1/sensor/gadget-sensor-avt/1',
+    '/app/image_archive/pipeline/huhtumaki-pipeline/2/sensor/gadget-sensor-avt/2']
 
-for dst in dsts:
+test_image_dirs=[
+    './test_images/sensor_0',
+    './test_images/sensor_1',
+    './test_images/sensor_2',
+    './test_images/sensor_3']
+
+dirs=zip(dsts,test_image_dirs)
+
+for dst,tid in dirs:
     if not os.path.exists(dst):
         os.makedirs(dst)
-    images=glob.glob('./test_images/*.npy')
+    images=glob.glob(os.path.join(tid,'*.npy'))
     for image in images:
         shutil.copy2(image,dst)
 
@@ -75,17 +87,19 @@ def update_inspection_event(topicKey,decision,path):
 # %%
 if __name__ == '__main__':
     # variable overhead
-    module_list=[1,2,3,4]
+    module_list=[1,2,3,4,5,6,7,8,9,10]
     defect_list=AVAILABLE_DECISIONS
-    sensor_topic_list=[0]
+    sensor_topic_list=[0,1,2,3]
     state_list=['RUNNING','INITIALIZING','STOPPED']
-    # images=glob.glob('./test_images/*.png')
     sensor_topic_deq=collections.deque(sensor_topic_list)
     module_deq=collections.deque(module_list)
     state_deq=collections.deque(state_list)
     count0, count1=1,1
-    defect=random.choice(defect_list)
-    path=random.choice(images)
+
+    all_images=[]
+    for path in test_image_dirs:
+        all_images.append(glob.glob(path+'/*.npy'))
+
     while True:
         #---
         topic=sensor_topic_deq[0]
@@ -94,10 +108,9 @@ if __name__ == '__main__':
         time.sleep(1)
         #---
         update_ready_indicators(module,state)
-    
-        if count0%len(sensor_topic_list)==0:
-            defect=random.choice(defect_list)
-            path=random.choice(images)
+        images=all_images[topic]
+        defect=random.choice(defect_list)
+        path=random.choice(images)
         update_inspection_event(topic,defect,path)
         print(f'Count={count0}')
         

@@ -4,7 +4,7 @@ ARG PACKAGE_VER
 ARG PYPI_SERVER
 WORKDIR /app
 COPY ./offline_test/requirements.txt /app/requirements.txt
-COPY ./offline_test/offline_test_django.py /app/offline_test_django.py
+# COPY ./offline_test/offline_test_django.py /app/offline_test_django.py
 COPY ./offline_test/test_images /app/test_images
 COPY ./gadgetapp/settings.py /app/gadgetapp/settings.py
 COPY ./inspection/models.py /app/inspection/models.py
