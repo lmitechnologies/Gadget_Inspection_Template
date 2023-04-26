@@ -294,17 +294,20 @@ def ui_update(request):
         # get status data     
         status_updates=RuntimeStatusLatest.objects.all()
         status_service_type=[]
+        status_instance_name=[]
         status_instance=[]
         status_state=[]
         # build lists for each running service
         for current_status in status_updates:
             #current_status=get_object_or_404(RuntimeStatusLatest,pk=index+1)
             status_service_type.append(current_status.service_type)
+            status_instance_name.append(current_status.instance_name)
             status_instance.append(current_status.instance)
             status_state.append(current_status.state)
         
         # parse for sensor
         status_service_type=np.array(status_service_type)
+        status_instance_name=np.array(status_instance_name)
         status_instance=np.array(status_instance)
         status_state=np.array(status_state)
         sensor_instance=status_instance[status_service_type=='sensor']
@@ -315,7 +318,7 @@ def ui_update(request):
         # repeat for pipeline, automation, mqtt_bridge(cloud) - currently assumes 1 pipeline, 1 automation, 1 cloud
         sorted_pipeline_state= status_state[status_service_type=='pipeline']
         sorted_automation_state=status_state[status_service_type=='automation']
-        sorted_cloud_state=status_state[status_service_type=='platform']
+        sorted_cloud_state=status_state[status_instance_name=="mqtt_bridge"]
 
         state_dict={
             'sensor_state':sorted_sensor_state,

@@ -136,6 +136,7 @@ services:
       - ./gadget-platform/system_monitor.env
     volumes:
       - inline-storage:/app/data/inline
+      - offline-storage:/app/data/offline
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -208,7 +209,7 @@ services:
 
 
   #---------- gofactory ----------   
-  gadget-mqtt-bridge:
+  mqtt-bridge:
     container_name: gadget-mqtt-bridge
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
     restart: unless-stopped
@@ -218,18 +219,17 @@ services:
       - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_HOST=api-gateway
       - MQTT_BRIDGE_SETTINGS_SYSTEM_DATABASE_API_PORT=8080
       - MQTT_BRIDGE_SETTINGS_S3_INTEGRATOR_HOST=gadget-s3-integrator
-      - MQTT_BRIDGE_SETTINGS_LOG_COLLECTOR_HOST=gadget-log-collector
       - MQTT_BRIDGE_SETTINGS_BROKER_AUTH_USERNAME=root
       - MQTT_BRIDGE_SETTINGS_BROKER_AUTH_PASSWORD=um-@cU_-ZNa7zy_dmNcf
+      - MQTT_BRIDGE_SETTINGS_DATA_BROKER_HOST=gadget-data-broker
+      - MQTT_BRIDGE_SETTINGS_UPLOAD_PERIOD_SECONDS=10
+      - MQTT_BRIDGE_SETTINGS_UPLOAD_BACKLOG_MINUTES=15
     volumes:
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline
       - trasfer-storage:/app/data/transfer
-    depends_on:
-      api-gateway: 
-        condition: service_healthy
-    
-  gadget-s3-integrator:
+
+  s3-integrator:
     container_name: gadget-s3-integrator
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/s3_integrator:${PACKAGE_VER}
     restart: unless-stopped
@@ -237,13 +237,11 @@ services:
       - 7778:7777
     environment:
       - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
-      - STORAGE_PROFILE=${STORAGE_PROFILE}
-      - MINIO_HOST=${FACTORY_HOST}
       - VAULT_TOKEN=${VAULT_TOKEN} 
     volumes:
       - trasfer-storage:/app/data/transfer
-  
-  gadget-log-collector:
+
+  log-collector:
     container_name: gadget-log-collector
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/log_collector:${PACKAGE_VER}
     restart: unless-stopped
@@ -264,8 +262,5 @@ volumes:
       device: /mnt/gadget-inline
   trasfer-storage:
   postgres_db:
-    name: postgres_db
   static_volume:
-    name: static_volume
   db_static_volume:
-    name: db_static_volume

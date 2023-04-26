@@ -96,7 +96,7 @@ class Command(BaseCommand):
 
         runtimestatuslatest_cloud=RuntimeStatusLatest(
             service_type='platform',
-            instance_name="gadget-goFactory",
+            instance_name="mqtt_bridge",
             instance=0,
             report_time=datetime.datetime.utcnow(),
             state='STOPPED',

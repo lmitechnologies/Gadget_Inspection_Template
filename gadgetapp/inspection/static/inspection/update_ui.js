@@ -38,7 +38,7 @@ function get_app_data() {
             var led_model;
             var ready_model
             for (let pc=0; pc<n_pipelines; pc++) {
-                led_model=document.querySelector('#ready_model_'+pc);
+                led_model=document.querySelector('#ready_pipeline_'+pc);
                 ready_model=data.state_dict.pipeline_state[pc];
                 update_LED(led_model,ready_model);
             }
