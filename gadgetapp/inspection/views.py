@@ -35,6 +35,9 @@ NGINX_MEDIA_PATH='../../static/inspection/media/runtime'
 GADGET_APP_IMAGE_ARCHIVE_PATH='/gadgetapp/image_archive'
 MEDIA_BUFFER=20
 
+CANVAS_WIDTH=871
+CANVAS_HEIGHT=703        
+
 for index in range(len(INSPECTION_RESULT_KEYS)):
     keys=list(INSPECTION_RESULT_KEYS[index].values())
     keys=[str(x) for x in keys]
@@ -130,7 +133,7 @@ def convert_2_png(raw_media_path):
         t0=time.time() 
         path = Path(image_path)
         gimage = GadgetImage.load(path)
-        image = gimage.visualize()
+        image = gimage.visualize((CANVAS_WIDTH, CANVAS_HEIGHT))
         image.save(fpath_gadget)
         tf=time.time()
         for file in files:
