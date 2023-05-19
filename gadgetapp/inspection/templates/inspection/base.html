@@ -10,29 +10,31 @@
         <link rel="stylesheet" href="{% static 'inspection/style-grid.css' %}" type="text/css" media="all">
         <link rel="stylesheet" href="{% static 'inspection/style.css' %}" type="text/css" media="all">
         <link rel="stylesheet" href="{% static 'inspection/led/src/led.css' %}" type="text/css" media="all">
-        <!-- <link rel="stylesheet" href="{% static 'inspection/chart/src/2.9.3/Chart.min.css' %}" type="text/css" media="all"> -->
         <script src="{% static 'inspection/jquery/src/jquery-3.4.1.js' %}"></script>
         <script src="{% static 'inspection/chart/src/3.7.0/Chart.min.js' %}"></script>
-        <!-- <script src="{% static 'inspection/chart/src/2.9.3/chartjs-plugin-annotation.min.js' %}"></script> -->
         <script src="{% static 'inspection/led/src/led.js' %}"></script>
     </head>
     <body>
         <div class="content">
             <div id="site">
-                <div id="logo-container" class="grid-item">
-                    <img id="img_logo" src="{% static 'inspection/media/lmi_technologies_RGB.png' %}">
-                </div>
                 <div id="title-container" class="grid-item">
                     <span class="title-text">{{ ui.title }}</span>
                 </div>
+
+                <div id="logo-container" class="grid-item">
+                    <img id="img_logo" src="{% static 'inspection/media/lmi_technologies_RGB.png' %}">
+                </div>
                 
-               
+                <div id="admin-button-container" class="grid-item">
+                    <input id="admin-button" class="config-button" type="button" value="Admin">
+                </div>
+                
                 <div id=runtime-image-container>
                     {% block content %}
                     {% endblock %}
                     
                 </div>
-                    
+
                 <div id="tab-container">
                     <div class="grid-item">
                         <input id="main-button" class="config-button" type="button" value="Main">
@@ -43,10 +45,11 @@
                     <div class="grid-item">
                         <input id="model-button" class="config-button" type="button" value="Model">
                     </div>
+                    <div class="grid-item">
+                        <input id="automation-button" class="config-button" type="button" value="Automation">
+                    </div>
                 </div>
                 
-               
-
                 <div id="inside-charts-container">
                     <div id="param_0_plot-container">
                             <canvas id=param_0_plot></canvas>
@@ -127,94 +130,13 @@
                             }
                         </script>
                     </div>
-
-                    <div id="param_4_plot-container" >
-                        <canvas id=param_4_plot></canvas>
-                        <script type='module'>
-                            // initialize plot 4
-                            import{init_plot} from "{% static 'inspection/init_ui.js' %}"
-                            var parent_div_object = document.querySelector('#param_4_plot-container');
-                            var canvas_object = document.querySelector('#param_4_plot');
-                            if (true) {
-                                console.log('Initialize plot 4.');
-                                var plot_i = '{{ ui.plot_4 }}';
-                                var buffer = '{{ ui.plot_4_buffer | escapejs }}';
-                                var xinit = '{{ ui.plot_4_xinit | escapejs }}';
-                                var yinit = '{{ ui.plot_4_yinit | escapejs }}';
-                                var xlabel = '{{ ui.plot_4_xlabel | escapejs }}';
-                                var ylabel = '{{ ui.plot_4_ylabel | escapejs }}';
-                                init_plot(parent_div_object,canvas_object,parseInt(plot_i),parseInt(buffer),parseFloat(xinit),parseFloat(yinit),xlabel,ylabel);
-                            }
-                        </script>
-                    </div>
                 </div>
-                <!-- <div id="outside-charts-container">
-                    <div id="param_3_plot-container" >
-                        <canvas id=param_3_plot></canvas>
-                        <script type='module'>
-                            // initialize plot 3
-                            import{init_plot} from "{% static 'inspection/init_ui.js' %}"
-                            var parent_div_object = document.querySelector('#param_3_plot-container');
-                            var canvas_object = document.querySelector('#param_3_plot');
-                            if (true) {
-                                console.log('Initialize plot 3.');
-                                var plot_i = '{{ ui.plot_3 }}';
-                                var buffer = '{{ ui.plot_3_buffer | escapejs }}';
-                                var xinit = '{{ ui.plot_3_xinit | escapejs }}';
-                                var yinit = '{{ ui.plot_3_yinit | escapejs }}';
-                                var xlabel = '{{ ui.plot_3_xlabel | escapejs }}';
-                                var ylabel = '{{ ui.plot_3_ylabel | escapejs }}';
-                                init_plot(parent_div_object,canvas_object,parseInt(plot_i),parseInt(buffer),parseFloat(xinit),parseFloat(yinit),xlabel,ylabel);
-                            }
-                        </script>
-                    </div>
-                    <div id="param_4_plot-container" >
-                        <canvas id=param_4_plot></canvas>
-                        <script type='module'>
-                            // initialize plot 4
-                            import{init_plot} from "{% static 'inspection/init_ui.js' %}"
-                            var parent_div_object = document.querySelector('#param_4_plot-container');
-                            var canvas_object = document.querySelector('#param_4_plot');
-                            if (true) {
-                                console.log('Initialize plot 4.');
-                                var plot_i = '{{ ui.plot_4 }}';
-                                var buffer = '{{ ui.plot_4_buffer | escapejs }}';
-                                var xinit = '{{ ui.plot_4_xinit | escapejs }}';
-                                var yinit = '{{ ui.plot_4_yinit | escapejs }}';
-                                var xlabel = '{{ ui.plot_4_xlabel | escapejs }}';
-                                var ylabel = '{{ ui.plot_4_ylabel | escapejs }}';
-                                init_plot(parent_div_object,canvas_object,parseInt(plot_i),parseInt(buffer),parseFloat(xinit),parseFloat(yinit),xlabel,ylabel);
-                            }
-                        </script>
-                    </div>
-                    <div id="param_5_plot-container" >
-                        <canvas id=param_5_plot></canvas>
-                        <script type='module'>
-                            // initialize plot 5
-                            import{init_plot} from "{% static 'inspection/init_ui.js' %}"
-                            var parent_div_object = document.querySelector('#param_5_plot-container');
-                            var canvas_object = document.querySelector('#param_5_plot');
-                            if (true) {
-                                console.log('Initialize plot 5.');
-                                var plot_i = '{{ ui.plot_5 }}';
-                                var buffer = '{{ ui.plot_5_buffer | escapejs }}';
-                                var xinit = '{{ ui.plot_5_xinit | escapejs }}';
-                                var yinit = '{{ ui.plot_5_yinit | escapejs }}';
-                                var xlabel = '{{ ui.plot_5_xlabel | escapejs }}';
-                                var ylabel = '{{ ui.plot_5_ylabel | escapejs }}';
-                                init_plot(parent_div_object,canvas_object,parseInt(plot_i),parseInt(buffer),parseFloat(xinit),parseFloat(yinit),xlabel,ylabel);
-                            }
-                        </script>
-                    </div>
-                </div> -->
                 
                 <div id="info_bottom-container" class="grid-item">
                   <div id='info_bottom_text_container'>
                     <span class="info-text">{{ ui.info_display_2_label }}</span>
                     <span class="data-text" id="display_2_value">--</span>
                   </div>
-                </div>
-                <div id="reset-container" class='grid-item'>
                     <form id ='reset-button' method="post" action="{% url 'inspection:event_reset' %}">
                         {% csrf_token %}
                         <input  id="reset-button-selector" type="submit" value="Event Reset">
@@ -232,7 +154,6 @@
                     </form>
                 </div>
                 <div id="led-container" class="grid-item" >
-                     
                     <div class="led-box">
                         <div id="ready_sensor_0" class="led-red" style = "display: inline-block;"></div>
                         <!-- <p>Sensor 1</p> -->
@@ -241,8 +162,6 @@
                         <div id="ready_sensor_2" class="led-red" style = "display: inline-block;"></div>
                         <!-- <p>Sensor 3</p> -->  
                         <div id="ready_sensor_3" class="led-red" style = "display: inline-block;"></div>   
-                        <!-- <p>Sensor 4</p> --> 
-                        <div id="ready_sensor_4" class="led-red" style = "display: inline-block;"></div>   
                         <p>Sensor</p>
                     </div>
                     <div class="led-box">
@@ -253,8 +172,6 @@
                         <div id="ready_pipeline_2" class="led-red" style = "display: inline-block;"></div>
                         <!-- <p>pipeline 3</p> -->  
                         <div id="ready_pipeline_3" class="led-red" style = "display: inline-block;"></div>
-                        <!-- <p>pipeline 4</p> -->  
-                        <div id="ready_pipeline_4" class="led-red" style = "display: inline-block;"></div>   
                         <p>Pipeline</p>
                     </div>
                     <div class="led-box">

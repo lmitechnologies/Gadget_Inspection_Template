@@ -35,11 +35,7 @@ services:
         
   api-gateway:
     container_name: gadget-api-gateway
-    build: 
-      context: ./db_nginx
-      dockerfile: nginx.dockerfile
-      args:
-        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/nginx:${PACKAGE_VER}
     restart: unless-stopped
     ports:
       - 8080:8080
@@ -70,7 +66,7 @@ services:
     command: /bin/bash init_django_project.bash
     volumes:
       - static_volume:/gadgetapp/staticfiles
-      - inline-storage:/mnt/gadget-inline
+      - inline-storage:/app/data
     ports:
       - 8085:8000
     depends_on:
@@ -251,33 +247,6 @@ services:
       api-gateway: 
         condition: service_healthy
 
-  pipeline_4:
-    container_name: gadget-pipeline-4
-    command: gadget_pipeline_server
-    deploy:
-        resources:
-          reservations:
-            devices:
-              - driver: nvidia
-                count: 1
-                capabilities: [gpu]
-    build: 
-      context: ./pipeline
-      args:
-        PACKAGE_VER: ${PACKAGE_VER}
-        PYPI_SERVER: ${PYPI_SERVER}
-      dockerfile: pipeline.dockerfile
-    image: pipeline:${PACKAGE_VER}
-    restart: unless-stopped
-    env_file:
-      - ./pipeline/pipeline_4.env
-    volumes:
-      - ./pipeline/:/home/gadget/workspace/pipeline
-      - inline-storage:/app/data/inline
-    depends_on:
-      api-gateway: 
-        condition: service_healthy
-
   automation:
     container_name: gadget-automation
     command: gadget_automation_server
@@ -298,6 +267,17 @@ services:
     depends_on:
       nginx: 
         condition: service_healthy
+
+  avt-camera_0:
+    container_name: gadget-sensor-avt-0
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_avt:${PACKAGE_VER}
+    network_mode: host 
+    restart: unless-stopped
+    env_file:
+      - ./sensor/sensor_avt_0.env
+    volumes:
+      - ./data/test_images/avt_0:/home/gadget/workspace/test_images
+      - inline-storage:/app/data/inline
 
   gocator-0:
     hostname: gadget-sensor-gocator-0
@@ -343,36 +323,6 @@ services:
       nginx: 
         condition: service_healthy
   
-  gocator-3:
-    hostname: gadget-sensor-gocator-3
-    container_name: gadget-sensor-gocator-3
-    network_mode: host 
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
-    restart: unless-stopped
-    env_file:
-      - ./sensor/sensor_gocator_3.env
-    volumes:
-      - ./data/test_images/gocator_3:/home/gadget/workspace/test_images
-      - inline-storage:/app/data
-    depends_on:
-      nginx: 
-        condition: service_healthy
-
-  gocator-4:
-    hostname: gadget-sensor-gocator-4
-    container_name: gadget-sensor-gocator-4
-    network_mode: host 
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
-    restart: unless-stopped
-    env_file:
-      - ./sensor/sensor_gocator_4.env
-    volumes:
-      - ./data/test_images/gocator_4:/home/gadget/workspace/test_images
-      - inline-storage:/app/data
-    depends_on:
-      nginx: 
-        condition: service_healthy
-
   #---------- gofactory ----------   
   gadget-mqtt-bridge:
     container_name: gadget-mqtt-bridge

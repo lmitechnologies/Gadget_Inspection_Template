@@ -4,27 +4,40 @@ from django.db import models
 
 from configs.models import AutomationConfig, SensorConfig, PipelineConfig
 
-available_decisions=['0','1','2', '3', '4', '5', '6', '7', '8', '9', '10']
+
+# TODO:Available decisions from model pipeline
+# path_to_pipeline_configs=os.environ.get('PATH_TO_PIPELINE_CONFIGS','../pipeline/pipeline_def.json')
+# try:
+#     with open(path_to_pipeline_configs,'r') as f:
+#         pipeline_configs=json.load(f)
+#     mykeys=[kvp['name'] for kvp in pipeline_configs['configs_def']]
+#     index=mykeys.index('yolov5_class_map')
+#     available_decisions=list(pipeline_configs['configs_def'][index]['default_value'].values())
+# except:
+#     raise(f'Pipeline config file {path_to_pipeline_configs} not found.')
+
+available_decisions=['None', 'defect','anomaly','both']
 available_decisions.insert(0,'none')
 AVAILABLE_DECISIONS=available_decisions
 
+
 # Inspection events that the Gadget App uses to update display
 INSPECTION_RESULT_KEYS={   
-    0:{'service_type':'pipeline','instance_name':'pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-gocator/0'},
-    1:{'service_type':'pipeline','instance_name':'pipeline','instance':1,'sensor_topic':'sensor/gadget-sensor-gocator/1'},
-    2:{'service_type':'pipeline','instance_name':'pipeline','instance':2,'sensor_topic':'sensor/gadget-sensor-gocator/2'},
-    3:{'service_type':'pipeline','instance_name':'pipeline','instance':3,'sensor_topic':'sensor/gadget-sensor-gocator/3'},
-    4:{'service_type':'pipeline','instance_name':'pipeline','instance':4,'sensor_topic':'sensor/gadget-sensor-gocator/4'}
+    0:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':0,'sensor_topic':'sensor/gadget-sensor-avt/0'},
+    1:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':1,'sensor_topic':'sensor/gadget-sensor-gocator/0'},
+    2:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':2,'sensor_topic':'sensor/gadget-sensor-gocator/1'},
+    3:{'service_type':'pipeline','instance_name':'gadget-pipeline','instance':3,'sensor_topic':'sensor/gadget-sensor-gocator/2'}
 }
 
 # Mapping of inspection events to Charts
 CHART_KEYS={
-    0:{'charts':[0],'chart_type':[1],'plot_update':[0]},
-    1:{'charts':[1],'chart_type':[1],'plot_update':[0]},
-    2:{'charts':[2],'chart_type':[1],'plot_update':[0]},
-    3:{'charts':[3],'chart_type':[1],'plot_update':[0]},
-    4:{'charts':[4],'chart_type':[1],'plot_update':[0]},
-    }
+    0:{'charts':[0],'chart_type':[1],'plot_update':[0],'plot_y_key':['decision']},
+    1:{'charts':[1],'chart_type':[1],'plot_update':[0],'plot_y_key':['decision']},
+    2:{'charts':[2],'chart_type':[1],'plot_update':[0],'plot_y_key':['decision']},
+    3:{'charts':[3],'chart_type':[1],'plot_update':[0],'plot_y_key':['decision']},
+
+}
+
 
 class ConfigUI(models.Model):
     """
@@ -89,17 +102,11 @@ class ConfigUI(models.Model):
     plot_3_ylabel=models.CharField(max_length=128,default='y',)
     plot_3_misc=models.TextField(blank=True, default='',)
 
-    plot_4=models.IntegerField(choices=plot_options,default=0,)
-    plot_4_update=models.IntegerField(choices=update_options,default=0,)
-    plot_4_buffer=models.IntegerField(default=25,)
-    plot_4_xinit=models.CharField(max_length=3,default='nan',)
-    plot_4_yinit=models.CharField(max_length=3,default='nan',)
-    plot_4_xlabel=models.CharField(max_length=128,default='x',)
-    plot_4_ylabel=models.CharField(max_length=128,default='y',)
-    plot_4_misc=models.TextField(blank=True, default='',)
-
     gocator_0_url=models.TextField(blank=True, default='')
     gocator_1_url=models.TextField(blank=True, default='')
+    gocator_2_url=models.TextField(blank=True, default='')
+
+
 
     def __str__(self):
         return self.name
@@ -118,33 +125,32 @@ class UserSensorConfig(models.Model):
     gain=models.FloatField(default=1.0)
 
 #--
-
-class AvailableModels(models.Model):
-    pipeline=models.CharField(max_length=256,default="pipeline/huhtumaki-pipeline/0")
-    model_type=models.CharField(max_length=256,blank=False)
-    model_name=models.CharField(max_length=256,blank=False)
-    model_path=models.CharField(max_length=256,blank=False)
-
 class UserPipelineSelector(models.Model):
     current_pipeline = models.ForeignKey(PipelineConfig, default=None, blank=False, null=False, on_delete=models.PROTECT,)
 
 class UserPipelineConfig(models.Model):
-    instance_name = models.CharField(max_length=256,default="huhtumaki-pipeline")
+    instance_name = models.CharField(max_length=256,default="gadget-pipeline")
     instance = models.IntegerField(default=0)
-    ad_error_threshold=models.FloatField(default=20)
-    ad_error_size=models.FloatField(default=20)
-    od_confidence_foreground=models.FloatField(default=20)
+    od_confidence_board = models.FloatField(default=0.5)
+    od_confidence_defect = models.FloatField(default=0.5)
+    od_confidence_water = models.FloatField(default=0.5)
+    ad_error_threshold=models.FloatField(default=25)
+    ad_error_size=models.IntegerField(default=1000)
+
 #--
 class UserAutomationSelector(models.Model):
     current_automation = models.ForeignKey(AutomationConfig, default=None, blank=True, null=True, on_delete=models.SET_NULL,)
 
 class UserAutomationConfig(models.Model):
-    user_ID=models.CharField(max_length=256,default="Anomymous User")
-    batch_ID=models.CharField(max_length=256,default="Unspecified Batch")
-    eject_defect=models.BooleanField(blank=False, default=False)
-
-class UserConfigJob(models.Model):
-    job_name=models.CharField(max_length=256,unique=True,blank=False)
-
+    user_choice = [(False, 'For False'), (True, 'For True')]
+    mark_defect=models.BooleanField(choices=user_choice, default=False)
+    external_start=models.BooleanField(default=True)
+#--
 class SystemState(models.Model):
     running=models.BooleanField(default=False)
+
+
+
+
+
+

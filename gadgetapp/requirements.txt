@@ -5,8 +5,3 @@ gunicorn==20.1.0
 django-jsoneditor==0.2.2
 pytz==2022.1
 opencv-python-headless
-requests
-pillow>=8.4.0
-# gadget_api_configs==1.2.67 --extra-index-url https://pyadmin:D3@Rhome@gcp-registry.lmi-tech.com:8443/simple
-# gadget_api_inspection_events==1.2.67 --extra-index-url https://pyadmin:D3@Rhome@gcp-registry.lmi-tech.com:8443/simple
-# gadget_api_runtime==1.2.67 --extra-index-url https://pyadmin:D3@Rhome@gcp-registry.lmi-tech.com:8443/simple

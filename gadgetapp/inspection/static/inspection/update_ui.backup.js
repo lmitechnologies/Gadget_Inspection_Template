@@ -6,7 +6,7 @@ import {update_3D} from './update_media.js';
 
 window.onload=function() { 
     //https://www.w3schools.com/jsref/met_win_setinterval.asp
-    setInterval(function(){get_app_data()},500);
+    setInterval(function(){get_app_data()},1000);
 }
 
 //persistent data counter.
@@ -33,16 +33,10 @@ function get_app_data() {
                 ready_sensor=data.state_dict.sensor_state[sc];
                 update_LED(led_sensor,ready_sensor);
             }
-            // pipeline
-            var pipeline_state_array=data.state_dict.pipeline_state;
-            var n_pipelines=pipeline_state_array.length;
-            var led_pipeline;
-            var ready_pipeline;
-            for (let sc=0; sc<n_pipelines; sc++) {
-                led_pipeline=document.querySelector('#ready_pipeline_'+sc);
-                ready_pipeline=data.state_dict.pipeline_state[sc];
-                update_LED(led_pipeline,ready_pipeline);
-            }
+            // model
+            var led_model=document.querySelector('#ready_model');
+            var ready_model=data.state_dict.pipeline_state;
+            update_LED(led_model,ready_model);
             // automation
             var led_automation=document.querySelector('#ready_automation');
             var ready_automation=data.state_dict.automation_state;
@@ -54,7 +48,7 @@ function get_app_data() {
             // play button
             var start_button=document.querySelector('#play-button-selector');
             var is_running=data.is_running;
-            update_STARTSTOP(start_button,is_running=="RUNNING");
+            update_STARTSTOP(start_button,is_running);
 
             // UPDATE INSPECTION
             var current_count=new Array(n_sensors).fill(0);
@@ -165,7 +159,7 @@ function plot_selector(canvas, plot_option, plot_update, plot_x, plot_y) {
             update_bar(canvas,plot_update,plot_y);
             break;
         case 3:
-            update_hist(canvas,plot_x,plot_y);
+            //update_hist(canvas,plot_x,plot_y);
             break;
     }
 }

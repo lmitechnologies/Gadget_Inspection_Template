@@ -2,34 +2,13 @@
 {% block content %}
 
 {% load static %}
-<div id="image-s0-container" class="grid-item-config">
-    <h1 class=config-title_text>Config Job</h1>
-    <div class="grid-item">
-        <div class=config-input_text style="margin-top: -10px;">
-            <form method="POST" action="{% url 'inspection:config_job' %}"> 
-                {% csrf_token %}
-                {{ form_choose_job.as_p }}
-                <input type="submit" class="config-button" name="form_type" value="Load Job">
-                <input type="submit" class="config-button" style="margin-top: 1%" name="form_type" value="Update Job">
-            </form>
-        
-            <form method="POST" action="{% url 'inspection:config_job' %}">
-                {% csrf_token %}
-                {{ form_create_new_job.as_p }}
-                <input type="submit" class="config-button" name="form_type" value="Create New Job">
-            </form>
-            
-        </div>
-    </div>
-</div>
 
-<div id="image-s1-container" class="grid-item-config">
-    <h1 class=config-title_text>Pipeline 0</h1>
+<div id="image-s0-container" class="grid-item-config">
+    <h1 class=config-title_text>Top</h1>
     <div class="grid-item">
         <div class=config-input_text>
-            <form method="POST" action="{% url 'inspection:pipeline_config' 0 %}">
+            <form method="POST" action="{% url 'inspection:pipeline_config' 'gadget-pipeline-top' 0 %}">
                 {% csrf_token %}
-                {{ form_choose_model_0.as_p }}
                 {{ form_change_pipeline_0.as_p }}
                 <input type="submit" class="config-button" name="form_type" value="Change Pipeline Parameters">
             </form>    
@@ -37,13 +16,12 @@
     </div>
 </div>
 
-<div id="image-s2-container" class="grid-item-config">
-    <h1 class=config-title_text>Pipeline 1</h1>
+<div id="image-s1-container" class="grid-item-config">
+    <h1 class=config-title_text>Bottom</h1>
     <div class="grid-item">
         <div class=config-input_text>
-            <form method="POST" action="{% url 'inspection:pipeline_config' 1 %}">
+            <form method="POST" action="{% url 'inspection:pipeline_config' 'gadget-pipeline-bottom' 0 %}">
                 {% csrf_token %}
-                {{ form_choose_model_1.as_p }}
                 {{ form_change_pipeline_1.as_p }}
                 <input type="submit" class="config-button" name="form_type" value="Change Pipeline Parameters">
             </form>    
@@ -51,13 +29,12 @@
     </div>
 </div>
 
-<div id="image-s3-container" class="grid-item-config">
-    <h1 class=config-title_text>Pipeline 2</h1>
+<div id="image-s2-container" class="grid-item-config">
+    <h1 class=config-title_text>Side Left</h1>
     <div class="grid-item">
         <div class=config-input_text>
-            <form method="POST" action="{% url 'inspection:pipeline_config' 2 %}">
+            <form method="POST" action="{% url 'inspection:pipeline_config' 'gadget-pipeline-side' 0%}">
                 {% csrf_token %}
-                {{ form_choose_model_2.as_p }}
                 {{ form_change_pipeline_2.as_p }}
                 <input type="submit" class="config-button" name="form_type" value="Change Pipeline Parameters">
             </form>    
@@ -65,28 +42,13 @@
     </div>
 </div>
 
-<div id="image-s4-container" class="grid-item-config">
-    <h1 class=config-title_text>Pipeline 3</h1>
+<div id="image-s3-container" class="grid-item-config">
+    <h1 class=config-title_text>Side Right</h1>
     <div class="grid-item">
         <div class=config-input_text>
-            <form method="POST" action="{% url 'inspection:pipeline_config' 3 %}">
+            <form method="POST" action="{% url 'inspection:pipeline_config' 'gadget-pipeline-side' 1 %}">
                 {% csrf_token %}
-                {{ form_choose_model_3.as_p }}
                 {{ form_change_pipeline_3.as_p }}
-                <input type="submit" class="config-button" name="form_type" value="Change Pipeline Parameters">
-            </form>    
-        </div>
-    </div>
-</div>
-
-<div id="image-s5-container" class="grid-item-config">
-    <h1 class=config-title_text>Pipeline 4</h1>
-    <div class="grid-item">
-        <div class=config-input_text>
-            <form method="POST" action="{% url 'inspection:pipeline_config' 4 %}">
-                {% csrf_token %}
-                {{ form_choose_model_4.as_p }}
-                {{ form_change_pipeline_4.as_p }}
                 <input type="submit" class="config-button" name="form_type" value="Change Pipeline Parameters">
             </form>    
         </div>

@@ -3,11 +3,18 @@
 
 {% load static %}
 
-<div class=config-input_text>
-        <form method="POST" action="{% url 'inspection:automation_config' %}">
-                {% csrf_token %}
-                {{ form_change_automation.as_p }}
-                <input type="submit" style="visibility: visible;" class="config-button" name="form_type" value="Change Automation Parameters">
-        </form>
+<div id="image-s0-container" class="grid-item-config">
+        <h1 class=config-title_text>Automation</h1>
+        <div class="grid-item">
+            <div class=config-input_text>
+                    <form method="POST" action="{% url 'inspection:automation_config' %}">
+                            {% csrf_token %}
+                            {{ form_change_automation.as_p }}
+                            <input type="submit" style="visibility: visible;" class="config-button" name="form_type" value="Change Automation Parameters">
+                    </form>    
+            </div>
+        </div>
 </div>
+
 {% endblock %}
+

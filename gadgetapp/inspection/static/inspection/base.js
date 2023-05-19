@@ -2,8 +2,9 @@ const INDEX_BUTTON=document.querySelector('#index')
 const DASH_BUTTON=document.querySelector('#dashboard');
 const MODEL_CONFIG_BUTTON=document.querySelector('#model-button')
 const SENSOR_CONFIG_BUTTON=document.querySelector('#sensor-button')
+const automation_CONFIG_BUTTON=document.querySelector('#automation-button');
 const MAIN_BUTTON=document.querySelector('#main-button');
-const CONFIG_JOB_BUTTON=document.querySelector('#config-job-button');
+const ADMIN_BUTTON=document.querySelector('#admin-button');
 
 
 const PLAY_BUTTON=document.querySelector('#play-button');
@@ -24,12 +25,14 @@ function goto_sensor_config() {
     location.href="/inspection/sensor_config"
 }
 
+function goto_automation_config() {
+    location.href="/inspection/automation_config"
+}
 function goto_main() {
     location.href="/inspection/main"
 }
-
-function goto_config_job() {
-    location.href="/inspection/config_job"
+function goto_admin() {
+    location.href="/admin"
 }
 
 if (INDEX_BUTTON!=null) {
@@ -44,11 +47,14 @@ if (MODEL_CONFIG_BUTTON!=null) {
 if (SENSOR_CONFIG_BUTTON!=null) {
     SENSOR_CONFIG_BUTTON.addEventListener("click", goto_sensor_config, false);
 }
+if (automation_CONFIG_BUTTON!=null) {
+    automation_CONFIG_BUTTON.addEventListener("click", goto_automation_config, false);
+}
 if (MAIN_BUTTON!=null) {
     MAIN_BUTTON.addEventListener("click", goto_main, false);
 }
-if (CONFIG_JOB_BUTTON!=null) {
-    CONFIG_JOB_BUTTON.addEventListener("click", goto_config_job, false);
+if (ADMIN_BUTTON!=null) {
+    ADMIN_BUTTON.addEventListener("click", goto_admin, false);
 }
 
 

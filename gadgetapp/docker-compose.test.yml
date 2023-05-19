@@ -72,14 +72,11 @@ services:
       dockerfile: ./offline_test/offline_test.dockerfile
     restart: unless-stopped  
     volumes:
-      - ./offline_test/offline_test_django.py:/app/offline_test_django.py
       - image_archive:/app/image_archive
+    command: python3 offline_test_django.py
     depends_on:
       nginx:
         condition: service_healthy
-    command: python3 offline_test_django.py
-    # stdin_open: true # docker run -i
-    # tty: true        # docker run -t
     
 volumes:
   postgres_db:

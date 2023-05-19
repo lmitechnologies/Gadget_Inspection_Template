@@ -50,28 +50,5 @@
     </script>
 </div>
 
-<div id="image-s4-container" class="grid-item-canvas">
-    <canvas id="media-canvas-4" ></canvas>
-    <script type='module'>
-        import{init_media} from "{% static 'inspection/init_ui.js' %}"
-        console.log('Initialize media.');
-        var parent_div_object=document.querySelector('#image-s4-container');
-        var canvas_object=document.querySelector('#media-canvas-4');
-        var media_type=parseInt('{{ ui.media_type | escapejs }}');
-        init_media(parent_div_object,canvas_object,media_type);
-    </script>
-</div>
-
-<div id="image-s5-container" class="grid-item-canvas">
-    <canvas id="media-canvas-5" ></canvas>
-    <script type='module'>
-        import{init_media} from "{% static 'inspection/init_ui.js' %}"
-        console.log('Initialize media.');
-        var parent_div_object=document.querySelector('#image-s5-container');
-        var canvas_object=document.querySelector('#media-canvas-5');
-        var media_type=parseInt('{{ ui.media_type | escapejs }}');
-        init_media(parent_div_object,canvas_object,media_type);
-    </script>
-</div>
 
 {% endblock %}

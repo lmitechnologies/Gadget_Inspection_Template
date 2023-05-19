@@ -8,8 +8,6 @@ import time
 import glob
 import random
 import string
-import requests
-from PIL import Image
 from pathlib import Path
 
 from django.shortcuts import render, get_object_or_404
@@ -22,7 +20,7 @@ from django.conf import settings
 from gadget_core.data.gadget_image import GadgetImage
 
 #import models
-from inspection.models import ConfigUI, UserSensorSelector, UserSensorConfig, UserPipelineSelector, UserPipelineConfig, UserAutomationConfig, SystemState, AvailableModels
+from inspection.models import ConfigUI, UserSensorSelector, UserSensorConfig, UserPipelineSelector, UserPipelineConfig, UserAutomationConfig, SystemState
 from inspection.models import AVAILABLE_DECISIONS, INSPECTION_RESULT_KEYS, CHART_KEYS
 
 from configs.models import AutomationConfig, PipelineConfig, SensorConfig
@@ -30,17 +28,15 @@ from inspection_events.models import PipelineInspectionEventLatest, InspectionEv
 from runtime.models import RuntimeStatusLatest
 
 #import forms
-from .forms import ChangeAutomationForm, ChoosePipelineForm, ChangePipelineForm, ChooseSensorForm, ChangeSensorForm, ChooseConfigJobForm, NewConfigForm, ChoosePipelineModel
+from .forms import ChangeAutomationForm, ChoosePipelineForm, ChangePipelineFormTop, ChangePipelineFormBottom, ChangePipelineFormSide, ChangeSensorForm
 
 RUNTIME_MEDIA_PATH='/gadgetapp/staticfiles/inspection/media/runtime'
 NGINX_MEDIA_PATH='../../static/inspection/media/runtime'
-NGINX_LABEL_PATH='../../static/inspection/media'
-GADGET_APP_IMAGE_ARCHIVE_PATH='/mnt/gadget-inline'
-REFERENCE_IMAGES_BASE="/gadgetapp"
+GADGET_APP_IMAGE_ARCHIVE_PATH='/app/data'
 MEDIA_BUFFER=20
 
-DATABASE_API_HOST = "api-gateway"
-DATABASE_API_PORT = "8080"
+CANVAS_WIDTH=623
+CANVAS_HEIGHT=347
 
 for index in range(len(INSPECTION_RESULT_KEYS)):
     keys=list(INSPECTION_RESULT_KEYS[index].values())
@@ -50,35 +46,42 @@ for index in range(len(INSPECTION_RESULT_KEYS)):
     if not os.path.isdir(path_i):
         logging.info(f'Creating media/runtime directory: {path_i}')
         os.makedirs(path_i)
+    path_i=os.path.join(RUNTIME_MEDIA_PATH,INSPECTION_RESULT_KEYS[index]['sensor_topic'])
+    if not os.path.isdir(path_i):
+        logging.info(f'Creating media/runtime directory: {path_i}')
+        os.makedirs(path_i)
+        
 # import abstract syntax trees to parse kwargs database fields
 import ast
 
 # import json to read log file
 import json
 
-logging.basicConfig(level=logging.INFO)
-
+DEBUG = int(os.environ.get("DEBUG", default=1))
+if DEBUG:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
+logging.info(f"Debug level: {DEBUG}")
 t0=datetime.min
 t0=t0.replace(tzinfo=pytz.UTC)
 persistent_timestamp=[t0 for i in range(len(INSPECTION_RESULT_KEYS))]
 new_data_counter=[0 for i in range(len(INSPECTION_RESULT_KEYS))]
 
-def get_category(current_decision):
+def get_category(current_defect):
     # classes_available=defect_list.split(",")
     try: 
-        # convert decision to same type as AVAILABLE_DECISIONS
-        current_decision = type(AVAILABLE_DECISIONS[1])(current_decision)
-        decision_ID=AVAILABLE_DECISIONS.index(current_decision)
-        logging.info(f'Decision: {current_decision} maps to ID: {decision_ID}')
+        defect_ID=AVAILABLE_DECISIONS.index(current_defect)
+        logging.debug(f'Defect: {current_defect} maps to ID: {defect_ID}')
     except:
-        logging.warning(f'Decision: {current_decision} not being tracked. Setting to 0.')
-        decision_ID=0
+        logging.warning(f'Decision: {current_defect} not being tracked. Setting to 0.')
+        defect_ID=0
     plot_y=[0]*( len(AVAILABLE_DECISIONS) -1 )
-    if decision_ID==0:
+    if defect_ID==0:
         return plot_y
     else:
         plot_i_y=plot_y
-        plot_i_y[decision_ID-1]=1
+        plot_i_y[defect_ID-1]=1
         return plot_i_y
 
 def query_inspection_events_table(index):
@@ -91,6 +94,9 @@ def query_inspection_events_table(index):
         sensor_topic=event_try['sensor_topic']).last()
     if not lastevent:
         lastevent=None
+        logging.warning(f'No pipeline event found for: {event_try}')
+    else:
+        logging.debug(f"Pipeline event found for sensor topic: {lastevent.sensor_topic}")  
     return lastevent
 
 def check_inspection_event_time(lastevent,index):
@@ -101,6 +107,7 @@ def check_inspection_event_time(lastevent,index):
     if last_event_time>persistent_timestamp[index]:
         persistent_timestamp[index]=last_event_time
         new_data=True
+        logging.debug(f'New inspection event at: {last_event_time}')
     else:
         new_data=False
     return new_data,last_event_time
@@ -109,13 +116,14 @@ def clean_media_dir():
     files=glob.glob(os.path.join(RUNTIME_MEDIA_PATH,'*.png'))
     nfiles=len(files)
     if nfiles > MEDIA_BUFFER:
+        logging.debug(f'Cleaning last {MEDIA_BUFFER} from media directory.')
         files.sort(reverse=True)
         for file in files[MEDIA_BUFFER:]:
             os.remove(os.path.join(RUNTIME_MEDIA_PATH,file))
 
 def convert_2_png(raw_media_path):
     image_path=os.path.join(GADGET_APP_IMAGE_ARCHIVE_PATH,raw_media_path)
-    fname=raw_media_path.replace('.gadget2d.pickle','.png')
+    fname=raw_media_path.replace('.pickle','.png')
     # create random file name
     # frandom=''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))+'.png'
     fpath_gadget=os.path.join(RUNTIME_MEDIA_PATH,fname)
@@ -123,18 +131,28 @@ def convert_2_png(raw_media_path):
     files=glob.glob(os.path.join(os.path.split(fpath_gadget)[0],'*.png'))
     convert_file=False if (fpath_gadget in files) else True
     # write the file if it doesn't exist
-    if convert_file:
-        t0=time.time() 
-        path = Path(image_path)
-        gimage = GadgetImage.load(path)
-        image = gimage.visualize()
-        image.save(fpath_gadget)
-        tf=time.time()
-        for file in files:
-            os.remove(file)
-   
-    fpath_nginx=os.path.join(NGINX_MEDIA_PATH,fname)
-    return fpath_nginx    
+    try:
+        if convert_file:
+            logging.debug(f'PNG file does not exist.  Creating file {fpath_gadget}')
+            t0=time.time() 
+            path = Path(image_path)
+            gimage = GadgetImage.load(path)
+            image = gimage.visualize((CANVAS_WIDTH, CANVAS_HEIGHT))
+            image.save(fpath_gadget)
+            
+            tf=time.time()
+            logging.debug(f'PNG save time for file {fname}:{tf-t0}')
+            logging.debug(f'Removing old files from media runtime directory.')
+            for file in files:
+                os.remove(file)
+        else:
+            logging.debug(f'PNG file {fname} already exists.  Skipping generation.')
+
+        fpath_nginx=os.path.join(NGINX_MEDIA_PATH,fname)
+        return fpath_nginx
+    except:
+        logging.exception("Error converting image")
+        return ""
 
 
 def set_xy(chart_type,update_option,decision,index,err_dist=None):
@@ -152,16 +170,17 @@ def set_xy(chart_type,update_option,decision,index,err_dist=None):
     # TODO: handle multiple defect, currently only captures first
     if type(decision)==list:
         decision = ",".join(decision)
-    logging.info(f'Current decision list: {decision}')
+    logging.info(f'Current decision: {decision}')
     if type(decision)==str:
         try:
             # get first defect in the string
             decision=decision.split(',')[0]
-            logging.info(f'Choosing {decision} from current decision list.')
+            logging.debug(f'Choosing {decision} from current decision list.')
         except:
             # if doesn't exist, then return default defect=none
             decision=AVAILABLE_DECISIONS[0]
             logging.warning(f'Empty decision list, choosing default decision: {decision}.')
+
     if chart_type==1:
         if update_option==0:
             x=new_data_counter[index]
@@ -198,13 +217,16 @@ def set_xy(chart_type,update_option,decision,index,err_dist=None):
             raise Exception(f'Charting Option {chart_type},{update_option} not supported.')
     return x,y
 
-@csrf_exempt
 def ui_update(request):
     '''
     DESCRIPTION:
-        Updates Gadget App HMI each time it is called by update_ui.js.
+        Updates Gadget App HMI each time it is called by update_ui.js.  
+        Key features:
+        - 
+    
     '''    
     if request.method == 'GET':
+        logging.info("UI Update")
         # get ui data
         config_ui = get_object_or_404(ConfigUI, pk=1)
         # initialize dictionary used for each sensor event
@@ -217,7 +239,6 @@ def ui_update(request):
         # plot_x/_y: plot values
         inspection_dict_entry={'new_data':None,'decision':None,'path':None,'charts':None,'chart_type':None,'plot_update':None,'plot_x':None,'plot_y':None}
         inspection_dict={}
-        reference_path = ""
 
         # Step through list of available sensors... one or many inspection from ea sensor can occur during a Gadget App update period
         for index in range(len(INSPECTION_RESULT_KEYS)):
@@ -243,33 +264,26 @@ def ui_update(request):
             if (query_success):
                 # get the decision from the json field, if decision field is supported
                 try:
-                    # current_decision_try=current_inspection.context['results']['obj_det_classes']
                     current_decision_try=current_inspection.context['decision']
+                    # current_decision_try=(current_inspection.context[CHART_KEYS[index]['plot_y_key'][0]], current_inspection.context[CHART_KEYS[index]['plot_y_key'][1]])
                 except:
                     logging.warning(f'Key error for decision JSON field: {index} {CHART_KEYS[index]}. Assigned default decision: {AVAILABLE_DECISIONS[0]}')
-                    current_decision_try=(AVAILABLE_DECISIONS[0], 0)
+                    current_decision_try=(AVAILABLE_DECISIONS, 0)
+
                 # split the decision string to get each defect
                 # TODO: handle multiple defect, currently only captures first
-                try:
-                    current_err_dist_try=current_inspection.context['results']['err_dist']
-                except:
-                    current_err_dist_try=np.zeros(100)
+
+                # try:
+                #     current_err_dist_try=current_inspection.context['results']['err_dist']
+                # except:
+                #     current_err_dist_try=np.zeros(100)
+                #     logging.warning(f'Error distribution not found.  Set to 0.')
                 current_decision=current_decision_try
-                current_err_dist=current_err_dist_try
+                logging.debug(f"Current decision: {current_decision}")
+                # current_err_dist=current_err_dist_try
                 # get path to annotated image, modify to reference gadget app image archive volume
                 raw_media_path=current_inspection.filename
                 media_path=convert_2_png(raw_media_path)
-
-                try:
-                    reference_image = current_inspection.context['reference_image']
-                    logging.info(f"Reference lable: {reference_image}")
-                except:
-                    logging.exception("Error")
-                    reference_image = "lmi_technologies_cube_RGB.png"
-                    
-                if reference_image != '':
-                    reference_path = os.path.join(NGINX_LABEL_PATH, reference_image)
-                    logging.info(f"Reference path {reference_path}")
 
                 # set data structure passed back to AJAX for Gadget App updates
                 inspection_dict[str(index)]['decision']=current_decision
@@ -281,13 +295,14 @@ def ui_update(request):
                 plot_y=[]
                 # format data for chart updates
                 for cnt,val in enumerate(CHART_KEYS[index]['chart_type']):
-                    x,y=set_xy(val,CHART_KEYS[index]['plot_update'][cnt],current_decision,index,err_dist=current_err_dist)
+                    x,y=set_xy(val,CHART_KEYS[index]['plot_update'][cnt],current_decision,index)
                     plot_x.append(x)
                     plot_y.append(y)
                 inspection_dict[str(index)]['plot_x']=plot_x
                 inspection_dict[str(index)]['plot_y']=plot_y
                 # update event count
-                if (new_data and current_decision in AVAILABLE_DECISIONS[1:]): 
+                if (new_data and (current_decision in AVAILABLE_DECISIONS[1:])):
+                    logging.info(f'New event count: {config_ui.count+1}') 
                     config_ui.count=config_ui.count+1
                     config_ui.save()
 
@@ -315,20 +330,22 @@ def ui_update(request):
         # repeat for pipeline, automation, mqtt_bridge(cloud) - currently assumes 1 pipeline, 1 automation, 1 cloud
         sorted_pipeline_state= status_state[status_service_type=='pipeline']
         sorted_automation_state=status_state[status_service_type=='automation']
-        sorted_cloud_state = RuntimeStatusLatest.objects.get(instance_name='mqtt_bridge')
-        
+        sorted_cloud_state=status_state[status_service_type=='platform']
+
         state_dict={
             'sensor_state':sorted_sensor_state,
             'pipeline_state':sorted_pipeline_state.tolist(),
             'automation_state':sorted_automation_state.tolist(),
-            'cloud_state':sorted_cloud_state.state,
+            'cloud_state':sorted_cloud_state.tolist(),
             }
+
+        logging.debug(f'State dictionary: {state_dict}')
 
         # media type (image or point cloud)
         media_type = config_ui.media_type
         # system state: running or stopped
         systemstate=get_object_or_404(SystemState,pk=1)
-        is_running=systemstate.running
+        is_running=sorted_sensor_state[0]
 
         d = {
                 'state_dict':state_dict,
@@ -338,14 +355,12 @@ def ui_update(request):
                 'info_display_0_value': None,
                 'info_display_1_value': None,
                 'info_display_2_value': str(config_ui.count),
-                'reference_image': reference_path
             }
 
         # data_json = json.dumps(d)
         # return HttpResponse(data_json)
 
         return JsonResponse(d,status=200)
-
 
 def event_reset(request):
     if request.method == "POST":
@@ -366,7 +381,6 @@ def error_500_refresh_view(request):
     logging.warning("FringeAI Django error, taking to redirect page...")
     return render(request, "403_csrf.html")  # standard error redirect page
 
-
 def views_main(request):
     # get UIdata
     ui = get_object_or_404(ConfigUI, pk=1)
@@ -379,17 +393,77 @@ def views_main(request):
 
     return render(request, 'inspection/main.html', context)
 
+def views_automation_config(request):
+    # get UIdata
+    ui = get_object_or_404(ConfigUI, pk=1)
+    title = ui.title
+    # check request.method to see if user is posting new data
+    if request.method == "POST":
+        if request.POST.get("form_type") == "Change Automation Parameters":
+            # get current automation configs
+            user_automation_configs=get_object_or_404(UserAutomationConfig,pk=1)
+            # modify configs
+            form = ChangeAutomationForm(request.POST,instance=user_automation_configs)
+            if form.is_valid():
+                # commit changes
+                user_automation_configs = form.save(commit=False)
+                user_automation_configs.save()
+                automation_configs=get_object_or_404(AutomationConfig)
+                custom=automation_configs.custom
+                field_names=[f.name for f in user_automation_configs._meta.get_fields()]
+                for field in field_names[1:]:
+                    custom[field]=getattr(user_automation_configs,field)
+                # commit new system configs
+                automation_configs.custom=custom
+                automation_configs.save()
+        if request.POST.get("form_type") == "":
+            pass
 
-def views_pipeline_config(request,  instance = 0):
+    # get current automation
+    automation_configs=get_object_or_404(AutomationConfig)
+    user_automation_configs=get_object_or_404(UserAutomationConfig,pk=1)
+    field_names=[f.name for f in user_automation_configs._meta.get_fields()]
+    jsonfields=automation_configs.custom
+    for field in field_names[1:]:
+        try:
+            setattr(user_automation_configs,field,jsonfields[field])
+        except:
+            logging.warning(f'Config {field} not supported by automation service.')
+    user_automation_configs.save()
+    # initialize forms with database settings
+    form_change_automation = ChangeAutomationForm(instance=user_automation_configs)
+
+    # get current UI configs
+    ui = get_object_or_404(ConfigUI, pk=1)
+
+    systemstate=get_object_or_404(SystemState)
+    is_running=systemstate.running
+
+    # pass forms/data to html
+    context = {'title': title, 'form_change_automation':form_change_automation,
+               'ui': ui, 'is_running': is_running}
+
+    return render(request, 'inspection/automation_config.html', context)
+
+
+def views_pipeline_config(request, instance_name = 'gadget-pipeline', instance = 0):
     # get UIdata
     ui = get_object_or_404(ConfigUI, pk=1)
     title = ui.title
     # check request.method to see if user is posting new data
     if request.method == "POST":
         if request.POST.get("form_type") == "Change Pipeline Parameters":
+            # get current pipeline configs
+            user_pipeline_config = UserPipelineConfig.objects.get(instance_name = instance_name,instance=instance)
             # modify configs
-            user_pipeline_config = UserPipelineConfig.objects.get(instance=instance)
-            form = ChangePipelineForm(request.POST, instance=user_pipeline_config)
+            
+            if instance_name == 'gadget-pipeline-top':
+                form = ChangePipelineFormTop(request.POST,instance=user_pipeline_config)
+            elif instance_name == 'gadget-pipeline-bottom':
+                form = ChangePipelineFormBottom(request.POST,instance=user_pipeline_config)
+            elif instance_name == 'gadget-pipeline-side':
+                form = ChangePipelineFormSide(request.POST,instance=user_pipeline_config)
+
             if form.is_valid():
                 # commit changes
                 user_pipeline_config = form.save(commit=False)
@@ -401,34 +475,15 @@ def views_pipeline_config(request,  instance = 0):
                 for field in field_names[1:]:
                     if custom.get(field) is not None:
                         custom[field]=getattr(user_pipeline_config,field)
-
-                model_name = request.POST.get('annomoly_model')
-                curr_pipeline_name = f'{pipeline_configs.service_type}/{pipeline_configs.instance_name}/{pipeline_configs.instance}'
-                models = AvailableModels.objects.filter(pipeline=curr_pipeline_name, model_name=model_name, model_type="annomoly")
-                if len(models) != 0:
-                    custom['ad_saved_model_path'] = models[0].model_path
-                else:
-                    logging.warning("No available models for this pipeline")
-
-                model_name = request.POST.get('object_model')
-                curr_pipeline_name = f'{pipeline_configs.service_type}/{pipeline_configs.instance_name}/{pipeline_configs.instance}'
-                models = AvailableModels.objects.filter(pipeline=curr_pipeline_name, model_name=model_name, model_type="object")
-                if len(models) != 0:
-                    custom['od_engine_file'] = models[0].model_path
-                else:
-                    logging.warning("No available models for this pipeline")
-                
                 # commit new system configs
                 pipeline_configs.custom=custom
                 pipeline_configs.save()
         if request.POST.get("form_type") == "":
             pass
 
-    user_pipeline_configs = UserPipelineConfig.objects.filter(instance_name='pipeline').order_by('instance')
+    user_pipeline_configs = UserPipelineConfig.objects.filter(instance_name='gadget-pipeline-top').order_by('instance')
     field_names=[f.name for f in user_pipeline_configs[0]._meta.get_fields()]
-    pipeline_forms = []
-    choose_model_forms = []
-    
+    top_forms = {}
     for user_config in user_pipeline_configs:
         pipeline_config = PipelineConfig.objects.get(instance_name=user_config.instance_name, instance=user_config.instance)
         jsonfields=pipeline_config.custom
@@ -437,36 +492,40 @@ def views_pipeline_config(request,  instance = 0):
                 setattr(user_config,field,jsonfields[field])
             except:
                 continue
-        
-        user_config.save()
-        form = ChangePipelineForm(instance=user_config)
-        pipeline_forms.append(form)
+            user_config.save()
+            form = ChangePipelineFormTop(instance=user_config)
+            top_forms[user_config.instance] = form
+
+    user_pipeline_configs = UserPipelineConfig.objects.filter(instance_name='gadget-pipeline-bottom').order_by('instance')
+    field_names=[f.name for f in user_pipeline_configs[0]._meta.get_fields()]
+    bottom_forms = {}
+    for user_config in user_pipeline_configs:
+        pipeline_config = PipelineConfig.objects.get(instance_name=user_config.instance_name, instance=user_config.instance)
+        jsonfields=pipeline_config.custom
+        for field in field_names[1:]:
+            try:
+                setattr(user_config,field,jsonfields[field])
+            except:
+                continue
+            user_config.save()
+            form = ChangePipelineFormBottom(instance=user_config)
+            bottom_forms[user_config.instance] = form
+
+    user_pipeline_configs = UserPipelineConfig.objects.filter(instance_name='gadget-pipeline-side').order_by('instance')
+    field_names=[f.name for f in user_pipeline_configs[0]._meta.get_fields()]
+    side_forms = {}
+    for user_config in user_pipeline_configs:
+        pipeline_config = PipelineConfig.objects.get(instance_name=user_config.instance_name, instance=user_config.instance)
+        jsonfields=pipeline_config.custom
+        for field in field_names[1:]:
+            try:
+                setattr(user_config,field,jsonfields[field])
+            except:
+                continue
+            user_config.save()
+            form = ChangePipelineFormSide(instance=user_config)
+            side_forms[user_config.instance] = form
     
-        try:
-            curr_annomoly_path = jsonfields['ad_saved_model_path']
-            curr_object_path = jsonfields['od_engine_file']
-        except:
-            curr_annomoly_path = ""
-            curr_object_path = ""
-
-        curr_pipeline_name = f'{pipeline_config.service_type}/{pipeline_config.instance_name}/{pipeline_config.instance}'
-        
-        aval_models = AvailableModels.objects.filter(pipeline=curr_pipeline_name)
-        models = []
-        curr_annomoly_name = "Unknown"
-        curr_object_name = "Unknown"
-        for model in aval_models:
-            if curr_annomoly_path == model.model_path:
-                curr_annomoly_name = model.model_name
-            elif curr_object_path == model.model_path:
-                curr_object_name = model.model_name
-            else:
-                models.append((model.model_type, model.model_name))
-
-        choose_model_forms.append(ChoosePipelineModel(curr_annomoly_name, curr_object_name, models))
-
-    form_choose_job, form_create_new_job = get_config_job_forms()
-
     # get current UI configs
     ui = get_object_or_404(ConfigUI, pk=1)
     systemstate=get_object_or_404(SystemState)
@@ -474,12 +533,10 @@ def views_pipeline_config(request,  instance = 0):
 
     # pass forms/data to html
     context = {'title': title, 
-                'form_change_pipeline_0':pipeline_forms[0], 'form_choose_model_0':choose_model_forms[0],
-                'form_change_pipeline_1':pipeline_forms[1], 'form_choose_model_1':choose_model_forms[1],
-                'form_change_pipeline_2':pipeline_forms[2], 'form_choose_model_2':choose_model_forms[2],
-                'form_change_pipeline_3':pipeline_forms[3], 'form_choose_model_3':choose_model_forms[3],
-                'form_change_pipeline_4':pipeline_forms[4], 'form_choose_model_4':choose_model_forms[4],
-                'form_choose_job': form_choose_job, 'form_create_new_job':form_create_new_job,
+                'form_change_pipeline_0': top_forms[0],
+                'form_change_pipeline_1': bottom_forms[0],
+                'form_change_pipeline_2': side_forms[0],
+                'form_change_pipeline_3': side_forms[1],
                 'ui': ui, 'is_running': is_running}
 
     return render(request, 'inspection/pipeline_config.html', context)
@@ -492,11 +549,14 @@ def views_sensor_config(request, instance = 0):
     # check request.method to see if user is posting new data
     if request.method == "POST":
         if request.POST.get("form_type") == "Change Sensor Parameters":
+            # get current sensor configs
             user_sensor_config = UserSensorConfig.objects.get(instance=instance)
-            form = ChangeSensorForm(request.POST, instance=user_sensor_config)
+            # modify configs
+            form = ChangeSensorForm(request.POST,instance=user_sensor_config)
             if form.is_valid():
                 # commit changes
                 user_sensor_config = form.save(commit=False)
+                user_sensor_config.save()
                 # get system config data and map new configs from user data
                 sensor_configs = SensorConfig.objects.get(instance_name=user_sensor_config.instance_name, instance=user_sensor_config.instance)
                 custom=sensor_configs.custom
@@ -516,7 +576,6 @@ def views_sensor_config(request, instance = 0):
     field_names=[f.name for f in user_sensor_configs[0]._meta.get_fields()]
     sensor_forms = []
     
-    sensor_forms = []
     for user_config in user_sensor_configs:
         sensor_config = SensorConfig.objects.get(instance_name=user_config.instance_name, instance=user_config.instance)
         jsonfields=sensor_config.custom
@@ -535,82 +594,10 @@ def views_sensor_config(request, instance = 0):
     systemstate=get_object_or_404(SystemState)
     is_running=systemstate.running
 
-    form_choose_job, form_create_new_job = get_config_job_forms()
-
     # pass forms/data to html
-    context = {'title': title, 'form_change_sensor_0':sensor_forms[0], 
-                'form_change_sensor_1':sensor_forms[1], 'form_change_sensor_2':sensor_forms[2],
-                'form_choose_job': form_choose_job,'form_create_new_job':form_create_new_job,
-                'ui': ui, 'is_running': is_running}
+    context = {'title': title, 'form_change_sensor_0':sensor_forms[0], 'ui': ui, 'is_running': is_running}
 
     return render(request, 'inspection/sensor_config.html', context)
-
-
-def get_config_job_forms():
-    ob_names = []   
-    try:
-        response = requests.get(f"http://{DATABASE_API_HOST}:{DATABASE_API_PORT}/api/configs/job/get/names")
-        response_json = json.loads(response.text)
-        job_names = response_json['job_names']
-    except json.JSONDecodeError as e:
-        logging.exception("Unable to load json")
-    except requests.exceptions.RequestException as e:
-        logging.exception("Unable to get jobs from database api")
-
-    form_choose_job = ChooseConfigJobForm(config_job_names=job_names)
-    form_create_new_job = NewConfigForm()
-    
-    return form_choose_job, form_create_new_job
-
-
-def views_config_job(request):
-    
-    if request.method == "POST":
-        if request.POST.get("form_type") == 'Load Job':
-            job_name = request.POST.get("choose_job")
-            if job_name != "none":
-                try:
-                    response = requests.post(f"http://{DATABASE_API_HOST}:{DATABASE_API_PORT}/api/configs/job/load/{job_name}")
-                    if response.status_code != 200:
-                        logging.error(response.text)
-                except requests.exceptions.RequestException as e:
-                    logging.exception("Exception attempting to load job")
-        if request.POST.get("form_type") == 'Update Job':
-            job_name = request.POST.get("choose_job")
-
-            if job_name != "none":
-                try:
-                    response = requests.post(f"http://{DATABASE_API_HOST}:{DATABASE_API_PORT}/api/configs/job/update/{job_name}")
-                    if response.status_code != 200:
-                        logging.error(response.text)
-                except requests.exceptions.RequestException as e:
-                    logging.exception("Exception attempting to load job")
-            else:
-                logging.warning("Job name too")
-        if request.POST.get("form_type") == 'Create New Job':
-            job_name = request.POST.get("job_name")
-            logging.info(len(job_name))
-            if len(job_name) < 65:
-                try:
-                    response = requests.post(f"http://{DATABASE_API_HOST}:{DATABASE_API_PORT}/api/configs/job/create/{job_name}")
-                except requests.exceptions.RequestException as e:
-                    logging.exception("Unable to create new job")
-
-        if request.POST.get("form_type") == "":
-            pass
-
-    job_names = []   
-    try:
-        response = requests.get(f"http://{DATABASE_API_HOST}:{DATABASE_API_PORT}/api/configs/job/get/names")
-        logging.info(response.text)
-        response_json = json.loads(response.text)
-        job_names = response_json['job_names']
-    except json.JSONDecodeError as e:
-        logging.exception("Unable to load json")
-    except requests.exceptions.RequestException as e:
-        logging.exception("Unable to get jobs from database api")
-
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def toggle_start_stop(request):
