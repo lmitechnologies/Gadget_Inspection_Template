@@ -1,0 +1,14 @@
+#requires the version of docker-compose >= 1.19
+version: "3.8"
+services:
+  eff:
+    build: 
+      context: .
+      dockerfile: arm.dockerfile
+    image: pipeline_test
+    volumes:
+      - ../:/home/gadget/workspace/pipeline
+      - ../../data:/home/gadget/workspace/data
+    runtime: nvidia
+    command: python3 /home/gadget/workspace/pipeline/pipeline_class.py
+    
