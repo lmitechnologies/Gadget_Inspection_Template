@@ -151,9 +151,9 @@ class ModelPipeline:
         
         # get the center and diameter
         boxes = np.array(boxes)     #[x1,y1,x2,y2]
-        centers = 0.5*(boxes[:,:2]+boxes[:,2:])
-        hws = centers-boxes[:,:2]   #[xc-x1,yc-y1]
-        diameters = np.mean(hws,axis=1)
+        centers = 0.5*(boxes[...,:2]+boxes[...,2:])
+        hws = centers-boxes[...,:2]   #[xc-x1,yc-y1]
+        diameters = np.mean(hws,axis=1) if len(hws) else np.array([])
         
         # annotation
         if annotated_image is not None:
@@ -181,7 +181,7 @@ class ModelPipeline:
     def predict(self, configs: dict, image: np.ndarray, **kwargs) -> dict:
         errors = []
         result_dict = {
-                'anotated_output': None,
+                'annotated_output': image,
                 'automation_keys': [],
                 'factory_keys': [],
                 'should_archive': False,
@@ -205,9 +205,7 @@ class ModelPipeline:
             c:configs.get(f'confidence_{c}', self.det_configs['conf_thres'][c]) for c in TARGET_CLASSES 
         }
         
-        annotated_image = None
-        if test_mode:
-            annotated_image = image.copy()
+        annotated_image = image.copy()
         
         try:
             results_dict1, time_info1 = self.det_predict(img_det, operators_det, conf_thres, annotated_image)
@@ -229,8 +227,9 @@ class ModelPipeline:
         total_time = preprocess_time+inference_time+postprocess_time
         
         obj_list = results_dict1['classes']
-        # if not len(obj_list):
-        #     result_dict['should_archive'] = True
+
+        result_dict['should_archive'] = True
+        result_dict['annotated_output'] = annotated_image
         result_dict['automation_keys'] = ['det_centers','det_diameters']
         result_dict['factory_keys'] = ['det_boxes','det_scores','det_classes','total_proc_time']
         result_dict['det_boxes'] = results_dict1['boxes']
@@ -239,6 +238,7 @@ class ModelPipeline:
         result_dict['det_centers'] = results_dict1['centers']
         result_dict['det_diameters'] = results_dict1['diameters']
         result_dict['errors'] = errors
+        result_dict['total_proc_time'] = total_time
         
         self.logger.info(f'found objects: {obj_list}')
         self.logger.info(f'preprocess:{preprocess_time:.4f}, inference:{inference_time:.4f}, ' +
