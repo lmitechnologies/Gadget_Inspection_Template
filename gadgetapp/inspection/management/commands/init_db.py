@@ -1,5 +1,5 @@
 import datetime
-
+import os
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection, transaction
@@ -57,7 +57,7 @@ class Command(BaseCommand):
         self.create_custom(automation_config,user_automation_config)
         
         ui_config=ConfigUI(
-            title='New Gadget Application', \
+            title=os.environ.get('APPLICATION_NAME', 'New Gadget Application'), \
             info_display_2_label='Total Inspection Count:', \
             media_type=0, \
             plot_0=CHART_KEYS[0]['chart_type'][0], plot_0_yinit=0, plot_0_update=CHART_KEYS[0]['plot_update'][0], plot_0_xinit=0, plot_0_xlabel='Acquistion Event', plot_0_ylabel='Inspection Event', \
