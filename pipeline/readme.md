@@ -80,7 +80,7 @@ The pipeline predict method will return a dictionary that follows this pattern:
 ```python
 {
     # Required 
-    "file_path": string,
+    "annotated_output": numpy,
     "automation_keys": list,
     "factory_keys": list,
     "tags":list,
