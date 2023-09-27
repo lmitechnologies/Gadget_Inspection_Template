@@ -102,7 +102,7 @@ Here is an example:
 Pipeline predict result and stored in Postgres database:
 ```python
 {
-    "file_path": "/path/to/annotated/image"
+    "annotated_output": np_array,
     "automation_keys": [ "decision", "center_point"],
     "factory_keys":  ["tags", "decision", "score", "total_proc_time"],
     "tags": ["round", "square"], 
