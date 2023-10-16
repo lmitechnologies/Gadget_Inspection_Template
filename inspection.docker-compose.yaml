@@ -132,6 +132,7 @@ services:
     container_name: gadget-system-monitor
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/system_monitor:${PACKAGE_VER}
     restart: unless-stopped
+    network_mode: host
     env_file:
       - ./gadget-platform/system_monitor.env
     volumes:
