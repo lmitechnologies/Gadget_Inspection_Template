@@ -24,7 +24,7 @@ from inspection.models import ConfigUI, UserSensorSelector, UserSensorConfig, Us
 from inspection.models import AVAILABLE_DECISIONS, INSPECTION_RESULT_KEYS, CHART_KEYS
 
 from configs.models import AutomationConfig, PipelineConfig, SensorConfig
-from inspection_events.models import PipelineInspectionEventLatest, InspectionEvent
+from inspection_events.models import InspectionEvent
 from runtime.models import RuntimeStatusLatest
 
 #import forms

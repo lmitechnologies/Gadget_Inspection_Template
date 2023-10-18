@@ -23,7 +23,7 @@ django.setup()
 #%% 
 from inspection.models import SystemState, AVAILABLE_DECISIONS, INSPECTION_RESULT_KEYS
 from configs.models import AutomationConfig, SensorConfig, PipelineConfig
-from inspection_events.models import PipelineInspectionEventLatest, InspectionEvent
+from inspection_events.models import InspectionEvent
 from runtime.models import RuntimeStatusLatest
 
 dsts=['/app/image_archive/pipeline/gadget-pipeline/0/sensor/gadget-sensor-gocator/0']
@@ -42,7 +42,6 @@ def update_ready_indicators(component, value):
     q.save()
 
 def update_inspection_event(topicKey,decision,path):
-    # q=PipelineInspectionEventLatest.objects.get(pk=topicID+1)
     newinspection=InspectionEvent()
     event_time=datetime.now().replace(tzinfo=pytz.UTC)
     newinspection.event_time=event_time

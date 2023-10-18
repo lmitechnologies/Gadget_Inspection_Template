@@ -11,7 +11,7 @@ from inspection.models import ConfigUI, UserSensorSelector, UserSensorConfig, Us
 
 # Register your models here.
 # from runtime.models import RuntimeStatus, RuntimeStatusLatest
-# from inspection_events.models import InspectionEvent, PipelineInspectionEventLatest
+# from inspection_events.models import InspectionEvent
 # from configs.models import PlatformConfig, SensorConfig, PipelineConfig, AutomationConfig
 
 admin.site.register(UserSensorSelector)
@@ -58,18 +58,6 @@ admin.site.register(SystemState)
 #         '_id', 'service_type', 'instance_name', 
 #         'instance', 'event_id', 'event_time', 
 #         'filename'
-#     )
-#     formfield_overrides = {
-#         models.JSONField: {'widget': JSONEditorWidget()},
-#     }
-
-
-# @admin.register(PipelineInspectionEventLatest)
-# class PipelineInspectionEventLatestConfigAdmin(admin.ModelAdmin):
-#     readonly_fields = (
-#         '_id', 'service_type', 'instance_name', 
-#         'instance', 'event_id', 'event_time', 
-#         'filename', 'new_data', 'sensor_topic'
 #     )
 #     formfield_overrides = {
 #         models.JSONField: {'widget': JSONEditorWidget()},
