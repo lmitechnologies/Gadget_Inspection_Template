@@ -3,3 +3,4 @@ pcds
 .vscode
 __pycache__
 image_archive
+pipeline/trt-generation/**/*.engine
