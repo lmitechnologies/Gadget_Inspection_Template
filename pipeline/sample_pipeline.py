@@ -181,7 +181,7 @@ class ModelPipeline:
     def predict(self, configs: dict, image: np.ndarray, **kwargs) -> dict:
         errors = []
         result_dict = {
-                'anotated_output': None,
+                'annotated_output': None,
                 'automation_keys': [],
                 'factory_keys': [],
                 'should_archive': False,
