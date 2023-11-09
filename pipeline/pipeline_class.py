@@ -47,7 +47,7 @@ class ModelPipeline:
         """
         pass
 
-    def predict(self, configs: dict, image: np.ndarray, profile: np.ndarray = None,  **kwargs) -> dict:
+    def predict(self, configs: dict, inputs: dict) -> dict:
         pass
 
 

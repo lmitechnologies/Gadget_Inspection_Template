@@ -23,9 +23,6 @@ services:
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/database_api:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      # - POSTGRES_NAME=postgres
-      # - POSTGRES_USER=postgres
-      # - POSTGRES_PASSWORD=postgres
       - TZ=utc
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
@@ -171,15 +168,15 @@ services:
       - PIPELINE_SERVER_SETTINGS_GADGET_DATABASE_API_HOST=127.0.0.1
       - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_HOST=127.0.0.1
       - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/gadget-sensor-gocator/0
-      - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/workspace/pipeline/models
-      - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/workspace/pipeline
+      - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
+      - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
       - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=false
       - PIPELINE_SERVER_PARAMS_ARCHIVE_PERIOD=1
       - TZ=utc
     volumes:
-      - ./pipeline/:/home/gadget/workspace/pipeline
+      - ./pipeline/:/home/gadget/pipeline
       - inline-storage:/app/data
     depends_on:
       api-gateway: 
@@ -227,7 +224,7 @@ services:
       - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10
       - TZ=utc
     volumes:
-      - ${PWD}/data/test_images:/home/gadget/workspace/test_images
+      - ./test_images:/home/gadget/test_images
       - inline-storage:/app/data
     depends_on:
       api-gateway: 
