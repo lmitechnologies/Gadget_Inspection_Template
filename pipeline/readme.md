@@ -69,8 +69,8 @@ To complete these taks, below are the required methods to be implemented:
     This function loads the models.
 3. **def warm_up(self) -> None:**  
     This function run the models the first time.
-4. **def predict(self, `input_image`: str, `configs`: dict, `results_storage_path`: str) -> dict:**  
-    This function loads the `input_image` and `configs`, make predictions, add annotations to the `input_image`, save the annotated image to the `results_storage_path`. This function must return a dictionary. See the details in section - [Pipeline Result Dictionary](#pipeline-result-dictionary).  
+4. **def predict(self, `configs`: dict, `inputs`: dict) -> dict:**  
+    This function receives the `inputs` and `configs`, make predictions, add annotations to the image, and returns the annotated image with the model results. This function must return a dictionary. See the details in section - [Pipeline Result Dictionary](#pipeline-result-dictionary).  
     Besides, It would be helpful for developers to define a unit test in the main function. Refer to the main function in the **sample_pipeline.py**. 
 5. **def clean_up(self):**  
     This function deletes the models from memory.
@@ -86,15 +86,20 @@ The pipeline predict method will return a dictionary that follows this pattern:
     "tags":list,
     "should_archive":bool,
 
+    # Optional
+    "additional_outputs": dict
+
     # Custom
     "key-1": VALUE,
     "key-2": VALUE,
     "key-3": VALUE,
 }
 ```
-The key-value pairs in the dictionary must contain a literal or a list. No other object is allowed. The key-value pairs are grouped into two categories: **Required** and **Custom**.   
+The key-value pairs in the dictionary must contain a literal or a list. No other object is allowed. The key-value pairs are grouped into three categories: **Required**, **Optional**, and **Custom**.
 
-For the **Required** key-value pairs, the value of `file_path` is a string of the annotated output image path. The value of `automation_keys` is a list of strings that are a subset of **Custom** keys that will be sent to the automation service. They should be information that is specifically needed by the automation service. The value of `factory_keys` is a list of strings that are a subset of **Custom** keys that will be consumed by goFactory. They should be values that are actually useful in goFactory and will not overly inflate the size of the database. The value of `tags` should be a list of strings. They could be the predicted class names. The value of `should_archive` is a boolean indicating whether to archive current input.  
+For the **Required** key-value pairs, the value of `annotated_output` is a numpy array of the annotated image. The value of `automation_keys` is a list of strings that are a subset of **Custom** keys that will be sent to the automation service. They should be information that is specifically needed by the automation service. The value of `factory_keys` is a list of strings that are a subset of **Custom** keys that will be consumed by goFactory. They should be values that are actually useful in goFactory and will not overly inflate the size of the database.  The value of `tags` should be a list of strings. `factory_keys` should also include `tags` so that information is also sent to GoFactory. They could be the predicted class names. The value of `should_archive` is a boolean indicating whether to archive current input.  
+
+The only **Optional** key is `additional_outputs`. Any other image that the pipeline wants to save goes in here. Preprocessed images for example. `additional_outputs` is a dictionary where the key is the name of the subfolder where the image will be saved and the value is the numpy array of the image.
 
 For the **Custom** key-value pairs, the keys of some pairs will be used as the values of the **Required** keys as mentioned in the previous paragraph. The rest of pairs will be saved to the database.  
 
@@ -107,6 +112,11 @@ Pipeline predict result and stored in Postgres database:
     "factory_keys":  ["tags", "decision", "score", "total_proc_time"],
     "tags": ["round", "square"], 
     "should_archive": False,
+
+    "additional_outputs": {
+        "ad_preprocessed": preprocessed_ad,
+        "od_preprocessed": preprocessed_od
+    },
 
     "decision": ["round", "square"],
     "score": [.98, .95],

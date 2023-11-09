@@ -29,6 +29,8 @@ The containers definition and configuration is done in a docker-compose yaml fil
 - GoFactory
   - MQTT Bridge
     - Main connection between the gadget and GoFactory
+  - Vault Client
+    - Connects to secret manager
   - S3 Integrator
     - Moves files from the Gadget to GoFactory
   - Log Collector
@@ -148,17 +150,17 @@ The volumes used by the Gadget are defined at the bottom of the docker-compose f
 
     volumes:
         data-manager-storage:
-        offline-storage:     
+        offline-storage:
         inline-storage:
-            driver: local
-            driver_opts:
+          driver: local
+          driver_opts:
             o: bind
             type: none
             device: /mnt/gadget-inline
+        transfer-storage:
         postgres_db:
-            name: postgres_db
         static_volume:
-            name: static_volume
+        vault-storage:
 
 It is recommended that the inline-storage volume be bound to a tmpfs folder. Run the following command to create the folder:
 
