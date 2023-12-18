@@ -178,8 +178,9 @@ class ModelPipeline:
         return results_dict, time_info
 
 
-    def predict(self, configs: dict, image: np.ndarray, **kwargs) -> dict:
+    def predict(self, configs: dict, inputs: dict) -> dict:
         errors = []
+        image = inputs['image']
         result_dict = {
                 'annotated_output': image,
                 'automation_keys': [],
