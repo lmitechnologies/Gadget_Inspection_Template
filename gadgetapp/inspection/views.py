@@ -271,7 +271,7 @@ def ui_update(request):
                 current_decision=current_decision_try
                 current_err_dist=current_err_dist_try
                 # get path to annotated image, modify to reference gadget app image archive volume
-                raw_media_path=current_inspection.filename
+                raw_media_path=current_inspection.filenames[INSPECTION_RESULT_KEYS[index]['subfolder']]
                 media_path=convert_2_png(raw_media_path)
 
                 # set data structure passed back to AJAX for Gadget App updates
