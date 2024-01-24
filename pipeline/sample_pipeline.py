@@ -19,11 +19,11 @@ import cv2
 import logging
 import sys
 
-#own modules
 sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/object_detectors')
 sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/lmi_utils')
 
-from yolov5.trt.yolov5_trt import YoLov5TRT
+# modules from LMI_AI_Solutions repo
+from yolov8_lmi.model import Yolov8
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
@@ -38,19 +38,11 @@ class ModelPipeline:
     logger.setLevel(logging.DEBUG)
 
     def __init__(self, **kwargs):
-        """
-        class_map: the class id -> class name
-        """
-        np.random.seed(777)
-        COLORMAP=[(0,255,0)] #BGR
+        COLORMAP=[]
         self.det_configs = {}
-        self.det_configs['engine_path'] = os.path.realpath(os.path.expandvars(kwargs.get('det_engine_file',"")))
-        self.det_configs['id_to_cls'] = pipeline_utils.convert_key_to_int(kwargs.get('det_class_map', {}))
-        self.det_configs['cls_to_id'] = pipeline_utils.val_to_key(self.det_configs['id_to_cls'])
-        
-        self.det_configs['conf_thres'] = {
-            c: kwargs.get(f'confidence_{c}',0.5) for c in TARGET_CLASSES
-        }
+        self.det_configs['model_path'] = os.path.realpath(os.path.expandvars(kwargs.get('model_path',"")))
+        self.det_configs['H'] = kwargs.get('input_h', 640)
+        self.det_configs['W'] = kwargs.get('input_w', 640)
         
         self.det_configs['color_map'] = {
             c:COLORMAP[i] if COLORMAP and i<len(COLORMAP) else np.random.randint(0,255,size=3).tolist() 
@@ -69,7 +61,7 @@ class ModelPipeline:
         """
 
         try:
-            self.models['det'] = YoLov5TRT(self.det_configs['engine_path'])
+            self.models['det'] = Yolov8(self.det_configs['model_path'])
             self.logger.info('models are loaded')
         except Exception:
             self.logger.exception('models are failed to load')
@@ -99,7 +91,7 @@ class ModelPipeline:
         if not self.models:
             return
         for model_name in self.models:
-            imgsz = [1,3,self.models[model_name].input_h, self.models[model_name].input_w]
+            imgsz = [self.det_configs['H'], self.det_configs['W']]
             self.models[model_name].warmup(imgsz)
             self.logger.info(f'warming up {model_name} on the input size of {imgsz}')
             
@@ -113,69 +105,37 @@ class ModelPipeline:
         return img_det,operators_det
             
             
-    def det_predict(self, image, operators, configs, annotated_image=None):
+    def det_predict(self, image, operators, configs):
         time_info = {}
         
         # preprocess
         t0 = time.time()
-        im,im0 = self.models['det'].preprocess(image)
+        processed_image = self.models['det'].preprocess(image)
         time_info['preproc'] = time.time()-t0
         
         # infer
         t0 = time.time()
-        pred = self.models['det'].forward(im)
+        pred = self.models['det'].forward(processed_image)
         time_info['proc'] = time.time()-t0
         
         # postprocess
         t0 = time.time()
-        conf_thres = {}
-        for k in configs:
-            if k not in self.det_configs['cls_to_id']:
-                continue
-            if k in TARGET_CLASSES:
-                conf_thres[self.det_configs['cls_to_id'][k]] = configs[k]
-            else:
-                # disable detection on non-target classes
-                conf_thres[self.det_configs['cls_to_id'][k]] = 1.1
-        self.logger.debug(f'[DET] configs: {configs}')
-        self.logger.debug(f'[DET] conf_thres: {conf_thres}')
-        result_dets = self.models['det'].postprocess(pred,im0,conf_thres)
-        
-        # only one image, get first batch
-        result_dets = result_dets[0].cpu().numpy()
-        scores = result_dets[:,4]
-        classes = [self.det_configs['id_to_cls'][i] for i in result_dets[:,5]]
-        
-        # convert coordinates to sensor space
-        boxes = pipeline_utils.revert_to_origin(result_dets[:,:4], operators)
-        
-        # get the center and diameter
-        boxes = np.array(boxes)     #[x1,y1,x2,y2]
-        centers = 0.5*(boxes[...,:2]+boxes[...,2:])
-        hws = centers-boxes[...,:2]   #[xc-x1,yc-y1]
-        diameters = np.mean(hws,axis=1) if len(hws) else np.array([])
-        
-        # annotation
-        if annotated_image is not None:
-            for j,box in enumerate(boxes):
-                pipeline_utils.plot_one_box(
-                    box,
-                    annotated_image,
-                    label="{}: {:.2f}".format(
-                        classes[j], scores[j]
-                    ),
-                    color=self.det_configs['color_map'][classes[j]],
-                )
-        
-        results_dict = {
-            'boxes': boxes.tolist(),
-            'classes': classes,
-            'scores': scores.tolist(),
-            'centers': centers.tolist(),
-            'diameters': diameters.tolist(),
+        conf_thres = {
+            c:configs.get(f'confidence_{c}', 0.5) for c in TARGET_CLASSES # set to 0.5 if not specified
         }
+        self.logger.debug(f'[DET] conf_thres: {conf_thres}')
+        results = self.models['det'].postprocess(pred,processed_image,image,conf_thres)
+        
+        # found objects
+        if len(results['boxes']):
+            # batch of 1 image
+            results = {k: v[0] for k,v in results.items()}
+            # convert coordinates to sensor space
+            results['boxes'] = pipeline_utils.revert_to_origin(results['boxes'], operators)
+            results['classes'] = results['classes'].tolist()
+            results['scores'] = results['scores'].tolist()
         time_info['postproc'] = time.time()-t0
-        return results_dict, time_info
+        return results, time_info
 
 
     def predict(self, configs: dict, inputs: dict) -> dict:
@@ -193,6 +153,7 @@ class ModelPipeline:
         if not self.models:
             errors.append('failed to load pipeline model(s)')
             self.logger.exception('failed to load pipeline model(s)')
+            result_dict['errors'] = errors
             return result_dict
         
         # preprocess
@@ -202,19 +163,31 @@ class ModelPipeline:
         
         # load runtime config
         test_mode = configs.get('test_mode', False)
-        conf_thres = {
-            c:configs.get(f'confidence_{c}', self.det_configs['conf_thres'][c]) for c in TARGET_CLASSES 
-        }
-        
-        annotated_image = image.copy()
         
         try:
-            results_dict1, time_info1 = self.det_predict(img_det, operators_det, conf_thres, annotated_image)
+            od_dict, time_info = self.det_predict(img_det, operators_det, configs)
         except Exception as e:
             self.logger.exception('failed to run detection model')
             errors.append(str(e))
+            result_dict['errors'] = errors
             return result_dict
+        
+        # grab OD results
+        boxes = od_dict['boxes']
+        classes = od_dict['classes']
+        scores = od_dict['scores']
+        
+        # annotate the image
+        annotated_image = image.copy()
+        for i,box in enumerate(boxes):
+            pipeline_utils.plot_one_box(
+                box,
+                annotated_image,
+                label=f'{classes[i]}: {scores[i]:.2f}',
+                color=self.det_configs['color_map'][classes[i]],
+            )
             
+        # save annotated image if test mode is enabled
         if test_mode:
             outpath = kwargs.get('results_storage_path','./outputs')
             annotated_image_path = os.path.join(outpath, 'annotated_'+str(self.frame_index).zfill(4))+'.png'
@@ -222,28 +195,24 @@ class ModelPipeline:
             cv2.imwrite(annotated_image_path, annot_bgr)
             
         # gather time info
-        preprocess_time = time_info1['preproc'] + preproc_time
-        inference_time = time_info1['proc']
-        postprocess_time = time_info1['postproc']
-        total_time = preprocess_time+inference_time+postprocess_time
-        
-        obj_list = results_dict1['classes']
+        prep_time = time_info['preproc'] + preproc_time
+        infer_time = time_info['proc']
+        postproc_time = time_info['postproc']
+        total_time = prep_time + infer_time + postproc_time
 
+        # pack results
         result_dict['should_archive'] = True
         result_dict['annotated_output'] = annotated_image
-        result_dict['automation_keys'] = ['det_centers','det_diameters']
-        result_dict['factory_keys'] = ['det_boxes','det_scores','det_classes','total_proc_time']
-        result_dict['det_boxes'] = results_dict1['boxes']
-        result_dict['det_scores'] = results_dict1['scores']
-        result_dict['det_classes'] = results_dict1['classes']
-        result_dict['det_centers'] = results_dict1['centers']
-        result_dict['det_diameters'] = results_dict1['diameters']
-        result_dict['errors'] = errors
+        result_dict['factory_keys'] = ['total_proc_time'] # send proc_time to GoFactory
+        result_dict['det_boxes'] = boxes
+        result_dict['det_scores'] = scores
+        result_dict['det_classes'] = classes
         result_dict['total_proc_time'] = total_time
         
-        self.logger.info(f'found objects: {obj_list}')
-        self.logger.info(f'preprocess:{preprocess_time:.4f}, inference:{inference_time:.4f}, ' +
-            f'postprocess:{postprocess_time:.4f}, total:{total_time:.4f}\n')
+        # print logs
+        self.logger.info(f'found objects: {classes}')
+        self.logger.info(f'preprocess:{prep_time:.4f}, inference:{infer_time:.4f}, ' +
+            f'postprocess:{postproc_time:.4f}, total:{total_time:.4f}\n')
         self.frame_index += 1
         
         return result_dict
@@ -280,6 +249,8 @@ if __name__ == '__main__':
                 im = cv2.cvtColor(im_bgr, cv2.COLOR_BGR2RGB)
             elif im_fmt=='npy':
                 im = np.load(image_path)
-            pipeline.predict(image=im, configs={'test_mode':True}, results_storage_path=output_dir)
+            inputs = {'image': im}
+            configs = {'test_mode':True}
+            pipeline.predict(configs=configs, inputs=inputs)
 
     pipeline.clean_up()
