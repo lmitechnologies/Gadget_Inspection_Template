@@ -1,0 +1,9 @@
+
+.loading {
+    display: flex;
+    height: 100vh;
+    background-color: rgb(29, 21, 35);
+    align-items: center;
+    justify-content: center;
+    color: white;
+}

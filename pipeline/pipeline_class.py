@@ -12,6 +12,7 @@ this pipeline class, needs to have the following methods:
 
 import numpy as np
 import logging
+import random
 
 
 
@@ -47,8 +48,20 @@ class ModelPipeline:
         """
         pass
 
+    status = True
     def predict(self, configs: dict, inputs: dict) -> dict:
-        pass
+        self.logger.info(f"Predicting: {self.status}")
+        self.status = not self.status
+        return {
+            "outputs": {
+                "annotated": inputs["image"]
+            },
+            "automation_keys": ["decision"],
+            "factory_keys": [],
+            "tags": None,
+            "should_archive": True,
+            "decision": random.randint(0, 4)
+        }
 
 
 
