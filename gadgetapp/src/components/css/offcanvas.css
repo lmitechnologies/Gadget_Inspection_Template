@@ -1,0 +1,47 @@
+
+.offcanvas {
+  width: 50% !important;
+  display: flex;
+  color: white !important;
+  background-color: black !important;
+}
+
+.offcanvas-header {
+  text-align: center; /* Centers text horizontally */
+  width: 100%; /* Ensure the header takes the full width */
+}
+
+.offcanvas-title {
+  width: 100%; /* Ensure the title takes the full width */
+  display: block; /* Makes the title a block element, allowing it to be affected by text-align */
+}
+
+.offcanvas-body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .custom-offcanvas {
+      max-width: 500px; 
+  }
+}
+
+.custom-offcanvas .accordion {
+  width: 100%; /* Ensure the accordion takes the full width */
+  margin: 0; /* Remove any default margin */
+  padding: 0; /* Remove any default padding */
+}
+
+.custom-offcanvas .accordion-item {
+  width: 100%; /* Ensure each accordion item takes the full width */
+  margin: 0; /* Adjust margin as needed */
+  border: none; /* Optional: remove borders between accordion items for a cleaner look */
+}
+
+.custom-offcanvas .accordion-button {
+  width: 100%; /* Ensure the button takes the full width */
+  margin: 0; /* Adjust margin as needed */
+}

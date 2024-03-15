@@ -30,7 +30,7 @@ services:
       timeout: 5s
       retries: 5
     depends_on:
-      gadgetapp:
+      db: 
         condition: service_healthy
         
   api-gateway:
@@ -48,58 +48,31 @@ services:
       database-api: 
         condition: service_healthy
 
-  gadgetapp:
-    container_name: gadget-gadgetapp
+  gadgetapp-backend:
+    container_name: gadget-gadgetapp-backend
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/gadgetapp_backend:0.0.0.dev1156055067065066060
+    restart: unless-stopped
+    ports:
+      - 5678:5678
+    volumes:
+      - inline-storage:/app/data
+      - static-volume:/app/static
+      - user-volume:/app/db/
+    environment:
+      - VERBOSE='False'
+
+  gadgetapp-frontend:
+    container_name: gadget-gadgetapp-frontend
     build:
       context: ./gadgetapp
-      args:
-        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
-        PACKAGE_VER: ${PACKAGE_VER}
-        PYPI_SERVER: ${PYPI_SERVER}
-      dockerfile: gadgetapp.dockerfile
-    environment:
-      - POSTGRES_NAME=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - APPLICATION_NAME=New Gadget Application
-      - DEBUG=0
-      - TZ=utc
+      dockerfile: Dockerfile
+    image: gadgetapp-frontend
     restart: unless-stopped
-    command: /bin/bash init_django_project.bash
-    volumes:
-      - static_volume:/gadgetapp/staticfiles
-      - inline-storage:/gadgetapp/image_archive
-    ports:
-      - 8085:8000
-    depends_on:
-      db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-  
-  nginx:
-    container_name: gadget-nginx
-    build: 
-      context: ./nginx
-      dockerfile: nginx.dockerfile
-      args:
-        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
-    restart: unless-stopped
+    command: tail -F anything
     ports:
       - 80:80
     volumes:
-      - static_volume:/gadgetapp/staticfiles
-    depends_on:
-      gadgetapp: 
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -O /dev/null http://localhost || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
+      - static-volume:/usr/share/nginx/html/static
 
   data-broker:
     container_name: gadget-data-broker
@@ -163,14 +136,14 @@ services:
     image: everything_pipeline:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - PIPELINE_SERVER_INSTANCE_NAME=gadget-pipeline
-      - PIPELINE_SERVER_INSTANCE_NUMBER=0
-      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/gadget-sensor-gocator/0
+      - PIPELINE_SERVER_SERVICE_TYPE=pipeline-server
+      - PIPELINE_SERVER_SERVICE_NAME=default
+      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
       - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
       - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
-      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=true
+      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=false
       - PIPELINE_SERVER_PARAMS_ARCHIVE_PERIOD=1
       - TZ=utc
     volumes:
@@ -194,11 +167,11 @@ services:
     image: everything_automation:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - AUTOMATION_SERVER_INSTANCE_NAME=gadget-automation
-      - AUTOMATION_SERVER_INSTANCE_NUMBER=0
+      - AUTOMATION_SERVER_SERVICE_TYPE=automation-server
+      - AUTOMATION_SERVER_SERVICE_NAME=default
       - AUTOMATION_SERVER_SETTINGS_GADGET_DATABASE_API_HOST=127.0.0.1
       - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_HOST=127.0.0.1
-      - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=pipeline/gadget-pipeline/0
+      - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=pipeline/default
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_PATH=/home/gadget/automation/
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_CLASS=automation_class.AutomationClass
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_DEFINITION_JSON=automation_class_def.json
@@ -216,13 +189,13 @@ services:
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - INSTANCE=0
+      - SENSOR_GOCATOR_SERVICE_NAME=profiler
       - SENSOR_GOCATOR_PARAMS_START=true
-      - SENSOR_GOCATOR_PARAMS_EMULATION_ENABLED=false
+      - SENSOR_GOCATOR_PARAMS_EMULATION_ENABLED=true
       - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10
       - TZ=utc
     volumes:
-      - ./test_images:/home/gadget/workspace/test_images
+      - ./test_images/gocator:/home/gadget/test_images
       - inline-storage:/app/data/inline
     depends_on:
       api-gateway: 
@@ -285,5 +258,6 @@ volumes:
       device: /mnt/gadget-inline
   transfer-storage:
   postgres_db:
-  static_volume:
+  static-volume:
   vault-storage:
+  user-volume:
