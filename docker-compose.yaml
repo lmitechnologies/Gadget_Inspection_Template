@@ -136,9 +136,9 @@ services:
     image: everything_pipeline:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - PIPELINE_SERVER_SERVICE_TYPE=pipeline-server
-      - PIPELINE_SERVER_SERVICE_NAME=default
-      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
+      - PIPELINE_SERVER_INSTANCE_NAME=gadget-pipeline
+      - PIPELINE_SERVER_INSTANCE_NUMBER=0
+      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/gadget-sensor-gocator/0
       - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
       - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
@@ -167,11 +167,11 @@ services:
     image: everything_automation:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - AUTOMATION_SERVER_SERVICE_TYPE=automation-server
-      - AUTOMATION_SERVER_SERVICE_NAME=default
+      - AUTOMATION_SERVER_INSTANCE_NAME=gadget-automation
+      - AUTOMATION_SERVER_INSTANCE_NUMBER=0
       - AUTOMATION_SERVER_SETTINGS_GADGET_DATABASE_API_HOST=127.0.0.1
       - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_HOST=127.0.0.1
-      - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=pipeline/default
+      - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=pipeline/gadget-pipeline/0
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_PATH=/home/gadget/automation/
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_CLASS=automation_class.AutomationClass
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_DEFINITION_JSON=automation_class_def.json
@@ -189,7 +189,7 @@ services:
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - SENSOR_GOCATOR_SERVICE_NAME=profiler
+      - INSTANCE=0
       - SENSOR_GOCATOR_PARAMS_START=true
       - SENSOR_GOCATOR_PARAMS_EMULATION_ENABLED=true
       - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10

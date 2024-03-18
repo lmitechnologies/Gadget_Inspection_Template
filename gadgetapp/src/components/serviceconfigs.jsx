@@ -22,33 +22,33 @@ async function fetchData(endpoint, setData, setLoading, setError) {
     }
   }
 
-export default function ServiceConfigs({service_type}) {
+export default function ServiceConfigs({instance_name}) {
 
     const [loading, setLoading] = useState(null);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
     
     useEffect(() => {  
-        fetchData(`/api/configs/${service_type}`, setData, setLoading, setError);
+        fetchData(`/api/configs/${instance_name}`, setData, setLoading, setError);
     }, [])
 
     function getDisplayNames(configs) {
       let displayNames = [];
 
-      if (config_forms[configs['service_category']] !== undefined) {
-        if (config_forms[configs['service_category']][configs['service_type']] !== undefined) {
-          if (config_forms[configs['service_category']][configs['service_type']]['service_name'] !== undefined) {
-            if (config_forms[configs['service_category']][configs['service_type']][configs['service_name']]['configs'] !== undefined){
-             displayNames = config_forms[configs['service_category']][configs['service_type']][configs['service_name']]['configs'];
+      if (config_forms[configs['service_type']] !== undefined) {
+        if (config_forms[configs['service_type']][configs['instance_name']] !== undefined) {
+          if (config_forms[configs['service_type']][configs['instance_name']]['instance'] !== undefined) {
+            if (config_forms[configs['service_type']][configs['instance_name']][configs['instance']]['configs'] !== undefined){
+             displayNames = config_forms[configs['service_type']][configs['instance_name']][configs['instance']]['configs'];
             }
           } else {
-            if (config_forms[configs['service_category']][configs['service_type']]['configs'] !== undefined){
-              displayNames = config_forms[configs['service_category']][configs['service_type']]['configs'];
+            if (config_forms[configs['service_type']][configs['instance_name']]['configs'] !== undefined){
+              displayNames = config_forms[configs['service_type']][configs['instance_name']]['configs'];
             }
           }
         } else {
-          if (config_forms[configs['service_category']]['configs'] !== undefined){
-            displayNames = config_forms[configs['service_category']]['configs'];
+          if (config_forms[configs['service_type']]['configs'] !== undefined){
+            displayNames = config_forms[configs['service_type']]['configs'];
           }
         } 
       }
@@ -65,7 +65,7 @@ export default function ServiceConfigs({service_type}) {
                 if (displayNames.length > 0){
                   return (
                     <Accordion.Item className='accordion-item' key={index} eventKey={index} >
-                      <Accordion.Header>{item['service_category']}/{item['service_type']}/{item['service_name']}</Accordion.Header>
+                      <Accordion.Header>{item['service_type']}/{item['instance_name']}/{item['instance']}</Accordion.Header>
                       <Accordion.Body>
                         <ConfigForm configData={item} displayNames={displayNames}/>
                       </Accordion.Body>

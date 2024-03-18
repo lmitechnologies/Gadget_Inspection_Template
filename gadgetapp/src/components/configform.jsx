@@ -3,9 +3,9 @@ import { FaCheck } from "react-icons/fa";
 import { Form, Button, Container, Row, Col } from 'react-bootstrap';
 import "./css/configform.css"
 function ConfigForm({ configData, displayNames = [] }) {
-    const [serviceCategory] = useState(configData['service_category'])
-    const [serviceName] = useState(configData['service_name'])
     const [serviceType] = useState(configData['service_type'])
+    const [instanceName] = useState(configData['instance_name'])
+    const [instance] = useState(configData['service_type'])
     const [formData, setFormData] = useState(configData['configs']);
     const [ showCheck, setShowCheck ] = useState(false)  
 
@@ -36,7 +36,7 @@ function ConfigForm({ configData, displayNames = [] }) {
 
     const postData = async () => {
         try {
-          const post_endpoint = `api/configs/update/${serviceCategory}/${serviceType}/${serviceName}`
+          const post_endpoint = `api/configs/update/${serviceType}/${instanceName}/${instance}`
       
           const content={"configs" : formData}
       

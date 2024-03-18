@@ -42,7 +42,7 @@ function ConfigsList({configsData}){
           configsData['data'].map((item, index) => {
             return (
               <Accordion.Item key={index} eventKey={index} >
-                <Accordion.Header>{item['service_category']}/{item['service_type']}/{item['service_name']}</Accordion.Header>
+                <Accordion.Header>{item['service_type']}/{item['instance_name']}/{item['instance']}</Accordion.Header>
                 <Accordion.Body>
                   <ConfigForm configData={item}/>
                 </Accordion.Body>
