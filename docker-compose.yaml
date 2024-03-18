@@ -50,7 +50,7 @@ services:
 
   gadgetapp-backend:
     container_name: gadget-gadgetapp-backend
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/gadgetapp_backend:0.0.0.dev1156055067065066060
+    image: dev-registry.factorysmart.com/linux/amd64/gadget/data_manager:0.0.0.dev1156055067065066060
     restart: unless-stopped
     ports:
       - 5678:5678
@@ -60,6 +60,9 @@ services:
       - user-volume:/app/db/
     environment:
       - VERBOSE='False'
+    depends_on:
+      api-gateway:
+        condition: service_healthy
 
   gadgetapp-frontend:
     container_name: gadget-gadgetapp-frontend
@@ -68,7 +71,6 @@ services:
       dockerfile: Dockerfile
     image: gadgetapp-frontend
     restart: unless-stopped
-    command: tail -F anything
     ports:
       - 80:80
     volumes:
@@ -195,7 +197,7 @@ services:
       - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10
       - TZ=utc
     volumes:
-      - ./test_images/gocator:/home/gadget/test_images
+      - ./test_images:/home/gadget/test_images
       - inline-storage:/app/data/inline
     depends_on:
       api-gateway: 

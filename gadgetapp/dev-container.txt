@@ -1,0 +1,16 @@
+gadgetapp-frontend:
+    container_name: gadget-gadgetapp-frontend
+    build:
+      context: ./gadgetapp
+      dockerfile: frontend-dev.dockerfile
+    image: gadgetapp-frontend
+    restart: unless-stopped
+    command: tail -F /app/frontend/package.json
+    ports:
+      - 80:80
+      - 3000:3000
+      - 3001:3001
+    volumes:
+      - static-volume:/usr/share/nginx/html/static
+      - ./gadgetapp:/app/frontend
+      - static-volume:/app/frontend/public/static
