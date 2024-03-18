@@ -22,14 +22,14 @@ async function fetchData(endpoint, setData, setLoading, setError) {
     }
   }
 
-export default function ServiceConfigs({instance_name}) {
+export default function ServiceConfigs({service_type}) {
 
     const [loading, setLoading] = useState(null);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
     
     useEffect(() => {  
-        fetchData(`/api/configs/${instance_name}`, setData, setLoading, setError);
+        fetchData(`/api/configs/${service_type}`, setData, setLoading, setError);
     }, [])
 
     function getDisplayNames(configs) {
