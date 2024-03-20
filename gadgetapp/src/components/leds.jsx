@@ -1,61 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import Badge from 'react-bootstrap/Badge';
-import { Stack } from 'react-bootstrap';
 import useWebSocket from './common/useWebSocket';
 import './css/led.css';
 
 export default function StatusLEDs() {
     const socket = useWebSocket("runtime_status");
-    const [stacks, setStacks] = useState([]);
+    const [LEDS, setLEDS] = useState([]);
 
     useEffect(() => {
-        if (!socket) {
-            return;
-        }
-        setStacks(
-            <Stack direction="horizontal">
-                { Object.keys(socket).map((key) => getStack(key, socket[key])) }
-            </Stack>
-        )
+        if (!socket) return;
+        setLEDS(Object.keys(socket).map((key) => getLEDs(key, socket[key])));
     }, [socket]);
-    
-    function getStack(title, statuses) {
-        if (JSON.stringify(statuses) === "{}"){
-            return;
-        } else {
-            return (
-                <Stack key={title} className="LEDStack" direction="vertical">
-                    <Stack direction="horizontal">
-                        {Object.entries(statuses).map(([key, value]) => {
-                            let color = "red";
-                            switch (value) {
-                                case "RUNNING":
-                                    color = "green";
-                                    break;
-                                case "INITILIZING":
-                                    color = "yellow";
-                                    break;
-                                case "STOPPED":
-                                    color = "red";
-                                    break;
-                                default:
-                                    color = "red";
-                            }
-                            return <div key={`${title}-${key}`} className={`led-${color}`}/>;
-                            
-                        })}
-                    </Stack>
-                    <p>{title}</p>
-                </Stack> 
-            );
-        }
+
+    function getLEDs(key, statuses) {
+        if (JSON.stringify(statuses) === "{}") return;
+
+        return (
+            <div className='service-leds' key={key}>
+                <div className='leds'>
+                    {Object.entries(statuses).map(([key, value]) => {
+                        let color = "red";
+                        switch (value) {
+                            case "RUNNING":
+                                color = "green";
+                                break;
+                            case "INITILIZING":
+                                color = "yellow";
+                                break;
+                            case "STOPPED":
+                                color = "red";
+                                break;
+                            default:
+                                color = "red";
+                        }
+                        return <div key={key} className={`led led-${color}`} />
+                        
+                    })}
+                </div>
+                {key}
+            </div>
+        );
     }
 
     return (
-        <div className="badge-container">
-            <Stack key="led-stack" direction="vertical">
-                { stacks }
-            </Stack>
+        <div className="led-container">
+            {LEDS}
         </div>
     );
 }
