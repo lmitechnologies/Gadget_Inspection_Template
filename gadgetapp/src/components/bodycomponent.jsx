@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useUpdate } from './common/updatecontext';
 import "./css/bodycomponent.css"
+import MultiLineChart from './multilinechart';
 import LineChart from './linechart';
 import BarChart from './barchart';
 import HistogramChart from './histogramchart';
 import ImageCanvas from './imagecanvas';
+import Metric from './metric';
 
 import { BACKEND_URL } from '../config.json';
 
@@ -80,7 +82,9 @@ function BodyComponent({ componentName, topic, height, onClick, ...props }) {
         //             setLoadError(true);
         //         });
         // }
-        if (componentName == 'linechart') {
+        if (componentName == 'multilinechart') {
+          setComponent(() => MultiLineChart);
+        } else if(componentName == 'linechart') {
           setComponent(() => LineChart);
         } else if (componentName == 'barchart') {
           setComponent(() => BarChart);
@@ -88,6 +92,8 @@ function BodyComponent({ componentName, topic, height, onClick, ...props }) {
           setComponent(() => HistogramChart);
         } else if (componentName == 'imagecanvas') {
           setComponent(() => ImageCanvas);
+        } else if (componentName == 'metric') {
+          setComponent(() => Metric);
         }
         
     }, [componentName]);

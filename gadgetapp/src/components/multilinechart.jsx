@@ -12,12 +12,14 @@ function addElement(array, element, len) {
     return newArray;
 }
 
-const LineChart = ({ id, inspection, decision_key, history_len=10 }) => {
+const MultiLineChart = ({ id, inspection, decision_key, history_len=10 }) => {
     const [dataSets, setDataSets] = useState(JSON.parse(localStorage.getItem(`line_chart_${id}`)) || [])
+
     let labels = []
     for (let i = 0; i < history_len; i++) {
         labels.push(i)
     }
+
     const data = {
         labels: labels,
         datasets: dataSets
@@ -53,23 +55,29 @@ const LineChart = ({ id, inspection, decision_key, history_len=10 }) => {
             if (inspection['results'][decision_key] != undefined) {
                 let decision = inspection['results'][decision_key];
                 setDataSets(prevDataSets => {
-                    if (prevDataSets.length === 0){
-                        return [{
-                            label: decision_key,
-                            data: [parseInt(decision)],
-                            tension: 0.1,
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            borderColor: 'rgba(255, 99, 132, 1)'
-                        }];
-                    }
-
+                    let found = false
                     const updatedDataSets = prevDataSets.map(dataset => {
-                        return { ...dataset, data: addElement(dataset.data, parseInt(decision), history_len) };
+                        if (dataset.label === decision){
+                            found = true
+                            return { ...dataset, data: addElement(dataset.data, 1, history_len) };
+                        } else {
+                            return { ...dataset, data: addElement(dataset.data, 0, history_len) };
+                        }
                     });
 
+                    if (found === false){
+                        const newColor = stringToColor(String(decision));
+                        updatedDataSets.push({
+                            label: decision,
+                            data: [0,0,0,0,0,0,0,0,0,1],
+                            tension: 0.1,
+                            backgroundColor: newColor,
+                            borderColor: newColor
+                        });
+                    }
+                    
                     return updatedDataSets
                 });
-
                 localStorage.setItem(`line_chart_${id}`, JSON.stringify(dataSets));
             }
         }
@@ -80,5 +88,5 @@ const LineChart = ({ id, inspection, decision_key, history_len=10 }) => {
             </div>
 };
 
-export default LineChart;
+export default MultiLineChart;
 

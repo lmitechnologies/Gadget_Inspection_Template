@@ -60,7 +60,7 @@ class ModelPipeline:
             "factory_keys": [],
             "tags": None,
             "should_archive": True,
-            "decision": random.randint(0, 4)
+            "decision": random.randint(-1, 4)
         }
 
 
