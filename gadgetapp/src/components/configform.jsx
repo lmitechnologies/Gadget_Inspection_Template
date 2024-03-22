@@ -5,7 +5,7 @@ import "./css/configform.css"
 function ConfigForm({ configData, displayNames = [] }) {
     const [serviceType] = useState(configData['service_type'])
     const [instanceName] = useState(configData['instance_name'])
-    const [instance] = useState(configData['service_type'])
+    const [instance] = useState(configData['instance'])
     const [formData, setFormData] = useState(configData['configs']);
     const [ showCheck, setShowCheck ] = useState(false)  
 

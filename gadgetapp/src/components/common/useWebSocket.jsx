@@ -4,60 +4,57 @@ import { BACKEND_URL } from '../../config.json';
 
 function useWebSocket( topic ) {
     const [inspection, setInspection] = useState(null);
-    const [connected, setConnected] = useState(false);
-    const [webSocket, setWebSocket] = useState(null);
     
+    const webSocket = useRef(null);  
     const retryRef = useRef(null);
 
     useEffect(() => {
-        // Create a new WebSocket connection
-        function connect() {
+      if (webSocket.current && webSocket.current.readyState === WebSocket.OPEN) {
+          webSocket.current.close();
+      }
 
-            const ws = new WebSocket(`ws:${BACKEND_URL}:5678?topic=${topic}`);
-
-            ws.onopen = () => {
-                console.log("WebSocket Connected");
-                ws.send(JSON.stringify({topic }));
-                setConnected(true);
-                if (retryRef.current) {
-                    clearInterval(retryRef.current);
-                    retryRef.current = null;
-                }
-            };
-
-            ws.onmessage = (event) => {
-                setInspection(JSON.parse(event.data));
-            };
-
-            ws.onerror = (error) => {
-                console.error("WebSocket Error: ", error);
-                ws.close(); // Trigger the onclose handler
-            };
-
-            ws.onclose = () => {
-                console.log("WebSocket Disconnected");
-                setConnected(false);
-                // Start retrying if not already doing so
-                if (!retryRef.current) {
-                    retryRef.current = setInterval(connect, 5000);
-                }
-            };
-
-            setWebSocket(ws)
-
-        };
-
-        connect();
-
-        return () => {
-            if (connected) {
-                webSocket.close();
-            }
+      function connect () {
+        webSocket.current = new WebSocket(`ws:${BACKEND_URL}:5678?topic=${topic}`);
+        
+        webSocket.current.onopen = () => {
+          console.log("WebSocket Connected");
+          if (webSocket.current.readyState === WebSocket.OPEN) {
+            webSocket.current.send(JSON.stringify({ topic }));
             if (retryRef.current) {
-                clearInterval(retryRef.current);
+              clearInterval(retryRef.current);
+              retryRef.current = null;
             }
+          }
+        }; 
+
+        webSocket.current.onmessage = (event) => {
+          console.log("WebSocket Message: ", event.data);
+          setInspection(JSON.parse(event.data));
         };
 
+        webSocket.current.onerror = (error) => {
+          console.error("WebSocket Error: ", error);
+          webSocket.current.close(); // Trigger the onclose handler
+        };
+
+        webSocket.current.onclose = () => {
+          console.log("WebSocket Disconnected");
+          // Start retrying if not already doing so
+          if (!retryRef.current) {
+              retryRef.current = setInterval(connect, 5000);
+          }
+        };
+      }
+      
+      connect();
+
+      return () => {
+        if (webSocket.current){
+          if (webSocket.current === WebSocket.OPEN) {
+              socket.close();
+          }
+        }
+      };
     }, [topic]);
     
     return inspection;

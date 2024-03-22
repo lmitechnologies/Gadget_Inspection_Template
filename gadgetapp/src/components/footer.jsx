@@ -19,68 +19,64 @@ import { BACKEND_URL } from '../config.json';
 export default function Footer() {
   const [ running, setRunning ] = useState(false);
   const [ loading, setLoading ] = useState(false); 
-  const [ connected, setConnected ] = useState(false);
-  const [ webSocket, setWebSocket ] = useState(null);
   const { shouldUpdate, toggleUpdate } = useUpdate();
 
+  const webSocket = useRef(null);  
   const retryRef = useRef(null);
 
-
   useEffect(() => {
-      // Create a new WebSocket connection
-      function connect() {
+      if (webSocket.current && webSocket.current.readyState === WebSocket.OPEN) {
+          webSocket.current.close();
+      }
 
-          const ws = new WebSocket(`ws:${BACKEND_URL}:5678?topic=start-stop`);
+      function connect () {
+        webSocket.current = new WebSocket(`ws:${BACKEND_URL}:5678?topic=start-stop`);
+        
+        webSocket.current.onopen = () => {
+          console.log("WebSocket Connected");
+          if (webSocket.current.readyState === WebSocket.OPEN) {
+            webSocket.current.send(JSON.stringify("start-stop"));
+            if (retryRef.current) {
+              clearInterval(retryRef.current);
+              retryRef.current = null;
+            }
+          }
+        }; 
 
-          ws.onopen = () => {
-              console.log("WebSocket Connected");
-              setConnected(true);
-              if (retryRef.current) {
-                  clearInterval(retryRef.current);
-                  retryRef.current = null;
-              }
-          };
+        webSocket.current.onmessage = (event) => {
+          console.log("WebSocket Message: ", event.data);
+          setRunning(JSON.parse(event.data).running)
+        };
 
-          ws.onmessage = (event) => {
-              console.log("WebSocket Message: ", event.data);
-              setRunning(JSON.parse(event.data).running)
-          };
+        webSocket.current.onerror = (error) => {
+          console.error("WebSocket Error: ", error);
+          webSocket.current.close(); // Trigger the onclose handler
+        };
 
-          ws.onerror = (error) => {
-              console.error("WebSocket Error: ", error);
-              ws.close(); // Trigger the onclose handler
-          };
-
-          ws.onclose = () => {
-              console.log("WebSocket Disconnected");
-              setConnected(false);
-              // Start retrying if not already doing so
-              if (!retryRef.current) {
-                  retryRef.current = setInterval(connect, 5000);
-              }
-          };
-
-          setWebSocket(ws)
-
-      };
-
+        webSocket.current.onclose = () => {
+          console.log("WebSocket Disconnected");
+          // Start retrying if not already doing so
+          if (!retryRef.current) {
+              retryRef.current = setInterval(connect, 5000);
+          }
+        };
+      }
+      
       connect();
 
       return () => {
-          if (connected) {
-              webSocket.close();
+        if (webSocket.current){
+          if (webSocket.current === WebSocket.OPEN) {
+              socket.close();
           }
-          if (retryRef.current) {
-              clearInterval(retryRef.current);
-          }
+        }
       };
-
-  }, []);
+    }, []);
 
   async function startOnClick() {
     try {
       setLoading(true);
-      const result = await webSocket.send(JSON.stringify({topic: "start-stop", message: running ? "stop" : "start"}));      
+      const result = await webSocket.current.send(JSON.stringify({topic: "start-stop", message: running ? "stop" : "start"}));      
       console.log("Gadget started/stopped")
     } catch (error) {
       console.log("Error starting/stopping the pipeline", error);
