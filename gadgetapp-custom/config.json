@@ -3,7 +3,7 @@
     "appName": "New Gadget App",
     "configForms": {
         "sensor": {
-            "configs": []
+            "configs": ["verbose"]
         },
         "pipeline": {
             "configs": []

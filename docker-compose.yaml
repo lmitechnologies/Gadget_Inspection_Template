@@ -25,7 +25,7 @@ services:
     environment:
       - TZ=utc
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,7 +40,7 @@ services:
     ports:
       - 8080:8080
     healthcheck:
-      test: ["CMD-SHELL", "wget -O /dev/null http://localhost:8080 || exit 1"]
+      test: ["CMD-SHELL", "wget -O /dev/null http://127.0.0.1:8080 || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -52,14 +52,12 @@ services:
     container_name: gadget-app-backend
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_backend:${PACKAGE_VER}
     restart: unless-stopped
-    ports:
-      - 5678:5678
     volumes:
       - inline-storage:/app/data
       - static-volume:/app/static
       - user-volume:/app/db/
     environment:
-      - VERBOSE='False'
+      - VERBOSE=False
     depends_on:
       api-gateway:
         condition: service_healthy
@@ -72,7 +70,7 @@ services:
       - 80:80
     volumes:
       - static-volume:/usr/share/nginx/html/static
-      - ./configs_files/config.json:/usr/share/nginx/html/config.json
+      - ./gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
 
   data-broker:
     container_name: gadget-data-broker
