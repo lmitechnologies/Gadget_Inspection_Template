@@ -6,7 +6,6 @@ import BodyComponent from './bodycomponent';
 
 import configs from '../config.json';
 import './css/body.css'
-
 export default function Body() {
 
     const body_height = "85vh";
@@ -36,7 +35,7 @@ export default function Body() {
                 <Col sm={10}>
                     <BodyComponent key="1" componentName="imagecanvas" topic="pipeline/gadget-pipeline/0" height={`calc(${body_height} / 1)`} onClick={() => {setHighlight(true); setType("imagecanvas"); setTopic("pipeline/gadget-pipeline/0");}}/>
                 </Col>
-                <Col sm={2}>
+                <Col sm={2}>    
                     <BodyComponent key="2" componentName="barchart"  topic="pipeline/gadget-pipeline/0" height={`calc(${body_height} / 2)`} decision_key="decision" onClick={() => {setHighlight(true); setType("barchart"); setTopic("pipeline/gadget-pipeline/0"); setDecisionKey("decision");}}/>
                     <BodyComponent key="3" componentName="linechart" topic="pipeline/gadget-pipeline/0" height={`calc(${body_height} / 2)`} decision_key="decision" history_len={100} onClick={() => {setHighlight(true); setType("linechart"); setTopic("pipeline/gadget-pipeline/0"); setDecisionKey("decision");}}/>
                 </Col>

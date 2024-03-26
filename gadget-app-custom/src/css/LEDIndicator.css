@@ -1,0 +1,12 @@
+/* LEDIndicator.css */
+.LEDIndicator {
+  display: inline-block;
+  border-radius: 50%;
+  margin: 1px;
+  width: 20px;
+  height: 20px;
+  background-color: #111;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  background: radial-gradient(circle at 35% 25%, #FFF, transparent 60%, #000);
+}

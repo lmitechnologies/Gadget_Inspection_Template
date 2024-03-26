@@ -1,7 +1,7 @@
 import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 import React, { useEffect, useState } from 'react';
-import './css/chart.css';
+import '../css/chart.css';
 
 // Bar chart that uses a predefined list of labels
 const HistogramChart = ({ id, inspection, topic, decision_key, label_list=[] }) => {

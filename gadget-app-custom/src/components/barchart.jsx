@@ -1,7 +1,6 @@
 import { Bar } from 'react-chartjs-2';
 import 'chart.js/auto';
 import React, { useEffect, useState } from 'react';
-import './css/chart.css';
 
 const BarChart = ({ id, inspection, topic, decision_key }) => {
     const [chartData, setChartData] = useState(JSON.parse(localStorage.getItem(`bar_chart_${id}`)) || [])
@@ -84,7 +83,14 @@ const BarChart = ({ id, inspection, topic, decision_key }) => {
         }
     };
 
-    return <div className="chart-container">
+    const style = {
+        height: "90%",
+        position: "relative",
+        fontSize: "20px",
+        width: "100%",
+    }
+
+    return <div style={style}>
                 <Bar data={data} options={options} />
             </div>
 

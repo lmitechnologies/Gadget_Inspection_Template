@@ -1,10 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useUpdate } from './common/updatecontext';
 import "./css/bodycomponent.css"
-import MultiLineChart from './multilinechart';
-import LineChart from './linechart';
-import BarChart from './barchart';
-import HistogramChart from './histogramchart';
+// import MultiLineChart from './charts/multilinechart';
+// import LineChart from './charts/linechart';
+// import BarChart from './chart  s/barchart';
+// import HistogramChart from './charts/histogramchart';
+
+// import { BarChart } from './custom/my-library.es';
+// import { LineChart } from './custom/my-library.es';
+
+import * as CustomComponents from './custom/my-library.es';
 import ImageCanvas from './imagecanvas';
 import Metric from './metric';
 
@@ -70,37 +75,45 @@ function BodyComponent({ componentName, topic, height, onClick, ...props }) {
       };
     }, [topic]);
 
-  
     useEffect(() => {
-        // if (componentName) {
-        //     import(/* @vite-ignore */`./${componentName}.jsx`)
-        //         .then((module) => {
-        //             setComponent(() => module.default);
-        //         })
-        //         .catch((error) => {
-        //             console.error(`Component "${componentName}" could not be loaded`, error);
-        //             setLoadError(true);
-        //         });
-        // }
-        if (componentName == 'multilinechart') {
-          setComponent(() => MultiLineChart);
-        } else if(componentName == 'linechart') {
-          setComponent(() => LineChart);
-        } else if (componentName == 'barchart') {
-          setComponent(() => BarChart);
-        } else if (componentName == 'histogramchart') {
-          setComponent(() => HistogramChart);
-        } else if (componentName == 'imagecanvas') {
-          setComponent(() => ImageCanvas);
-        } else if (componentName == 'metric') {
-          setComponent(() => Metric);
+      const loadComponent = async () => {
+        // Dynamically import all components in the 'components' directory
+        const componentModules = import.meta.glob('/custom/*.jsx');
+
+        // Find the component by name and import it
+        for (const path in componentModules) {
+            // Assuming the file name (without extension) is the component name
+            const name = path.split('/').pop().replace('.jsx', '');
+            console.log(`Name: ${name}, Path: ${path}`)
+            if (name === componentName) {
+                const module = await componentModules[path]();
+                setComponent(() => module.default);
+                setLoadError(false)
+                return;
+            }
         }
+        // If no component is found, you can set a default state or handle the "not found" case
+        console.log(`${componentName} component not found.`);
+        setLoadError(true);
+      };
+
+      if (componentName == 'imagecanvas') {
+        setComponent(() => ImageCanvas);
+      } else if (componentName == 'metric') {
+        setComponent(() => Metric);
+      } else if (componentName == 'linechart') {
+        setComponent(() => LineChart);
+      } else if (componentName == 'barchart') {
+        setComponent(() => BarChart);
+      // } else if (componentName == 'histogramchart') {
+      //   setComponent(() => HistogramChart);
+      } else if (componentName == 'multilinechart') { 
+        setComponent(() => MultiLineChart);
+      } else {
+        loadComponent();
+      }
         
     }, [componentName]);
-
-    if (loadError) {
-        return <div>Error loading component</div>;
-    }
 
     const style = {
       height: `${height}`
@@ -113,9 +126,13 @@ function BodyComponent({ componentName, topic, height, onClick, ...props }) {
           <Component inspection={inspection} {...props} />
         </div>
       );
+    } else if (loadError){
+      return (
+        <div className='error-div' style={style} >Error loading component</div>
+      );
     } else {
       return (
-        <div>Loading...</div>
+        <div className='error-div' style={style} >Loading...</div>
       );
     }
 }

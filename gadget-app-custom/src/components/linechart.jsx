@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
-import './css/chart.css';
-import stringToColor from './common/stringtocolor';
+import '../css/chart.css';
 
 function addElement(array, element, len) {
     const newArray = [...array, element];
@@ -74,8 +73,15 @@ const LineChart = ({ id, inspection, decision_key, history_len=10 }) => {
             }
         }
     }, [inspection]);
+
+    const style = {
+        height: "90%",
+        position: "relative",
+        fontSize: "20px",
+        width: "100%",
+    }
     
-    return  <div className="chart-container">
+    return <div style={style}>
                 <Line data={data} options={options} />
             </div>
 };
