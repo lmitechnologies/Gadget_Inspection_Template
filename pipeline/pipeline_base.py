@@ -1,30 +1,40 @@
 import cv2
 import time
 import collections
-import numpy as np
+import functools
 import sys
 import logging
-import os
+import numpy as np
 from abc import ABCMeta, abstractmethod
 
 # add path to LMI AIS modules
-sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/object_detectors')
-sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/classifiers')
 sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/lmi_utils')
 
-from yolov8_lmi.model import Yolov8
-from yolov8_cls.model import Yolov8_cls
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
 
-class Pipeline_Base(metaclass=ABCMeta):
+def track_exception(logger=logging.getLogger(__name__)):
+    def deco(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception:
+                logger.exception(f'failed to run funtion: {func.__name__}')
+                return None
+        return wrapper
+    return deco
+
+
+
+class Base(metaclass=ABCMeta):
     
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     
-    def __init__(self, **kwargs):
+    def __init__(self):
         """
-        init the pipeline with kwargs.
+        init the pipeline.
         it has the following attributes:
             models: a dictionary of model instances, e.g., {model_name: model_instance}
             configs: a dictionary of the initial configs to load models, e.g., {model_path: '/path/to/model'}
@@ -32,22 +42,31 @@ class Pipeline_Base(metaclass=ABCMeta):
         """
         self.models = collections.OrderedDict()
         self.configs = {}
+        self.errors = []
+        self.results = self.init_results()
         
-        self.results = {
+        
+    def init_results(self):
+        """
+        init the results
+        """
+        results = {
             "outputs": {
                 "annotated": None
             },
             "automation_keys": ["decision"],
             "factory_keys": [],
-            "tags": None,
+            "tags": [],
             "should_archive": True,
-            "decision": None
+            "decision": None,
+            "errors": [],
         }
+        return results
         
         
-    def update_results(self, result_key, value, dict_key=None):
+    def update_results(self, result_key:str, value, dict_key=None):
         """ 
-        modify the self.results dictionary with the following rules:
+        modify the self.results with the following rules:
         1: If the self.results[result_key] is a list, append the value to the list.
         2: If the self.results[result_key] is a dictionary and dict_key is not None, update the value of the dict_key.
         3: Otherwise, update the value of the result_key.
@@ -55,18 +74,56 @@ class Pipeline_Base(metaclass=ABCMeta):
         Args:
             result_key (str): the key of the self.results
             value (obj): the value of the key to be updated
-            dict_key (str, optional): the key of subdictionary to be updated. Defaults to None.
+            dict_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
         """
-        if isinstance(self.results[result_key], list):
+        if result_key not in self.results:
+            self.results[result_key] = value
+        elif isinstance(self.results[result_key], list):
             self.results[result_key].append(value)
         elif isinstance(self.results[result_key], dict) and dict_key is not None:
             self.results[result_key][dict_key] = value
         else:
             self.results[result_key] = value
             
+            
+    def add_to_factory(self, result_key:str):
+        """add result_key to the GoFactory
+
+        Args:
+            result_key (str): the key to be added to the factory_keys list
+        """
+        if result_key not in self.results['factory_keys']:
+            self.results['factory_keys'].append(result_key)
+            
+            
+    def add_to_automation(self, result_key:str):
+        """add result_key to the Automation service
+
+        Args:
+            result_key (str): _description_
+        """
+        if result_key not in self.results['automation_keys']:
+            self.results['automation_keys'].append(result_key)
+           
+            
+    def update_factory(self, result_key:str, value):
+        """
+        update key-value pair to the self.results and also upload the key to GoFactory.
+        """
+        self.update_results(result_key, value)
+        self.add_to_factory(result_key)
+        
+        
+    def update_automation(self, result_key:str, value):
+        """
+        update key-value pair to the self.results and also upload the key to Automation service
+        """
+        self.update_results(result_key, value)
+        self.add_to_automation(result_key)
+    
         
     @abstractmethod
-    def warmup(self):
+    def warm_up(self):
         """
         warmup the pipeline
         """
@@ -83,6 +140,15 @@ class Pipeline_Base(metaclass=ABCMeta):
     
     @abstractmethod
     def predict(self, configs: dict, inputs, **kwargs) -> dict:
+        """the main function to run the pipeline. It should update self.results and return it.
+
+        Args:
+            configs (dict): runtime configs
+            inputs (dict): the input data
+
+        Returns:
+            dict: return self.results
+        """
         pass
     
     
@@ -91,19 +157,17 @@ class Pipeline_Base(metaclass=ABCMeta):
         clean up the pipeline in REVERSED order, i.e., the last models get destroyed first
         """
         L = list(reversed(self.models.keys())) if self.models else []
-        self.logger.info('cleanning up pipeline...')
         for model_name in L:
             del self.models[model_name]
             self.logger.info(f'{model_name} is cleaned up')
 
-        #del the pipeline
         del self.models
         self.models = None
         self.logger.info('pipeline is cleaned up')
     
     
     @staticmethod
-    def yolov8_predict(model, image, operators, configs, iou):
+    def yolov8_obj_predict(model, image, operators, configs, iou):
         """run yolov8 object detector inference. It converts the results to the original coordinates space if the operators are provided.
         
         Args:
@@ -200,3 +264,41 @@ class Pipeline_Base(metaclass=ABCMeta):
         
         return results, time_info
     
+    
+    @staticmethod
+    def annotate_image(results, image, colormap=None):
+        """annotate the object dectector results on the image.
+
+        Args:
+            results (dict): the results of the object detection, e.g., {'boxes':[], 'classes':[], 'scores':[], 'masks':[], 'segments':[]}
+            image (np.ndarray): the input image
+            colors (list, optional): a dictionary of colormaps, e.g., {'class-A':(0,0,255), 'class-B':(0,255,0)}. Defaults to None.
+
+        Returns:
+            np.ndarray: the annotated image
+        """
+        boxes = results['boxes']
+        classes = results['classes']
+        scores = results['scores']
+        masks = results['masks']
+        segments = results['segments']
+        
+        image2 = image.copy()
+        if not len(boxes):
+            return image2
+        
+        for i in range(len(boxes)):
+            mask = masks[i] if len(masks) else None
+            pipeline_utils.plot_one_box(
+                boxes[i],
+                image2,
+                mask,
+                label="{}: {:.2f}".format(
+                    classes[i], scores[i]
+                ),
+                color=colormap[classes[i]] if colormap is not None else None,
+            )
+        # if segments is not None:
+        #     cv2.polylines(image2, [np.array(pts,dtype=int) for pts in segments],
+        #               isClosed=1,color=(255,255,255),thickness=2)
+        return image2
