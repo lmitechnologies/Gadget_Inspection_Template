@@ -3,15 +3,16 @@ import { useUpdate } from './common/updatecontext';
 import "./css/bodycomponent.css"
 // import MultiLineChart from './charts/multilinechart';
 // import LineChart from './charts/linechart';
-// import BarChart from './chart  s/barchart';
+// import BarChart from './charts/barchart';
 // import HistogramChart from './charts/histogramchart';
 
 // import { BarChart } from './custom/my-library.es';
 // import { LineChart } from './custom/my-library.es';
 
-import * as CustomComponents from './custom/my-library.es';
+// import * as CustomComponents from './custom/my-library.es';
 import ImageCanvas from './imagecanvas';
 import Metric from './metric';
+import fs from 'fs';
 
 import { BACKEND_URL } from '../config.json';
 
@@ -75,42 +76,43 @@ function BodyComponent({ componentName, topic, height, onClick, ...props }) {
       };
     }, [topic]);
 
+    async function loadLocalLibrary(modulePath) {
+      // Using synchronous method (not recommended for server operations)
+      try {
+          const module = await import(/* @vite-ignore */ modulePath);
+          return module;
+      } catch (error) {
+          setLoadError(true);
+          console.error(`Error loading local library from ${modulePath}:`, error);
+      }
+    }
+
     useEffect(() => {
-      const loadComponent = async () => {
-        // Dynamically import all components in the 'components' directory
-        const componentModules = import.meta.glob('/custom/*.jsx');
-
-        // Find the component by name and import it
-        for (const path in componentModules) {
-            // Assuming the file name (without extension) is the component name
-            const name = path.split('/').pop().replace('.jsx', '');
-            console.log(`Name: ${name}, Path: ${path}`)
-            if (name === componentName) {
-                const module = await componentModules[path]();
-                setComponent(() => module.default);
-                setLoadError(false)
-                return;
-            }
-        }
-        // If no component is found, you can set a default state or handle the "not found" case
-        console.log(`${componentName} component not found.`);
-        setLoadError(true);
-      };
-
-      if (componentName == 'imagecanvas') {
+      if (componentName == 'ImageCanvas') {
         setComponent(() => ImageCanvas);
-      } else if (componentName == 'metric') {
+      } else if (componentName == 'Metric') {
         setComponent(() => Metric);
-      } else if (componentName == 'linechart') {
-        setComponent(() => LineChart);
-      } else if (componentName == 'barchart') {
-        setComponent(() => BarChart);
+      // } else if (componentName == 'linechart') {
+      //   setComponent(() => LineChart);
+      // } else if (componentName == 'barchart') {
+      //   setComponent(() => BarChart);
       // } else if (componentName == 'histogramchart') {
       //   setComponent(() => HistogramChart);
-      } else if (componentName == 'multilinechart') { 
-        setComponent(() => MultiLineChart);
+      // } else if (componentName == 'multilinechart') { 
+      //   setComponent(() => MultiLineChart);
       } else {
-        loadComponent();
+        loadLocalLibrary('/app/custom/my-library.es')
+          .then(library => {
+            let component = library[componentName];
+            if (component) {
+              setComponent(() => component);
+            } else {
+              setLoadError(true);
+            }
+          })
+          .catch(error => {
+            setLoadError(true);
+          });
       }
         
     }, [componentName]);
