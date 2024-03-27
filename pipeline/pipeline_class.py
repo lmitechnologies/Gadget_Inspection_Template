@@ -13,55 +13,52 @@ this pipeline class, needs to have the following methods:
 import numpy as np
 import logging
 import random
+from pipeline_base import Base, track_exception
 
 
+class ModelPipeline(Base):
 
-class ModelPipeline:
+    logger = logging.getLogger(__name__)
 
-    logger = logging.getLogger()
-
+    @track_exception(logger)
     def __init__(self, **kwargs):
         """
         init the pipeline with kwargs
         """
+        super().__init__()
         pass
         
         
+    @track_exception(logger)
     def load(self):
         """
         create model instances with weight files
         if loading files fail, then don't create model instances
         """
         pass
-        
-
-    def clean_up(self):
-        """
-        clean up the pipeline in REVERSED order, i.e., the last models get destroyed first
-        """
-        pass
 
 
+    @track_exception(logger)
     def warm_up(self):
         """
         warm up all the models in the pipeline
         """
         pass
 
-    status = True
+
+    @track_exception(logger)
     def predict(self, configs: dict, inputs: dict) -> dict:
-        self.logger.info(f"Predicting: {self.status}")
-        self.status = not self.status
-        return {
-            "outputs": {
-                "annotated": inputs["image"]
-            },
-            "automation_keys": ["decision"],
-            "factory_keys": [],
-            "tags": None,
-            "should_archive": True,
-            "decision": random.randint(-1, 4)
-        }
+        """predict on the inputs
+
+        Args:
+            configs (dict): runtime configs
+            inputs (dict): inputs data
+
+        Returns:
+            dict: Must return the self.results defined in the base class
+        """
+        
+        return self.results
 
 
 
