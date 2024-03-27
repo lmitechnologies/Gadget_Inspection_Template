@@ -281,7 +281,6 @@ class Base(metaclass=ABCMeta):
         classes = results['classes']
         scores = results['scores']
         masks = results['masks']
-        segments = results['segments']
         
         image2 = image.copy()
         if not len(boxes):
@@ -298,7 +297,4 @@ class Base(metaclass=ABCMeta):
                 ),
                 color=colormap[classes[i]] if colormap is not None else None,
             )
-        # if segments is not None:
-        #     cv2.polylines(image2, [np.array(pts,dtype=int) for pts in segments],
-        #               isClosed=1,color=(255,255,255),thickness=2)
         return image2
