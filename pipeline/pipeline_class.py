@@ -5,14 +5,11 @@ pipeline class
 Requirements:
 this pipeline class, needs to have the following methods:
     load
-    clean_up
     warm_up
     predict
 """
 
-import numpy as np
 import logging
-import random
 from pipeline_base import PipelineBase, track_exception
 
 
@@ -23,9 +20,8 @@ class ModelPipeline(PipelineBase):
     @track_exception(logger)
     def __init__(self, **kwargs):
         """
-        init the pipeline with kwargs
+        init the pipeline with kwargs. To initialize self.results, call super().__init__()
         """
-        super().__init__()
         pass
         
         
@@ -55,10 +51,9 @@ class ModelPipeline(PipelineBase):
             inputs (dict): inputs data
 
         Returns:
-            dict: Must return the self.results defined in the base class
+            dict: should return self.results defined in the pipeline base class
         """
-        
-        return self.results
+        pass
 
 
 
