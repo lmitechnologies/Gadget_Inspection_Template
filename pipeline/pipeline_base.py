@@ -6,11 +6,6 @@ import sys
 import logging
 from abc import ABCMeta, abstractmethod
 
-# add path to LMI AIS modules
-sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/lmi_utils')
-
-import gadget_utils.pipeline_utils as pipeline_utils
-
 
 # decorator to track exceptions
 def track_exception(logger=logging.getLogger(__name__)):
@@ -41,14 +36,14 @@ class PipelineBase(metaclass=ABCMeta):
         """
         self.models = collections.OrderedDict()
         self.configs = {}
-        self.results = self.init_results()
+        self.init_results()
         
         
     def init_results(self):
         """
         init the output results
         """
-        results = {
+        self.results = {
             "outputs": {
                 "annotated": None,
             },
@@ -59,7 +54,6 @@ class PipelineBase(metaclass=ABCMeta):
             "decision": None,
             "errors": [],
         }
-        return results
     
     
     @abstractmethod
