@@ -146,7 +146,7 @@ class PipelineBase(metaclass=ABCMeta):
         """add result_key to the Automation service
 
         Args:
-            result_key (str): _description_
+            result_key (str): the key to be added to the automation_keys list
         """
         if result_key not in self.results['automation_keys']:
             self.results['automation_keys'].append(result_key)
