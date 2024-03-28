@@ -4,7 +4,6 @@ import collections
 import functools
 import sys
 import logging
-import numpy as np
 from abc import ABCMeta, abstractmethod
 
 # add path to LMI AIS modules
@@ -13,7 +12,7 @@ sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/lmi_utils')
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
-
+# decorator to track exceptions
 def track_exception(logger=logging.getLogger(__name__)):
     def deco(func):
         @functools.wraps(func)
@@ -28,7 +27,7 @@ def track_exception(logger=logging.getLogger(__name__)):
 
 
 
-class Base(metaclass=ABCMeta):
+class PipelineBase(metaclass=ABCMeta):
     
     logger = logging.getLogger(__name__)
     
@@ -42,19 +41,18 @@ class Base(metaclass=ABCMeta):
         """
         self.models = collections.OrderedDict()
         self.configs = {}
-        self.errors = []
         self.results = self.init_results()
         
         
     def init_results(self):
         """
-        init the results
+        init the output results
         """
         results = {
             "outputs": {
                 "annotated": None
             },
-            "automation_keys": ["decision"],
+            "automation_keys": [],
             "factory_keys": [],
             "tags": [],
             "should_archive": True,
@@ -62,26 +60,74 @@ class Base(metaclass=ABCMeta):
             "errors": [],
         }
         return results
+    
+    
+    @abstractmethod
+    def warm_up(self):
+        """
+        warmup the pipeline
+        """
+        pass
+    
+    
+    @abstractmethod
+    def load(self):
+        """
+        load models into self.models
+        """
+        pass
+    
+    
+    @abstractmethod
+    def predict(self, configs: dict, inputs, **kwargs) -> dict:
+        """the main function to run the pipeline. It should update self.results and return it.
+
+        Args:
+            configs (dict): runtime configs
+            inputs (dict): the input data
+
+        Returns:
+            dict: should return self.results
+        """
+        pass
+    
+    
+    def clean_up(self):
+        """
+        clean up the pipeline in REVERSED order, i.e., the last models get destroyed first
+        """
+        L = list(reversed(self.models.keys())) if self.models else []
+        for model_name in L:
+            del self.models[model_name]
+            self.logger.info(f'{model_name} is cleaned up')
+
+        del self.models
+        self.models = None
+        self.logger.info('pipeline is cleaned up')
         
         
-    def update_results(self, result_key:str, value, dict_key=None):
+    def update_results(self, result_key:str, value, sub_key=None):
         """ 
         modify the self.results with the following rules:
-        1: If the self.results[result_key] is a list, append the value to the list.
-        2: If the self.results[result_key] is a dictionary and dict_key is not None, update the value of the dict_key.
-        3: Otherwise, update the value of the result_key.
+        1: If the result_key is not in the self.results, create the key-value pair.
+        2: If the self.results[result_key] is a list, append the value to the list.
+        3: If the self.results[result_key] is a dictionary and sub_key is not None, update the value of the sub_key.
+        4: Otherwise, update the value of the result_key.
 
         Args:
             result_key (str): the key of the self.results
             value (obj): the value of the key to be updated
-            dict_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
+            sub_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
         """
         if result_key not in self.results:
-            self.results[result_key] = value
+            if sub_key is not None:
+                self.results[result_key] = {sub_key:value}
+            else:
+                self.results[result_key] = value
         elif isinstance(self.results[result_key], list):
             self.results[result_key].append(value)
-        elif isinstance(self.results[result_key], dict) and dict_key is not None:
-            self.results[result_key][dict_key] = value
+        elif isinstance(self.results[result_key], dict) and sub_key is not None:
+            self.results[result_key][sub_key] = value
         else:
             self.results[result_key] = value
             
@@ -104,78 +150,45 @@ class Base(metaclass=ABCMeta):
         """
         if result_key not in self.results['automation_keys']:
             self.results['automation_keys'].append(result_key)
-           
             
-    def update_factory(self, result_key:str, value):
+            
+    def update_factory(self, result_key:str, value, sub_key=None):
         """
         update key-value pair to the self.results and also upload the key to GoFactory.
+        
+        args:
+            result_key (str): the key of the self.results
+            value (obj): the value of the key to be updated
+            sub_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
+        
         """
-        self.update_results(result_key, value)
+        self.update_results(result_key, value, sub_key)
         self.add_to_factory(result_key)
         
         
-    def update_automation(self, result_key:str, value):
+    def update_automation(self, result_key:str, value, sub_key=None):
         """
         update key-value pair to the self.results and also upload the key to Automation service
-        """
-        self.update_results(result_key, value)
-        self.add_to_automation(result_key)
-    
         
-    @abstractmethod
-    def warm_up(self):
+        args:
+            result_key (str): the key of the self.results
+            value (obj): the value of the key to be updated
+            sub_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
         """
-        warmup the pipeline
-        """
-        pass
-    
-    
-    @abstractmethod
-    def load(self):
-        """
-        load models
-        """
-        pass
-    
-    
-    @abstractmethod
-    def predict(self, configs: dict, inputs, **kwargs) -> dict:
-        """the main function to run the pipeline. It should update self.results and return it.
-
-        Args:
-            configs (dict): runtime configs
-            inputs (dict): the input data
-
-        Returns:
-            dict: return self.results
-        """
-        pass
-    
-    
-    def clean_up(self):
-        """
-        clean up the pipeline in REVERSED order, i.e., the last models get destroyed first
-        """
-        L = list(reversed(self.models.keys())) if self.models else []
-        for model_name in L:
-            del self.models[model_name]
-            self.logger.info(f'{model_name} is cleaned up')
-
-        del self.models
-        self.models = None
-        self.logger.info('pipeline is cleaned up')
+        self.update_results(result_key, value, sub_key)
+        self.add_to_automation(result_key)
     
     
     @staticmethod
-    def yolov8_obj_predict(model, image, operators, configs, iou):
+    def yolov8_obj_predict(model, image, configs, operators=[], iou=0.4):
         """run yolov8 object detector inference. It converts the results to the original coordinates space if the operators are provided.
         
         Args:
             model (Yolov8): the object detection model loaded memory
             image (np.ndarry): the input image
-            operators (list): a list of dictionaries of the image preprocess operators, such as {'resize':[resized_w, resized_h, orig_w, orig_h]}, {'pad':[pad_left, pad_right, pad_top, pad_bot]}
             configs (dict): a dictionary of the confidence thresholds for each class, e.g., {'classA':0.5, 'classB':0.6}
-            iou (float): the iou threshold for non-maximum suppression
+            operators (list): a list of dictionaries of the image preprocess operators, such as {'resize':[resized_w, resized_h, orig_w, orig_h]}, {'pad':[pad_left, pad_right, pad_top, pad_bot]}
+            iou (float): the iou threshold for non-maximum suppression. defaults to 0.4
 
         Returns:
             list of [results, time info]
@@ -267,7 +280,7 @@ class Base(metaclass=ABCMeta):
     
     @staticmethod
     def annotate_image(results, image, colormap=None):
-        """annotate the object dectector results on the image.
+        """annotate the object dectector results on the image. If colormap is None, it will use the random colors.
 
         Args:
             results (dict): the results of the object detection, e.g., {'boxes':[], 'classes':[], 'scores':[], 'masks':[], 'segments':[]}
