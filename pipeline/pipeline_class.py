@@ -13,10 +13,10 @@ this pipeline class, needs to have the following methods:
 import numpy as np
 import logging
 import random
-from pipeline_base import Base, track_exception
+from pipeline_base import PipelineBase, track_exception
 
 
-class ModelPipeline(Base):
+class ModelPipeline(PipelineBase):
 
     logger = logging.getLogger(__name__)
 
