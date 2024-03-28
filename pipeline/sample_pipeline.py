@@ -60,7 +60,8 @@ class pipeline_test1(PipelineBase):
     @track_exception(logger)
     def predict(self, configs: dict, inputs, **kwargs) -> dict:
         start_time = time.time()
-    
+        self.init_results()
+        
         image = inputs['image']['pixels']
         
         if not self.models:
