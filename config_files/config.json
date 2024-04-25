@@ -1,0 +1,43 @@
+{
+    "version": 1,
+    "appName": "New Gadget App",
+    "configForms": {
+        "sensor": {
+            "configs": []
+        },
+        "pipeline": {
+            "configs": []
+        },
+        "automation": {
+            "configs": []
+        }
+    },
+    "body": [
+        {
+            "columnSize": 10,
+            "components": [
+                {
+                    "componentName": "ImageCanvas",
+                    "topic": "pipeline/gadget-pipeline/0"
+                }
+            ]
+        },
+        {
+            "columnSize": 2,
+            "components": [
+                {
+                    "componentName": "LineChart",
+                    "topic": "pipeline/gadget-pipeline/0",
+                    "decisionKey": "decision",
+                    "historyLen": 50
+                },
+                {
+                    "componentName": "HistogramChart",
+                    "topic": "pipeline/gadget-pipeline/0",
+                    "decisionKey": "decision",
+                    "labelList": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+                }
+            ]
+        }
+    ]
+}

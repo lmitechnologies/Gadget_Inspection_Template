@@ -48,9 +48,9 @@ services:
       database-api: 
         condition: service_healthy
 
-  gadgetapp-backend:
-    container_name: gadget-gadgetapp-backend
-    image: dev-registry.factorysmart.com/linux/amd64/gadget/data_manager:0.0.0.dev1156055067065066060
+  app-backend:
+    container_name: gadget-app-backend
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_backend:${PACKAGE_VER}
     restart: unless-stopped
     ports:
       - 5678:5678
@@ -64,17 +64,15 @@ services:
       api-gateway:
         condition: service_healthy
 
-  gadgetapp-frontend:
-    container_name: gadget-gadgetapp-frontend
-    build:
-      context: ./gadgetapp
-      dockerfile: Dockerfile
-    image: gadgetapp-frontend
+  app-frontend:
+    container_name: gadget-app-frontend
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_frontend:${PACKAGE_VER}
     restart: unless-stopped
     ports:
       - 80:80
     volumes:
       - static-volume:/usr/share/nginx/html/static
+      - ./configs_files/config.json:/usr/share/nginx/html/config.json
 
   data-broker:
     container_name: gadget-data-broker
