@@ -76,7 +76,9 @@ To complete these taks, below are the required methods to be implemented:
     This function deletes the models from memory.
 
 ## Pipeline Result Dictionary
+
 The pipeline predict method will return a dictionary that follows this pattern:  
+
 ```python
 {
     # Required 
@@ -93,29 +95,34 @@ The pipeline predict method will return a dictionary that follows this pattern:
     "key-2": VALUE,
     "key-3": VALUE,
 }
+
 ```
-The key-value pairs in the dictionary must contain a literal or a list. No other object is allowed. The key-value pairs are grouped into three categories: **Required**, **Optional**, and **Custom**.
 
-For the **Required** key-value pairs, the value of `annotated_output` is a numpy array of the annotated image. The value of `automation_keys` is a list of strings that are a subset of **Custom** keys that will be sent to the automation service. They should be information that is specifically needed by the automation service. The value of `factory_keys` is a list of strings that are a subset of **Custom** keys that will be consumed by goFactory. They should be values that are actually useful in goFactory and will not overly inflate the size of the database.  The value of `tags` should be a list of strings. `factory_keys` should also include `tags` so that information is also sent to GoFactory. They could be the predicted class names. The value of `should_archive` is a boolean indicating whether to archive current input.  
+The key-value pairs in the dictionary must contain a literal or a list. No other object is allowed. The key-value pairs are grouped into two categories: **Required** and **Custom**.
 
-The only **Optional** key is `additional_outputs`. Any other image that the pipeline wants to save goes in here. Preprocessed images for example. `additional_outputs` is a dictionary where the key is the name of the subfolder where the image will be saved and the value is the numpy array of the image.
+For the **Required** key-value pairs, the value of `annotated_output` is a numpy array of the annotated image. The value of `automation_keys` is a list of strings that are a subset of **Custom** keys that will be sent to the automation service. They should be information that is specifically needed by the automation service. The value of `factory_keys` is a list of strings that are a subset of **Custom** keys that will be consumed by GoFactory. They should be values that are actually useful in GoFactory and will not overly inflate the size of the database. The values in factory_keys are what populate the Grafana dashboards and appear when you over over an thumbnail in the inspections page. The values in tags appear at the top of an event column in the inspections page. They can be used to filter what results get shown. The value of `tags` should be a list of strings. `factory_keys` should also include `tags` so that information is also sent to GoFactory.
+
+![Alt text](./markdown_images/image.png "Optional title")
+
+The value of `should_archive` is a boolean indicating whether to archive current input. Archiving an image means telling the data manager to move the image from inline storage to offline storage. Images in offline storage are kept around for much longer.
 
 For the **Custom** key-value pairs, the keys of some pairs will be used as the values of the **Required** keys as mentioned in the previous paragraph. The rest of pairs will be saved to the database.  
 
 Here is an example:  
 Pipeline predict result and stored in Postgres database:
+
 ```python
+
 {
-    "annotated_output": np_array,
+    "outputs": {
+        "annotated": np_array,
+        "ad_preprocessed": preprocessed_ad,
+        "od_preprocessed": preprocessed_od
+    },
     "automation_keys": [ "decision", "center_point"],
     "factory_keys":  ["tags", "decision", "score", "total_proc_time"],
     "tags": ["round", "square"], 
     "should_archive": False,
-
-    "additional_outputs": {
-        "ad_preprocessed": preprocessed_ad,
-        "od_preprocessed": preprocessed_od
-    },
 
     "decision": ["round", "square"],
     "score": [.98, .95],
@@ -127,6 +134,7 @@ Pipeline predict result and stored in Postgres database:
 ```
 
 What get sent to automation:
+
 ```python
 {
     "decision": ["round", "square"],
@@ -134,8 +142,8 @@ What get sent to automation:
 }
 ```
 
+What get consumed by GoFactory:
 
-What get consumed by goFactory:
 ```python
 {
     "tags": ["round", "square"],
