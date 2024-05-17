@@ -106,7 +106,7 @@ class pipeline_test1(PipelineBase):
         self.logger.info(f'found objects: {objects}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
-        self.logger.info(f'pipeline results: {self.results}')
+        # self.logger.info(f'pipeline results: {self.results}')
         
         return self.results
 
