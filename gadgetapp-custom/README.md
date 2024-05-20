@@ -72,7 +72,7 @@ This defines the contents of the main body of the page. The body is divided into
 
 Displays an image. Usually the annotated output of the model.
 
-It takes no additional properties
+- **fileName**: the name of the pipeline output to render
 
 #### Metric
 
