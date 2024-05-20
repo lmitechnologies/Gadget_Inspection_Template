@@ -189,7 +189,7 @@ services:
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - SENSOR_GOCATOR_SERVICE_NAME=profiler
+      - SENSOR_GOCATOR_SERVICE_TYPE=profiler
       - SENSOR_GOCATOR_PARAMS_START=true
       - SENSOR_GOCATOR_PARAMS_EMULATION_ENABLED=true
       - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10

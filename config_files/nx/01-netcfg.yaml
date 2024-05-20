@@ -1,0 +1,11 @@
+network:
+	version: 2
+	renderer: NetworkManager
+	ethernets:			
+		eth0: #Port 1
+			addresses: [192.168.1.5/24]
+			mtu: 9000
+		eth1:	#Port 2
+			addresses: [10.10.10.100/24]
+		eth2: #Port 3
+			dhcp4: yes
