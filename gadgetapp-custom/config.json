@@ -18,7 +18,8 @@
             "components": [
                 {
                     "componentName": "ImageCanvas",
-                    "topic": "pipeline/gadget-pipeline/0"
+                    "topic": "pipeline/gadget-pipeline/0",
+                    "fileName": "annotated"
                 }
             ]
         },
