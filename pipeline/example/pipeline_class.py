@@ -3,7 +3,6 @@ import os
 import sys
 import cv2
 import logging
-import functools
 import numpy as np
 
 sys.path.append('/home/gadget/workspace/pipeline')
@@ -29,7 +28,7 @@ class pipeline_test1(PipelineBase):
         self.configs['middle_model'] =  os.path.realpath(os.path.expandvars(kwargs.get('middle_model',"")))
         self.configs['middle_hw'] = kwargs.get('middle_hw', [256, 256])
         
-        self.colormap = {'left':(0,0,255), 'right':(255,0,0), 'fatcap':(0,255,0), 'bone':(255,255,0)}
+        self.colormap = {'left':(0,0,255), 'right':(255,0,0)}
     
     
     @track_exception(logger)
@@ -70,13 +69,9 @@ class pipeline_test1(PipelineBase):
         
         # load runtime config
         test_mode = configs.get('test_mode', False)
-        iou = configs.get('iou_threshold', 0.4)
-        confs = {
-            'left':configs['confidence_left'],
-            'right':configs['confidence_right'],
-            'fatcap':configs['confidence_fatcap'],
-            'bone':configs['confidence_bone'],
-        }
+        middle_configs = configs['middle_configs']
+        iou = middle_configs['model_configs']['iou']
+        confs = {k:v['confidence'] for k,v in middle_configs['object_configs'].items()}
         
         # stage 1: detection the foreground
         img_middle, operators_middle = self.preprocess_middle(image)
@@ -84,6 +79,7 @@ class pipeline_test1(PipelineBase):
         
         # annotate the image
         annotated_image = self.models['middle'].annotate_image(results_dict1, image, self.colormap)
+        self.update_results('outputs', annotated_image, sub_key='annotated')
         
         # local tests
         if test_mode:
@@ -95,16 +91,22 @@ class pipeline_test1(PipelineBase):
         total_proc_time = time.time()-start_time
         
         # upload results to the factory
-        defects = results_dict1['classes']
-        self.update_factory('defects', defects)
-        self.update_factory('total_proc_time', total_proc_time)
+        objects = results_dict1['classes']
+        self.update_results('objects', objects, to_factory=True)
+        self.update_results('total_proc_time', total_proc_time, to_factory=True)
         
         # upload results to automation
-        decision = 0 if len(defects) == 0 else 1
-        self.update_automation('decision', decision)
+        decision = 0 if len(objects) == 0 else 1
+        self.update_results('decision', decision, to_automation=True)
         
-        self.logger.info(f'found objects: {defects}')
+        # update factory tags
+        tag = 'no_objects' if decision == 0 else 'objects_found'
+        self.update_results('tags', tag, to_factory=True)
+        
+        self.logger.info(f'found objects: {objects}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
+        
+        # self.logger.info(f'pipeline results: {self.results}')
         
         return self.results
 
@@ -116,10 +118,9 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
 
     BATCH_SIZE = 1
-    os.environ['PIPELINE_SERVER_SETTINGS_MODELS_ROOT'] = 'pipeline/test/trt-generation'
-    pipeline_def_file = 'pipeline/test/pipeline_def.json'
-    image_dir = '/data/test_images'
-    output_dir = '/data/outputs'
+    pipeline_def_file = './pipeline/pipeline_def.json'
+    image_dir = './data'
+    output_dir = './outputs'
     
     kwargs = pipeline_utils.load_pipeline_def(pipeline_def_file)
     pipeline = pipeline_test1(**kwargs)
@@ -142,7 +143,7 @@ if __name__ == '__main__':
             inputs = {
                 'image':{'pixels':im},
             }
-            configs = {'test_mode':True}
+            configs = {'test_mode':True, 'output_path':output_dir, 'fname':fname}
             configs.update(kwargs)
             results = pipeline.predict(configs, inputs, output_path=output_dir,fname=fname)
     

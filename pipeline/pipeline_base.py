@@ -1,8 +1,5 @@
-import cv2
-import time
 import collections
 import functools
-import sys
 import logging
 from abc import ABCMeta, abstractmethod
 
@@ -48,10 +45,9 @@ class PipelineBase(metaclass=ABCMeta):
                 "annotated": None,
             },
             "automation_keys": [],
-            "factory_keys": [],
+            "factory_keys": ['tags'],
             "tags": [],
             "should_archive": True,
-            "decision": None,
             "errors": [],
         }
     
@@ -94,75 +90,36 @@ class PipelineBase(metaclass=ABCMeta):
         self.logger.info('pipeline is cleaned up')
         
         
-    def update_results(self, result_key:str, value, sub_key=None):
+    def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False):
         """ 
         modify the self.results with the following rules:
-        1: If the result_key is not in the self.results, create the key-value pair.
-        2: If the self.results[result_key] is a list, append the value to the list.
-        3: If the self.results[result_key] is a dictionary and sub_key is not None, update the value of the sub_key.
-        4: Otherwise, update the value of the result_key.
+        1: If the key is not in the self.results, create the key-value pair.
+        2: If the self.results[key] is a list, append the value to the list.
+        3: If the self.results[key] is a dictionary and sub_key is not None, update the value of the sub_key.
+        4: Otherwise, update the value of the key.
 
         Args:
-            result_key (str): the key of the self.results
+            key (str): the key of the self.results
             value (obj): the value of the key to be updated
             sub_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
+            to_factory (bool, optional): add the key to the gofactory. Defaults to False.
+            to_automation (bool, optional): add the key to the automation. Defaults to False.
         """
-        if result_key not in self.results:
+        if key not in self.results:
             if sub_key is not None:
-                self.results[result_key] = {sub_key:value}
+                self.results[key] = {sub_key:value}
             else:
-                self.results[result_key] = value
-        elif isinstance(self.results[result_key], list):
-            self.results[result_key].append(value)
-        elif isinstance(self.results[result_key], dict) and sub_key is not None:
-            self.results[result_key][sub_key] = value
+                self.results[key] = value
+        elif isinstance(self.results[key], list):
+            self.results[key].append(value)
+        elif isinstance(self.results[key], dict) and sub_key is not None:
+            self.results[key][sub_key] = value
         else:
-            self.results[result_key] = value
+            self.results[key] = value
             
+        if to_factory and key not in self.results['factory_keys']:
+            self.results['factory_keys'].append(key)
             
-    def add_to_factory(self, result_key:str):
-        """add result_key to the GoFactory
-
-        Args:
-            result_key (str): the key to be added to the factory_keys list
-        """
-        if result_key not in self.results['factory_keys']:
-            self.results['factory_keys'].append(result_key)
-            
-            
-    def add_to_automation(self, result_key:str):
-        """add result_key to the Automation service
-
-        Args:
-            result_key (str): the key to be added to the automation_keys list
-        """
-        if result_key not in self.results['automation_keys']:
-            self.results['automation_keys'].append(result_key)
-            
-            
-    def update_factory(self, result_key:str, value, sub_key=None):
-        """
-        update key-value pair to the self.results and also upload the key to GoFactory.
-        
-        args:
-            result_key (str): the key of the self.results
-            value (obj): the value of the key to be updated
-            sub_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
-        
-        """
-        self.update_results(result_key, value, sub_key)
-        self.add_to_factory(result_key)
-        
-        
-    def update_automation(self, result_key:str, value, sub_key=None):
-        """
-        update key-value pair to the self.results and also upload the key to Automation service
-        
-        args:
-            result_key (str): the key of the self.results
-            value (obj): the value of the key to be updated
-            sub_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
-        """
-        self.update_results(result_key, value, sub_key)
-        self.add_to_automation(result_key)
+        if to_automation and key not in self.results['automation_keys']:
+            self.results['automation_keys'].append(key)
     

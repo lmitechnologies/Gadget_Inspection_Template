@@ -1,0 +1,18 @@
+#requires the version of docker-compose >= 1.19
+version: "3.8"
+services:
+  example_pipeline:
+    build: 
+      context: .
+      dockerfile: x86.dockerfile
+    image: pipeline_test
+    volumes:
+      - ./data:/home/gadget/workspace/data/
+      - ./outputs:/home/gadget/workspace/outputs/
+      - ./weights:/home/gadget/workspace/weights/
+      - ./pipeline_class.py:/home/gadget/workspace/pipeline/pipeline_class.py
+      - ./pipeline_def.json:/home/gadget/workspace/pipeline/pipeline_def.json
+      - ../pipeline_base.py:/home/gadget/workspace/pipeline/pipeline_base.py
+    runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    command: python3 /home/gadget/workspace/pipeline/pipeline_class.py
+    

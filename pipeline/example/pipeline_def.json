@@ -1,0 +1,29 @@
+{
+    "configs_def":[
+        {
+            "name": "middle_model",
+            "default_value": "/home/gadget/workspace/weights/best.pt"
+        },
+        {
+            "name": "middle_hw",
+            "default_value": [256,256]
+        },
+        {
+            "name": "middle_configs",
+            "default_value": {
+                "model_configs": {
+                    "iou": 0.45
+                },
+                "object_configs": {
+                    "left": {
+                        "confidence": 0.5
+                    },
+                    "right": {
+                        "confidence": 0.5
+                    }
+                }
+            },
+            "comment": "none"
+        }
+    ]
+}
