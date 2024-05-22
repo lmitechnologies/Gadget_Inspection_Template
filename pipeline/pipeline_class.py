@@ -26,7 +26,7 @@ class ModelPipeline(PipelineBase):
         
         
     @track_exception(logger)
-    def load(self):
+    def load(self, configs: dict):
         """
         create model instances with weight files
         if loading files fail, then don't create model instances
@@ -35,13 +35,13 @@ class ModelPipeline(PipelineBase):
 
 
     @track_exception(logger)
-    def warm_up(self):
+    def warm_up(self, configs: dict):
         """
         warm up all the models in the pipeline
         """
         pass
 
-
+    index = 0
     @track_exception(logger)
     def predict(self, configs: dict, inputs: dict) -> dict:
         """predict on the inputs
@@ -53,7 +53,16 @@ class ModelPipeline(PipelineBase):
         Returns:
             dict: should return self.results defined in the pipeline base class
         """
-        pass
+        self.index += 1
+        return {
+            "outputs": {
+                "annotated": inputs['image']['pixels']
+            },
+            "factory_keys": [],
+            "automation_keys": ["decision"],
+            "tags": [],
+            "decision": self.index % 5 == 0
+        }
 
 
 

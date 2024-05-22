@@ -53,15 +53,15 @@ class PipelineBase(metaclass=ABCMeta):
     
     
     @abstractmethod
-    def warm_up(self):
+    def warm_up(self, configs: dict):
         """
         warmup the pipeline
-        """
+        """ 
         pass
     
     
     @abstractmethod
-    def load(self):
+    def load(self, configs: dict):
         """
         load models
         """
@@ -69,14 +69,14 @@ class PipelineBase(metaclass=ABCMeta):
     
     
     @abstractmethod
-    def predict(self):
+    def predict(self, configs: dict, inputs: dict) -> dict:
         """
         the main function to run the pipeline.
         """
         pass
     
     
-    def clean_up(self):
+    def clean_up(self, configs: dict):
         """
         clean up the pipeline in REVERSED order, i.e., the last models get destroyed first
         """

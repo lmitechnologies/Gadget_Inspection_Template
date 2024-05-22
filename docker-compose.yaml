@@ -123,8 +123,8 @@ services:
         condition: service_healthy
 
   # ---------- inspection ----------   
-  pipeline:
-    container_name: gadget-pipeline
+  pipeline_0:
+    container_name: gadget-pipeline-0
     command: gadget_pipeline_server
     runtime: nvidia
     build: 
@@ -137,7 +137,67 @@ services:
     restart: unless-stopped
     environment:
       - PIPELINE_SERVER_SERVICE_TYPE=pipeline
-      - PIPELINE_SERVER_SERVICE_NAME=pipeline
+      - PIPELINE_SERVER_SERVICE_NAME=0
+      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
+      - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
+      - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
+      - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
+      - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
+      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=false
+      - PIPELINE_SERVER_PARAMS_ARCHIVE_PERIOD=1
+      - TZ=utc
+    volumes:
+      - ./pipeline/:/home/gadget/pipeline
+      - inline-storage:/app/data
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
+  pipeline_1:
+    container_name: gadget-pipeline-1
+    command: gadget_pipeline_server
+    runtime: nvidia
+    build: 
+      context: ./pipeline
+      args:
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      dockerfile: pipeline.dockerfile
+    image: everything_pipeline:${PACKAGE_VER}
+    restart: unless-stopped
+    environment:
+      - PIPELINE_SERVER_SERVICE_TYPE=pipeline
+      - PIPELINE_SERVER_SERVICE_NAME=1
+      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
+      - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
+      - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
+      - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
+      - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
+      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=false
+      - PIPELINE_SERVER_PARAMS_ARCHIVE_PERIOD=1
+      - TZ=utc
+    volumes:
+      - ./pipeline/:/home/gadget/pipeline
+      - inline-storage:/app/data
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
+  pipeline_2:
+    container_name: gadget-pipeline-2
+    command: gadget_pipeline_server
+    runtime: nvidia
+    build: 
+      context: ./pipeline
+      args:
+        PACKAGE_VER: ${PACKAGE_VER}
+        PYPI_SERVER: ${PYPI_SERVER}
+      dockerfile: pipeline.dockerfile
+    image: everything_pipeline:${PACKAGE_VER}
+    restart: unless-stopped
+    environment:
+      - PIPELINE_SERVER_SERVICE_TYPE=pipeline
+      - PIPELINE_SERVER_SERVICE_NAME=2
       - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
       - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
       - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline

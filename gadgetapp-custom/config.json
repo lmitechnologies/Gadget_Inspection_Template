@@ -18,7 +18,17 @@
             "components": [
                 {
                     "componentName": "ImageCanvas",
-                    "topic": "pipeline/pipeline",
+                    "topic": "pipeline/0",
+                    "fileName": "annotated"
+                },
+                {
+                    "componentName": "ImageCanvas",
+                    "topic": "pipeline/1",
+                    "fileName": "annotated"
+                },
+                {
+                    "componentName": "ImageCanvas",
+                    "topic": "pipeline/2",
                     "fileName": "annotated"
                 }
             ]
@@ -27,7 +37,7 @@
             "columnSize": 2,
             "components": [
                 {
-                    "componentName": "MultiLineChart",
+                    "componentName": "LineChart",
                     "topic": "pipeline/pipeline",
                     "decisionKey": "decision",
                     "historyLen": 50
