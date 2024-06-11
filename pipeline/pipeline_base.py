@@ -4,16 +4,23 @@ import logging
 from abc import ABCMeta, abstractmethod
 
 
-# decorator to track exceptions
-def track_exception(logger=logging.getLogger(__name__)):
+# decorator to track exceptions (updated to handle default return value)
+def track_exception(logger=logging.getLogger(__name__), default_return_value=None):
+    """track exceptions and log them with the logger provided or the default logger
+
+
+    Args:
+        logger (Logger, optional): the logger to use. Defaults to logging.getLogger(__name__).
+        default_return_value (Any, optional): The return value to return. Defaults to None.
+    """
     def deco(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             except Exception:
-                logger.exception(f'failed to run funtion: {func.__name__}')
-                return None
+                logger.exception(f'Failed to run function: {func.__name__} with following args: {args} and kwargs: {kwargs}')
+                return default_return_value
         return wrapper
     return deco
 
