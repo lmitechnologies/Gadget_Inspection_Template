@@ -21,7 +21,7 @@ class pipeline_test1(PipelineBase):
     logger = logging.getLogger(__name__)
     
     
-    @track_exception(logger)
+    @track_exception(logger, default_return_value=None)
     def __init__(self, **kwargs) -> None:
         super().__init__()
         
@@ -31,7 +31,7 @@ class pipeline_test1(PipelineBase):
         self.colormap = {'left':(0,0,255), 'right':(255,0,0)}
     
     
-    @track_exception(logger)
+    @track_exception(logger, default_return_value=None)
     def warm_up(self):
         t1 = time.time()
         for name in self.models:
@@ -42,7 +42,7 @@ class pipeline_test1(PipelineBase):
         self.logger.info(f'warm up time: {t2-t1:.4f}')
     
     
-    @track_exception(logger)
+    @track_exception(logger, default_return_value=None)
     def load(self):
         self.models['middle'] = Yolov8(self.configs['middle_model'])
         self.logger.info('models are loaded')
@@ -56,7 +56,7 @@ class pipeline_test1(PipelineBase):
         return img, operators
     
     
-    @track_exception(logger)
+    @track_exception(logger, default_return_value=dict())
     def predict(self, configs: dict, inputs, **kwargs) -> dict:
         start_time = time.time()
         self.init_results()
