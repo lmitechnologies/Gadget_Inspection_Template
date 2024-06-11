@@ -21,7 +21,7 @@ class pipeline_test1(PipelineBase):
     logger = logging.getLogger(__name__)
     
     
-    @track_exception(logger)
+    @track_exception(logger, default_return_value=None)
     def __init__(self, **kwargs) -> None:
         super().__init__()
         
