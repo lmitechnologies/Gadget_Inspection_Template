@@ -4,13 +4,14 @@ GadgetApp customization is done primarily in the config.json file. To overwrite 
 
     /usr/share/nginx/html/config.json
 
-The config file must contain the top level keys **version**, **appName**, **configForms**, and **body**. The most basic version of this would look like this
+The config file must contain the top level keys **version**, **appName**, **configForms**, and **body**. There is also an optional key **metricRow** The most basic version of this would look like this
 
     {
         "version": 1,
         "appName": "New Gadget App",
         "configForms": {},
-        "body": []
+        "body": [],
+        "metricRow": {}
     }
 
 ## Version
@@ -111,3 +112,33 @@ A bar chart with a predefined list of labels.
 A pie chart
 
 - **decisionKey**: the name of the value to be charted. The value must be a list of lists with the following format: [[value, label, (optional) color], ...]
+
+## Metric Row
+
+The metric row is an optional second footer that is used to display values it receives from the pipeline. **metricRow** defines if the metric row should exist and it's content, like this
+
+     {
+        "show": true,
+        "content": [
+            {
+                "topic": "pipeline/gadget-pipeline/0",
+                "metricKey": "decision",
+                "label": "Decision"
+            },
+            {
+                "topic": "pipeline/gadget-pipeline/0",
+                "metricKey": "score",
+                "label": "Score",
+                "cumulative": true
+            }
+        ]
+    }
+
+**show** defines if the metric row should be displayed. It is false by default, omitting **metricRow** will result in no metric row showing.
+
+**content** defines the what will be displayed. It must be a list of dicts that contain the keys **topic**, **metricKey**, **label**, and optionally **cumulative**.
+
+- **topic**: Zmq topic to subscribe to
+- **metricKey**: The name of the value to be displayed
+- **label**: Label displayed to viewer
+- **cumulative**: Should the values accumulate over time. Expects a boolean value. Defaults to false. If set to true the value must be a number.
