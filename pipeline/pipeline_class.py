@@ -42,7 +42,7 @@ class ModelPipeline(PipelineBase):
         pass
 
 
-    @track_exception(logger)
+    @track_exception(logger, dict())
     def predict(self, configs: dict, inputs: dict) -> dict:
         """predict on the inputs
 
