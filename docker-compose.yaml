@@ -134,9 +134,9 @@ services:
     image: everything_pipeline:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - PIPELINE_SERVER_INSTANCE_NAME=gadget-pipeline
-      - PIPELINE_SERVER_INSTANCE_NUMBER=0
-      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/gadget-sensor-gocator/0
+      - PIPELINE_SERVER_SERVICE_TYPE=pipeline
+      - PIPELINE_SERVER_SERVICE_NAME=pipeline
+      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
       - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
       - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
@@ -165,11 +165,11 @@ services:
     image: everything_automation:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - AUTOMATION_SERVER_INSTANCE_NAME=gadget-automation
-      - AUTOMATION_SERVER_INSTANCE_NUMBER=0
+      - AUTOMATION_SERVER_SERVICE_TYPE=gadget-automation
+      - AUTOMATION_SERVER_SERVICE_NAME=automation
       - AUTOMATION_SERVER_SETTINGS_GADGET_DATABASE_API_HOST=127.0.0.1
       - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_HOST=127.0.0.1
-      - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=pipeline/gadget-pipeline/0
+      - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=pipeline/pipeline
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_PATH=/home/gadget/automation/
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_CLASS=automation_class.AutomationClass
       - AUTOMATION_SERVER_SETTINGS_AUTOMATION_DEFINITION_JSON=automation_class_def.json
@@ -187,7 +187,7 @@ services:
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - INSTANCE=0
+      - SENSOR_GOCATOR_SERVICE_NAME=profiler
       - SENSOR_GOCATOR_PARAMS_START=true
       - SENSOR_GOCATOR_PARAMS_EMULATION_ENABLED=true
       - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10
@@ -199,37 +199,38 @@ services:
       api-gateway: 
         condition: service_healthy
 
-
-  #---------- gofactory ----------   
-  mqtt-bridge:
-    container_name: gadget-mqtt-bridge
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
-    restart: unless-stopped
-    environment:
-      - MQTT_BRIDGE_SETTINGS_CLIENT_ID=${FACTORY_CLIENT_ID}
-      - MQTT_BRIDGE_SETTINGS_BROKER_HOSTNAME=${FACTORY_HOST}
-    volumes:
-      - inline-storage:/app/data/inline
-      - offline-storage:/app/data/offline
-      - transfer-storage:/app/data/transfer
-
+  # ---------- gofactory ----------   
   vault-client:
     container_name: gadget-vault-client
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/vault_client:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - PROJECT_ID=${CLOUD_PROJECT_ID}
-      - CLIENT_ID=${FACTORY_CLIENT_ID}
+      - CLIENT_ID=${GADGET_DEVICE_ID}
       - INITIAL_CREDENTIAL=${VAULT_CREDENTIAL}
     volumes:
       - vault-storage:/app/data
+
+  mqtt-bridge:
+    container_name: gadget-mqtt-bridge
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
+    restart: unless-stopped
+    environment:
+      - MQTT_BRIDGE_SETTINGS_CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
+      - MQTT_BRIDGE_SETTINGS_CLIENT_ID=${FACTORY_CLIENT_ID}
+      - MQTT_BRIDGE_SETTINGS_BROKER_HOSTNAME=${FACTORY_HOST}
+    volumes:
+      - inline-storage:/app/data/inline
+      - offline-storage:/app/data/offline
+      - transfer-storage:/app/data/transfer
+    depends_on: 
+      api-gateway:
+        condition: service_healthy
 
   s3-integrator:
     container_name: gadget-s3-integrator
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/s3_integrator:${PACKAGE_VER}
     restart: unless-stopped
-    ports:
-      - 7778:7777
     environment:
       - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
     volumes:
@@ -239,11 +240,9 @@ services:
     container_name: gadget-log-collector
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/log_collector:${PACKAGE_VER}
     restart: unless-stopped
-    ports:
-      - 7771:7770
     volumes:
-      - /var/log/journal:/var/log/hostjournal:ro
       - transfer-storage:/app/data/transfer
+      - /var/log/journal:/var/log/hostjournal:ro
   
 volumes:
   data-manager-storage:
@@ -257,5 +256,6 @@ volumes:
   transfer-storage:
   postgres_db:
   static-volume:
+  db_static_volume:
   vault-storage:
   user-volume:
