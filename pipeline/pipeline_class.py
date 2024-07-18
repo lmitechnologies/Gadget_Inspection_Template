@@ -10,14 +10,14 @@ this pipeline class, needs to have the following methods:
 """
 
 import logging
-from pipeline_base import PipelineBase, track_exception
+from pipeline_base import PipelineBase as Base
 
 
-class ModelPipeline(PipelineBase):
+class ModelPipeline(Base):
 
     logger = logging.getLogger(__name__)
 
-    @track_exception(logger)
+    @Base.track_exception(logger)
     def __init__(self, **kwargs):
         """
         init the pipeline with kwargs. To initialize self.results, call super().__init__()
@@ -25,7 +25,7 @@ class ModelPipeline(PipelineBase):
         pass
         
         
-    @track_exception(logger)
+    @Base.track_exception(logger)
     def load(self):
         """
         create model instances with weight files
@@ -34,7 +34,7 @@ class ModelPipeline(PipelineBase):
         pass
 
 
-    @track_exception(logger)
+    @Base.track_exception(logger)
     def warm_up(self):
         """
         warm up all the models in the pipeline
@@ -42,7 +42,7 @@ class ModelPipeline(PipelineBase):
         pass
 
 
-    @track_exception(logger, dict())
+    @Base.track_exception(logger)
     def predict(self, configs: dict, inputs: dict) -> dict:
         """predict on the inputs
 
