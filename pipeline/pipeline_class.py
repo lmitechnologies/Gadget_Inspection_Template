@@ -10,6 +10,7 @@ this pipeline class, needs to have the following methods:
 """
 
 import logging
+import torch
 from pipeline_base import PipelineBase as Base
 
 
@@ -42,6 +43,7 @@ class ModelPipeline(Base):
         pass
 
 
+    @torch.no_grad()
     @Base.track_exception(logger)
     def predict(self, configs: dict, inputs: dict) -> dict:
         """predict on the inputs

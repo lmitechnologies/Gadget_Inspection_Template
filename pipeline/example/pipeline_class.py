@@ -3,7 +3,7 @@ import os
 import sys
 import cv2
 import logging
-import numpy as np
+import torch
 
 sys.path.append('/home/gadget/workspace/pipeline')
 sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/object_detectors')
@@ -56,6 +56,7 @@ class pipeline_test1(Base):
         return img, operators
     
     
+    @torch.no_grad()
     @Base.track_exception(logger)
     def predict(self, configs: dict, inputs, **kwargs) -> dict:
         start_time = time.time()
@@ -105,8 +106,6 @@ class pipeline_test1(Base):
         
         self.logger.info(f'found objects: {objects}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
-        
-        # self.logger.info(f'pipeline results: {self.results}')
         
         return self.results
 
