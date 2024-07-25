@@ -37,12 +37,13 @@ class PipelineBase(metaclass=ABCMeta):
                     return func(self, *args, **kwargs)
                 except Exception:
                     logger.exception(f'Failed to run function: {func.__name__}')
-                    err_msg = traceback.format_exc()
-                    # upload the error message to GoFactory
-                    self.update_results('errors', err_msg, to_factory=True)
-                    self.update_results('tags', 'ERROR', to_factory=True)
-                    self.update_results('should_archive', True)
-                    return self.results
+                    if func.__name__ == 'predict':
+                        # upload error messages to GoFactory
+                        err_msg = traceback.format_exc()
+                        self.update_results('errors', err_msg, to_factory=True)
+                        self.update_results('tags', 'ERROR', to_factory=True)
+                        self.update_results('should_archive', True)
+                        return self.results
             return wrapper
         return deco
     
