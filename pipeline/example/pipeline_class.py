@@ -3,25 +3,25 @@ import os
 import sys
 import cv2
 import logging
-import numpy as np
+import torch
 
 sys.path.append('/home/gadget/workspace/pipeline')
 sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/object_detectors')
 sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/classifiers')
 sys.path.append('/home/gadget/workspace/LMI_AI_Solutions/lmi_utils')
 
-from pipeline_base import PipelineBase, track_exception
+from pipeline_base import PipelineBase as Base
 from yolov8_lmi.model import Yolov8
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
 
-class pipeline_test1(PipelineBase):
+class pipeline_test1(Base):
     
     logger = logging.getLogger(__name__)
     
     
-    @track_exception(logger, default_return_value=None)
+    @Base.track_exception(logger)
     def __init__(self, **kwargs) -> None:
         super().__init__()
         
@@ -31,7 +31,7 @@ class pipeline_test1(PipelineBase):
         self.colormap = {'left':(0,0,255), 'right':(255,0,0)}
     
     
-    @track_exception(logger, default_return_value=None)
+    @Base.track_exception(logger)
     def warm_up(self):
         t1 = time.time()
         for name in self.models:
@@ -42,7 +42,7 @@ class pipeline_test1(PipelineBase):
         self.logger.info(f'warm up time: {t2-t1:.4f}')
     
     
-    @track_exception(logger, default_return_value=None)
+    @Base.track_exception(logger)
     def load(self):
         self.models['middle'] = Yolov8(self.configs['middle_model'])
         self.logger.info('models are loaded')
@@ -56,7 +56,8 @@ class pipeline_test1(PipelineBase):
         return img, operators
     
     
-    @track_exception(logger, default_return_value=dict())
+    @torch.no_grad()
+    @Base.track_exception(logger)
     def predict(self, configs: dict, inputs, **kwargs) -> dict:
         start_time = time.time()
         self.init_results()
@@ -105,8 +106,6 @@ class pipeline_test1(PipelineBase):
         
         self.logger.info(f'found objects: {objects}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
-        
-        # self.logger.info(f'pipeline results: {self.results}')
         
         return self.results
 

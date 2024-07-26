@@ -1,28 +1,8 @@
 import collections
 import functools
 import logging
+import traceback
 from abc import ABCMeta, abstractmethod
-
-
-# decorator to track exceptions (updated to handle default return value)
-def track_exception(logger=logging.getLogger(__name__), default_return_value=None):
-    """track exceptions and log them with the logger provided or the default logger
-
-
-    Args:
-        logger (Logger, optional): the logger to use. Defaults to logging.getLogger(__name__).
-        default_return_value (Any, optional): The return value to return. Defaults to None.
-    """
-    def deco(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception:
-                logger.exception(f'Failed to run function: {func.__name__} with following args: {args} and kwargs: {kwargs}')
-                return default_return_value
-        return wrapper
-    return deco
 
 
 
@@ -43,6 +23,31 @@ class PipelineBase(metaclass=ABCMeta):
         self.init_results()
         
         
+    @classmethod
+    def track_exception(cls, logger=logging.getLogger(__name__)):
+        """track exceptions and log the error message to GoFactory.
+        
+        Args:
+            logger (Logger, optional): the logger to use. Defaults to logging.getLogger(__name__).
+        """
+        def deco(func):
+            @functools.wraps(func)
+            def wrapper(self, *args, **kwargs):
+                try:
+                    return func(self, *args, **kwargs)
+                except Exception:
+                    logger.exception(f'Failed to run function: {func.__name__}')
+                    if func.__name__ == 'predict':
+                        # upload error messages to GoFactory
+                        err_msg = traceback.format_exc()
+                        self.update_results('errors', err_msg, to_factory=True)
+                        self.update_results('tags', 'ERROR', to_factory=True)
+                        self.update_results('should_archive', True)
+                        return self.results
+            return wrapper
+        return deco
+    
+    
     def init_results(self):
         """
         init the output results
