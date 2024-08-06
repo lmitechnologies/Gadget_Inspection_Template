@@ -102,11 +102,13 @@ class PipelineBase(metaclass=ABCMeta):
         self.logger.info('pipeline is cleaned up')
         
         
-    def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False):
+    def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False, overwrite=False):
         """ 
         modify the self.results with the following rules:
         1: If the key is not in the self.results, create the key-value pair.
-        2: If the self.results[key] is a list, append the value to the list.
+        2: If the self.results[key] is a list, 
+            2.1: if overwrite is False, append the value to the list.
+            2.2: if overwrite is True, overwrite the list with the value.
         3: If the self.results[key] is a dictionary and sub_key is not None, update the value of the sub_key.
         4: Otherwise, update the value of the key.
 
@@ -116,6 +118,7 @@ class PipelineBase(metaclass=ABCMeta):
             sub_key (str, optional): the key of sub dictionary to be updated. Defaults to None.
             to_factory (bool, optional): add the key to the gofactory. Defaults to False.
             to_automation (bool, optional): add the key to the automation. Defaults to False.
+            overwrite (bool, optional): if self.results[key] is a list, overwrite it with value. Defaults to False.
         """
         if key not in self.results:
             if sub_key is not None:
@@ -123,7 +126,10 @@ class PipelineBase(metaclass=ABCMeta):
             else:
                 self.results[key] = value
         elif isinstance(self.results[key], list):
-            self.results[key].append(value)
+            if overwrite:
+                self.results[key] = value
+            else:
+                self.results[key].append(value)
         elif isinstance(self.results[key], dict) and sub_key is not None:
             self.results[key][sub_key] = value
         else:
