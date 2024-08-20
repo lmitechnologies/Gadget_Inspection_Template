@@ -58,19 +58,21 @@ services:
       - user-volume:/app/db/
     environment:
       - VERBOSE=False
+    ports:
+      - 5678:5678
     depends_on:
       api-gateway:
         condition: service_healthy
 
-  app-frontend:
-    container_name: gadget-app-frontend
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_frontend:${PACKAGE_VER}
-    restart: unless-stopped
-    ports:
-      - 80:80
+  app_frontend:
+    command: tail -F anything
+    build:
+      context: /home/trevor/fsp/gadget/app_frontend
     volumes:
-      - static-volume:/usr/share/nginx/html/static
-      - ./gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
+      - /home/trevor/fsp/gadget/app_frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - 5173:5173
 
   data-broker:
     container_name: gadget-data-broker
@@ -120,6 +122,20 @@ services:
       api-gateway: 
         condition: service_healthy
 
+  model-manager:
+    container_name: gadget-model-manager
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/model_manager:${PACKAGE_VER}
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    environment:
+      - TZ=utc
+    volumes:
+      - models:/app/data/models
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
   # ---------- inspection ----------   
   pipeline:
     container_name: gadget-pipeline
@@ -141,7 +157,7 @@ services:
       - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
-      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=false
+      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=true
       - PIPELINE_SERVER_PARAMS_ARCHIVE_PERIOD=1
       - TZ=utc
     volumes:
@@ -180,20 +196,14 @@ services:
       api-gateway: 
         condition: service_healthy
 
-  gocator:
+  chromasens:
     hostname: gadget-sensor-gocator
     container_name: gadget-sensor-gocator
     network_mode: host 
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
+    image: dev-registry.factorysmart.com/linux/amd64/gadget/sensor_chromasens:0.0.0.dev1156055067065066060
     restart: unless-stopped
-    environment:
-      - SENSOR_GOCATOR_SERVICE_NAME=profiler
-      - SENSOR_GOCATOR_PARAMS_START=true
-      - SENSOR_GOCATOR_PARAMS_EMULATION_ENABLED=true
-      - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10
-      - TZ=utc
     volumes:
-      - ./test_images:/home/gadget/test_images
+      - ./data:/home/gadget/test_images
       - inline-storage:/app/data/inline
     depends_on:
       api-gateway: 
@@ -235,6 +245,7 @@ services:
       - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
     volumes:
       - transfer-storage:/app/data/transfer
+      - models:/app/data/models
 
   log-collector:
     container_name: gadget-log-collector
@@ -259,3 +270,9 @@ volumes:
   db_static_volume:
   vault-storage:
   user-volume:
+  models:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./models

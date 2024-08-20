@@ -65,9 +65,9 @@ The gadget pipeline is the class to load the configurations (confidence levels, 
 To complete these taks, below are the required methods to be implemented:
 1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
     This is the function to load and initialize the pipeline class configurations, where `kwargs` are keyword arguments and it contains the key-value pairs that are defined in the **pipeline_def.json**.
-2. **def load(self) -> None:**  
+2. **def load(self, configs) -> None:**  
     This function loads the models.
-3. **def warm_up(self) -> None:**  
+3. **def warm_up(self, configs) -> None:**  
     This function run the models the first time.
 4. **def predict(self, `configs`: dict, `inputs`: dict) -> dict:**  
     This function receives the `inputs` and `configs`, make predictions, add annotations to the image, and returns the annotated image with the model results. This function must return a dictionary. See the details in section - [Pipeline Result Dictionary](#pipeline-result-dictionary).  
