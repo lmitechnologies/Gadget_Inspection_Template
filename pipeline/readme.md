@@ -38,13 +38,14 @@ The pipeline folder consists of the followings:
 ```
 **pipeline_class.py**: the implementation of the pipeline class. There are several required functions to be implemented. Check the details in the section - [Pipeline API](#pipeline-api).  
 **pipeline.env**: the environmental file used by the docker container. Below is the content of the environmental file. `PIPELINE_SERVER_INSTANCE_NUMBER` is the instance index of the pipeline (default to 0). `PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS` is the subscriber topic. It currently subscribes to the gocator sensor. Modify it if other type of sensors is used. `PIPELINE_SERVER_SETTINGS_MODELS_ROOT` is the path to the trained models.
+
 ```bash
 # these settings are usually changed according to your application
-PIPELINE_SERVER_INSTANCE_NUMBER=0
-PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/gadget-sensor-gocator/0
+PIPELINE_SERVER_SERVICE_NAME=pipeline
+PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
 PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/workspace/pipeline/models
 # the following settings shouldn't be changed often
-PIPELINE_SERVER_INSTANCE_NAME=gadget-pipeline
+PIPELINE_SERVER_SERVICE_TYPE=pipeline
 PIPELINE_SERVER_SETTINGS_DATA_STORAGE_ROOT=/app/data/inline
 PIPELINE_SERVER_SETTINGS_GADGET_DATABASE_API_HOST=api-gateway
 PIPELINE_SERVER_SETTINGS_GADGET_DATABASE_API_PORT=8080
@@ -54,26 +55,28 @@ PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
 PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
 TZ=utc
 ```
-**pipeline.dockerfile**: the dockerfile defines the pipeline container.   
+
+**pipeline.dockerfile**: the dockerfile defines the pipeline container.
 **requirements.txt**: it defines what python libraries will be installed in the docker container.  
 **sample_pipeline.py**: the example pipeline class, where it loads two models, and makes prediction using all models.  
 **utils.py**: it defines all the utility functions that will be used in the **pipeline_class.py**.  
 
-
 ## Pipeline API
+
 The gadget pipeline is the class to load the configurations (confidence levels, trained AI models paths, class map, etc.), load and warm up the models, make predictions, and clean up the models. 
 To complete these taks, below are the required methods to be implemented:
+
 1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
     This is the function to load and initialize the pipeline class configurations, where `kwargs` are keyword arguments and it contains the key-value pairs that are defined in the **pipeline_def.json**.
-2. **def load(self) -> None:**  
-    This function loads the models.
-3. **def warm_up(self) -> None:**  
-    This function run the models the first time.
+2. **def load(self, `configs`: dict) -> None:**  
+    This function receives `configs` and loads the models.
+3. **def warm_up(self, `configs`: dict) -> None:**  
+    This function receives `configs` and runs the models the first time.
 4. **def predict(self, `configs`: dict, `inputs`: dict) -> dict:**  
     This function receives the `inputs` and `configs`, make predictions, add annotations to the image, and returns the annotated image with the model results. This function must return a dictionary. See the details in section - [Pipeline Result Dictionary](#pipeline-result-dictionary).  
     Besides, It would be helpful for developers to define a unit test in the main function. Refer to the main function in the **sample_pipeline.py**. 
-5. **def clean_up(self):**  
-    This function deletes the models from memory.
+5. **def clean_up(self, `configs`: dict):**  
+    This function receives `configs` and deletes the models from memory.
 
 ## Pipeline Result Dictionary
 
