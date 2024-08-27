@@ -152,17 +152,17 @@ services:
     environment:
       - PIPELINE_SERVER_SERVICE_TYPE=pipeline
       - PIPELINE_SERVER_SERVICE_NAME=pipeline
-      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
+      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/line-scan
       - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
       - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
-      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=true
+      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=false
       - PIPELINE_SERVER_PARAMS_ARCHIVE_PERIOD=1
       - TZ=utc
     volumes:
       - ./pipeline/:/home/gadget/pipeline
-      - ./models:/home/gadget/models
+      - ./models:/app/models
       - inline-storage:/app/data
     depends_on:
       api-gateway: 
@@ -204,8 +204,8 @@ services:
     image: dev-registry.factorysmart.com/linux/amd64/gadget/sensor_chromasens:0.0.0.dev1156055067065066060
     restart: unless-stopped
     volumes:
-      - ./data:/home/gadget/test_images
-      - inline-storage:/app/data/inline
+      - ./test_images:/home/gadget/test_images
+      - inline-storage:/app/data
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -230,6 +230,7 @@ services:
       - MQTT_BRIDGE_SETTINGS_CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
       - MQTT_BRIDGE_SETTINGS_CLIENT_ID=${FACTORY_CLIENT_ID}
       - MQTT_BRIDGE_SETTINGS_BROKER_HOSTNAME=${FACTORY_HOST}
+      - MQTT_BRIDGE_SETTINGS_UPLOAD_PERIOD_SECONDS=0.5
     volumes:
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline

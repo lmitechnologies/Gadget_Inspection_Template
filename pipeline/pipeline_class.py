@@ -42,6 +42,7 @@ class ModelPipeline(Base):
         pass
 
 
+    index = 0
     @Base.track_exception(logger)
     def predict(self, configs: dict, inputs: dict) -> dict:
         """predict on the inputs
@@ -53,7 +54,19 @@ class ModelPipeline(Base):
         Returns:
             dict: should return self.results defined in the pipeline base class
         """
-        pass
+        self.index += 1
+        self.logger.info(f"Index: {self.index} returns: {10 if self.index % 60 == 0 else 1}")
+        return {
+            "outputs": {
+                "annotated": inputs['image'],
+            },
+            "automation_keys": [ "decision"],
+            "factory_keys":  ["tags", "decision"],
+            "tags": ["round", "square"], 
+            "should_archive": False,
+
+            "decision": 10 if self.index % 60 == 0 else 1,
+        } 
 
 
 
