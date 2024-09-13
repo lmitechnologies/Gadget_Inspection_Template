@@ -11,7 +11,7 @@ this pipeline class, needs to have the following methods:
 
 import logging
 from pipeline_base import PipelineBase as Base
-
+import random
 
 class ModelPipeline(Base):
 
@@ -43,6 +43,7 @@ class ModelPipeline(Base):
 
 
     index = 0
+    arr = ["Blister", "Crack", "Wane", "FishEye"]
     @Base.track_exception(logger)
     def predict(self, configs: dict, inputs: dict) -> dict:
         """predict on the inputs
@@ -60,12 +61,16 @@ class ModelPipeline(Base):
             "outputs": {
                 "annotated": inputs['image'],
             },
-            "automation_keys": [ "decision"],
+            "automation_keys": [ "decision", "color_data", "pair_data", "defect", "temp"],
             "factory_keys":  ["tags", "decision"],
             "tags": ["round", "square"], 
             "should_archive": False,
 
-            "decision": 10 if self.index % 60 == 0 else 1,
+            "decision": [random.randint(0, 10), random.randint(0, 10), random.randint(0, 10)],
+            "color_data": [[random.randint(1, 60), "Yellow", [255,255,0]],[random.randint(1, 20), "Green", [34,139,34]],[random.randint(1, 20), "Blue", [30,144,255]]],
+            "pair_data": [["Blister", random.randint(0, 10)], ["Crack", random.randint(0, 10)], ["Wane", random.randint(0, 10)], ["FishEye", random.randint(0, 10)]],
+            "defect": self.arr[random.randint(0,3)],
+            "temp": random.randint(0, 100)
         } 
 
 

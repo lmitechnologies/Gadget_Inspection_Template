@@ -83,16 +83,18 @@ Displays a numeric or string value
 
 #### LineChart
 
-A line chart with a single line. Used to chart a numeric value over time.
+A line chart with a single line. Used to chart values over time.
 
 - **decisionKey**: the name of the value to be charted (it expects the value to be a number)
 - **historyLen**: the number of inspection events to track before over writing them. Default 10
+- **yLabels**: list of strings used as labels on the y axis. Defaults to null, if set the decision value must be in the list of labels
 
 #### MultiLineChart
 
 A line chart with multiple lines. Used to chart the number of times something occurs during an inspection event.
 
-- **decisionKey**: the name of the value to be charted.
+- **decisionKey**: the name of the value to be charted. Value must be list of key value pairs [[label, value]...]
+- **historyLen**: the number of inspection events to track before over writing them. Default 10
 
 #### BarChart
 
