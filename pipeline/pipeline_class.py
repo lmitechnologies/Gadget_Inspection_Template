@@ -22,7 +22,8 @@ class ModelPipeline(Base):
         """
         init the pipeline with kwargs. To initialize self.results, call super().__init__()
         """
-        pass
+        self.logger.info("INIT")
+        super().__init__()
         
         
     @Base.track_exception(logger)
@@ -31,7 +32,7 @@ class ModelPipeline(Base):
         create model instances with weight files
         if loading files fail, then don't create model instances
         """
-        pass
+        self.logger.info("LOAD")
 
 
     @Base.track_exception(logger)
@@ -39,7 +40,7 @@ class ModelPipeline(Base):
         """
         warm up all the models in the pipeline
         """
-        pass
+        self.logger.info("WARMUP")
 
 
     index = 0
