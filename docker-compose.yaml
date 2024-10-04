@@ -71,6 +71,7 @@ services:
     volumes:
       - /home/trevor/fsp/gadget/app_frontend:/usr/src/app
       - /usr/src/app/node_modules
+      - static-volume:/usr/src/app/public
     ports:
       - 5173:5173
 
@@ -308,8 +309,8 @@ services:
     environment:
       - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
     volumes:
-      - transfer-storage:/app/data/transfer
-      - ./models:/app/data/models
+      - transfer-storage:/app/data/transfer/data
+      - model-storage:/app/data/transfer/models
 
   log-collector:
     container_name: gadget-log-collector
