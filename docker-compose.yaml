@@ -11,7 +11,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - TZ=utc
     volumes:
-      - postgres_db:/var/lib/postgresql/data
+      - postgres-db:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
@@ -132,8 +132,7 @@ services:
       - CONVERSION_SERVICE_NAME=pipeline
       - TZ=utc
     volumes:
-      - model-storage:/app/data/models
-      - transfer-storage:/app/data/transfer
+      - model-storage:/app/models
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -280,8 +279,7 @@ volumes:
       type: none
       device: ./models
   transfer-storage:
-  postgres_db:
+  postgres-db:
   static-volume:
-  db_static_volume:
   vault-storage:
   user-volume:

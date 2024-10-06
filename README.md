@@ -11,14 +11,16 @@ The containers definition and configuration is done in a docker-compose yaml fil
     - Rest base API that allows services to communicate with the database
   - API Gateway
     - Nginx web server that allows access to the database api
-  - Gadget App
-    - Customizable HMI to control and view the system
-  - Nginx
-    - Web server to host the Gadget App
+  - GadgetApp Backend
+    - Back end service for the GadgetApp. A browser based HMI
+  - GadgetApp Frontend 
+    - Front end service for the GadgetApp. A browser based HMI. Reachable at port 80
   - Data Manager
-    - Maintains the state of the system through file archival, file pruning,  and database pruning
+    - Maintains the state of the system through file archival, file pruning, and database pruning
   - Data Broker
     - ZMQ message broker allows fast communication between services
+    Model Manager
+    - Manages state of models in GoFactory and locally. Allows users to pull pt files and convert them to engines 
 - Inspection
   - Sensor
     - Retrieves images from a sensor and passes it along to the model pipeline. The gadget supports docker images for the Gocator, Dalsa, and AVT sensors.
@@ -149,18 +151,25 @@ Update the Database API and Data Broker ports for relevant services using the en
 The volumes used by the Gadget are defined at the bottom of the docker-compose file.
 
     volumes:
-        data-manager-storage:
-        offline-storage:
-        inline-storage:
-          driver: local
-          driver_opts:
-            o: bind
-            type: none
-            device: /mnt/gadget-inline
-        transfer-storage:
-        postgres_db:
-        static_volume:
-        vault-storage:
+      data-manager-storage:
+      offline-storage:     
+      inline-storage:
+        driver: local
+        driver_opts:
+          o: bind
+          type: none
+          device: /mnt/gadget-inline
+      model-storage:
+        driver: local
+        driver_opts:
+          o: bind
+          type: none
+          device: ./models
+      transfer-storage:
+      postgres-db:
+      static-volume:
+      vault-storage:
+      user-volume:
 
 It is recommended that the inline-storage volume be bound to a tmpfs folder. Run the following command to create the folder:
 
@@ -178,23 +187,40 @@ Which services use **offline-storage** and **inline-storage** have already been 
       - data-manager-storage:/app/data/internal
 If it is mounted to a different location that will need to be updated using the env variable **INTERNAL_DATA_PATH**
 
-**postgres_db** is only used by the database. It needs to be mounted like this:
+**postgres-db** is only used by the database. It needs to be mounted like this:
 
     volumes:
-      - postgres_db:/var/lib/postgresql/data
+      - postgres-db:/var/lib/postgresql/data
 otherwise the postgres data will not be preserved when the Gadget gets stopped.
 
-**static_volume** is used by the Gadget App and Nginx. It allows Nginx to display the static files in the Gadget App. It needs to be mounted to the Gadget APP like this:
+**static-volume** is used the the front and backend of the GadgetApp. It needs to be mounted to the backend like this:
 
     volumes:
-      - static_volume:/gadgetapp/staticfiles
+      - static-volume:/app/static
 
-and to Nginx like this:
+and to the front end like this:
 
     volumes:
-      - static_volume:/gadgetapp/staticfiles
+      - static-volume:/usr/share/nginx/html/static
 
 If it is not mounted to that specific location the Gadget App will not work.
+
+**model-storage** is where models are stored on the machine. It needs to be mounted to the s3 integrator, model manager, and all pipelines.
+
+It needs to be mounted to the s3 integrator here:
+
+    volumes:
+      - model-storage:/app/data/transfer/models
+
+Model manager needs it to be mounted to the model root. It defaults to /app/models but can be changed using the env variable MODEL_ROOT
+
+    volumes:
+      - model-storage:/app/data/models
+
+Pipelines needs it to be mounted to the model root. It defaults to /app/models but can be changed using the env variable MODEL_ROOT.
+
+    volumes:
+      - model-storage:/app/models
 
 ## Environment variables
 
