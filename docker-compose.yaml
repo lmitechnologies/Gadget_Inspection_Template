@@ -120,6 +120,24 @@ services:
       api-gateway: 
         condition: service_healthy
 
+  model-manager:
+    container_name: gadget-model-manager
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/model_manager:${PACKAGE_VER}
+    restart: unless-stopped
+    ports:
+      - 8000:8000
+    environment:
+      - DATA_STORAGE_ROOT=/app/data/models
+      - CONVERT_TO=engine
+      - CONVERSION_SERVICE_NAME=pipeline
+      - TZ=utc
+    volumes:
+      - model-storage:/app/data/models
+      - transfer-storage:/app/data/transfer
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
   # ---------- inspection ----------   
   pipeline:
     container_name: gadget-pipeline
@@ -146,6 +164,7 @@ services:
       - TZ=utc
     volumes:
       - ./pipeline/:/home/gadget/pipeline
+      - model-storage:/app/models 
       - inline-storage:/app/data
     depends_on:
       api-gateway: 
@@ -234,7 +253,8 @@ services:
     environment:
       - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
     volumes:
-      - transfer-storage:/app/data/transfer
+      - transfer-storage:/app/data/transfer/data
+      - model-storage:/app/data/transfer/models
 
   log-collector:
     container_name: gadget-log-collector
@@ -253,6 +273,12 @@ volumes:
       o: bind
       type: none
       device: /mnt/gadget-inline
+  model-storage:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./models
   transfer-storage:
   postgres_db:
   static-volume:
