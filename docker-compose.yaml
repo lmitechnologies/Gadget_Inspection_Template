@@ -251,8 +251,8 @@ services:
     environment:
       - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
     volumes:
-      - transfer-storage:/app/data/transfer/data
-      - model-storage:/app/data/transfer/models
+      - transfer-storage:/app/data/transfer
+      - model-storage:/app/data/models
 
   log-collector:
     container_name: gadget-log-collector
