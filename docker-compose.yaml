@@ -64,16 +64,15 @@ services:
       api-gateway:
         condition: service_healthy
 
-  app_frontend:
-    command: tail -F anything
-    build:
-      context: /home/trevor/fsp/gadget/app_frontend
-    volumes:
-      - /home/trevor/fsp/gadget/app_frontend:/usr/src/app
-      - /usr/src/app/node_modules
-      - static-volume:/usr/src/app/public
+  app-frontend:
+    container_name: gadget-app-frontend
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_frontend:${PACKAGE_VER}
+    restart: unless-stopped
     ports:
-      - 5173:5173
+      - 80:80
+    volumes:
+      - static-volume:/usr/share/nginx/html/static
+      - ./gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
 
   data-broker:
     container_name: gadget-data-broker
