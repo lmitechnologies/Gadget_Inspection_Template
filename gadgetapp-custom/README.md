@@ -142,3 +142,10 @@ The metric row is an optional second footer that is used to display values it re
 - **metricKey**: The name of the value to be displayed
 - **label**: Label displayed to viewer
 - **cumulative**: Should the values accumulate over time. Expects a boolean value. Defaults to false. If set to true the value must be a number.
+
+## TableComponent
+
+Displays a table of values
+
+- **title**: Title displayed on top of table
+- **displayName**: name of the values to be put in the table. The values must be in a dictionary of key value pairs where both keys and values are literals.
