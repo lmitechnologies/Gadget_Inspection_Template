@@ -98,7 +98,7 @@ A line chart with multiple lines. Used to chart the number of times something oc
 
 A bar chart that creates a new bar for each unique value it receives
 
-- **decisionKey**: the name of the value to be charted.
+- **decisionKey**: the name of the value to be charted. Expects value to be a literal or an array of literals.
 
 #### Histogram
 
