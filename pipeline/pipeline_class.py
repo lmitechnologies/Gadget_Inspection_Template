@@ -57,7 +57,6 @@ class ModelPipeline(Base):
             dict: should return self.results defined in the pipeline base class
         """
         self.index += 1
-        self.logger.info(f"Index: {self.index} returns: {10 if self.index % 60 == 0 else 1}")
         return {
             "outputs": {
                 "annotated": inputs['image'],

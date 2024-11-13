@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   # ---------- platform ----------   
   db:
@@ -56,6 +55,7 @@ services:
       - inline-storage:/app/data
       - static-volume:/app/static
       - user-volume:/app/db/
+      - ./jobs:/app/jobs
     environment:
       - VERBOSE=False
     ports:
@@ -66,13 +66,25 @@ services:
 
   app-frontend:
     container_name: gadget-app-frontend
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_frontend:${PACKAGE_VER}
+    command: tail -f /dev/null
+    image: node:18-alpine
     restart: unless-stopped
     ports:
       - 80:80
     volumes:
       - static-volume:/usr/share/nginx/html/static
       - ./gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
+      - /home/trevor/fsp/gadget/app_frontend:/home
+
+  # app-frontend:
+  #   container_name: gadget-app-frontend
+  #   image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_frontend:${PACKAGE_VER}
+  #   restart: unless-stopped
+  #   ports:
+  #     - 80:80
+  #   volumes:
+  #     - static-volume:/usr/share/nginx/html/static
+  #     - ./gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
 
   data-broker:
     container_name: gadget-data-broker
@@ -131,7 +143,7 @@ services:
     environment:
       - TZ=utc
     volumes:
-      - ./models:/app/data/models
+      - model-manager:/app/data/models
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -152,7 +164,7 @@ services:
     environment:
       - PIPELINE_SERVER_SERVICE_TYPE=pipeline
       - PIPELINE_SERVER_SERVICE_NAME=pipeline
-      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/line-scan
+      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/one
       - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
       - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
@@ -162,7 +174,7 @@ services:
       - TZ=utc
     volumes:
       - ./pipeline/:/home/gadget/pipeline
-      - ./models:/app/models
+      - model-manager:/app/models
       - inline-storage:/app/data
     depends_on:
       api-gateway: 
@@ -197,15 +209,34 @@ services:
       api-gateway: 
         condition: service_healthy
 
-  chromasens:
-    hostname: gadget-sensor-gocator
-    container_name: gadget-sensor-gocator
+  gocator_0:
+    hostname: gadget-sensor-gocator-0
+    container_name: gadget-sensor-gocator-0
     network_mode: host 
-    image: dev-registry.factorysmart.com/linux/amd64/gadget/sensor_chromasens:0.0.0.dev1156055067065066060
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
+    restart: unless-stopped
+    environment:
+      - SENSOR_GOCATOR_SERVICE_NAME=one
+      - SENSOR_GOCATOR_PARAMS_START=true
+      - SENSOR_GOCATOR_PARAMS_EMULATION_ENABLED=true
+      - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10
+      - TZ=utc
+    volumes:
+      - ./test_images:/home/gadget/test_images
+      - inline-storage:/app/data/inline
+    depends_on:
+      api-gateway: 
+        condition: service_healthy
+
+  chromasens:
+    hostname: gadget-sensor-chromasens
+    container_name: gadget-sensor-chromasens
+    network_mode: host 
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_chromasens:${PACKAGE_VER}
     restart: unless-stopped
     volumes:
       - ./test_images:/home/gadget/test_images
-      - inline-storage:/app/data
+      - inline-storage:/app/data/inline
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -247,7 +278,7 @@ services:
       - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
     volumes:
       - transfer-storage:/app/data/transfer
-      - ./models:/app/data/models
+      - model-manager:/app/data/models
 
   log-collector:
     container_name: gadget-log-collector
@@ -272,4 +303,5 @@ volumes:
   db_static_volume:
   vault-storage:
   user-volume:
+  model-manager:
  
