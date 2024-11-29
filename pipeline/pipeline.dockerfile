@@ -4,7 +4,7 @@ FROM  python:3.8.12-buster
 ARG PACKAGE_VER
 ARG PYPI_SERVER
 
-WORKDIR /home/gadget/workspace
+WORKDIR /home/gadget
 
 # install dependecies
 COPY ./requirements.txt .

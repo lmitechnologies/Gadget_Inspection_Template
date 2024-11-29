@@ -11,6 +11,8 @@ this pipeline class, needs to have the following methods:
 
 import logging
 from pipeline_base import PipelineBase as Base
+import torch
+
 
 class ModelPipeline(Base):
 
@@ -41,6 +43,7 @@ class ModelPipeline(Base):
         pass
 
 
+    @torch.inference_mode()
     @Base.track_exception(logger)
     def predict(self, configs: dict, inputs: dict) -> dict:
         """predict on the inputs
