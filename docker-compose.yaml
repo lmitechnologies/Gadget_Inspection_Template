@@ -153,7 +153,7 @@ services:
       - PIPELINE_SERVER_SERVICE_TYPE=pipeline
       - PIPELINE_SERVER_SERVICE_NAME=pipeline
       - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
-      - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/models
+      - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/trt-engines
       - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
       - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
