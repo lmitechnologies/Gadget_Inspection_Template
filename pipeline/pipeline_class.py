@@ -27,12 +27,13 @@ class ModelPipeline(Base):
         
         
     @Base.track_exception(logger)
-    def load(self, configs):
+    def load(self, model_roles, configs):
         """
         create model instances with weight files
         if loading files fail, then don't create model instances
         """
-        self.logger.info("LOAD")
+        self.logger.info(f"MODEL ROLES {model_roles}")
+        self.logger.info(f"CONFIGS {configs}")
 
 
     @Base.track_exception(logger)
@@ -40,7 +41,7 @@ class ModelPipeline(Base):
         """
         warm up all the models in the pipeline
         """
-        self.logger.info("WARMUP")
+        self.logger.info(f"WARMUP")
 
 
     index = 0
