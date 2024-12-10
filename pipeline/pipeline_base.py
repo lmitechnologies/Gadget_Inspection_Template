@@ -9,20 +9,36 @@ from abc import ABCMeta, abstractmethod
 class PipelineBase(metaclass=ABCMeta):
     
     logger = logging.getLogger(__name__)
+    models: collections.OrderedDict
+    results: dict
     
     def __init__(self):
         """
         init the pipeline.
         it has the following attributes:
             models: a dictionary of model instances, e.g., {model_name: model_instance}
-            configs: a dictionary of the initial configs to load models, e.g., {model_path: '/path/to/model'}
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
         """
         self.models = collections.OrderedDict()
-        self.configs = {}
         self.init_results()
-        
-        
+    
+    
+    def init_results(self):
+        """
+        init the output results
+        """
+        self.results = {
+            "outputs": {
+                "annotated": None,
+            },
+            "automation_keys": [],
+            "factory_keys": ['tags'],
+            "tags": [],
+            "should_archive": True,
+            "errors": [],
+        }
+    
+    
     @classmethod
     def track_exception(cls, logger=logging.getLogger(__name__)):
         """track exceptions and log the error message to GoFactory.
@@ -46,22 +62,6 @@ class PipelineBase(metaclass=ABCMeta):
                         return self.results
             return wrapper
         return deco
-    
-    
-    def init_results(self):
-        """
-        init the output results
-        """
-        self.results = {
-            "outputs": {
-                "annotated": None,
-            },
-            "automation_keys": [],
-            "factory_keys": ['tags'],
-            "tags": [],
-            "should_archive": True,
-            "errors": [],
-        }
     
     
     @abstractmethod

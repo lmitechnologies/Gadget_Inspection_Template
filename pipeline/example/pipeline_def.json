@@ -2,24 +2,18 @@
     "configs_def":[
         {
             "name": "middle_model",
-            "default_value": "/home/gadget/workspace/weights/best.pt"
-        },
-        {
-            "name": "middle_hw",
-            "default_value": [256,256]
-        },
-        {
-            "name": "middle_configs",
             "default_value": {
-                "model_configs": {
-                    "iou": 0.45
-                },
-                "object_configs": {
+                "path": "/home/gadget/pipeline/trt-engines/best.pt",
+                "hw": [256,256],
+                "iou": 0.45,
+                "classes": {
                     "left": {
-                        "confidence": 0.5
+                        "confidence": 0.5,
+                        "rgb": [0,0,255]
                     },
                     "right": {
-                        "confidence": 0.5
+                        "confidence": 0.5,
+                        "rgb": [255,0,0]
                     }
                 }
             },
