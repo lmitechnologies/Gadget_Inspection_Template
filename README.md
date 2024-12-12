@@ -263,3 +263,112 @@ To stop the Gadget, run the command:
     docker-compose -f inspection.docker-compose.yaml down
 
 Include the flag -v after down to also delete the volumes, including the database and image archive. Not usually recommended
+
+# Line Config Yaml
+
+`line_config.yaml` is used to store line specific environment variables. Required variables are are `FACTORY_CLIENT_ID`, `GADGET_DEVICE_ID`, `VAULT_CREDENTIAL`, and `GADGETAPP_TITLE`. `SUBFOLDER` indicates to location of the docker compose file. If left blank it will use `./default`.
+
+# Makefile Documentation
+
+## Variables
+- **`LINE`**: Specifies the configuration line to use from `YAML_FILE`. Default: `default`.
+- **`NO-CACHE`**: Specifies whether to use Docker's `--no-cache` during builds. Accepts `y` for no-cache, defaults to `n`.
+- **`SERVICE`**: Optional variable for `restart` to specify a single service to restart.
+
+## Targets
+
+### 1. `init`
+Generate the `ENV_FILE` for a specified `LINE` from `YAML_FILE`.
+
+**Usage:**
+```bash
+make init LINE=<line_name>
+```
+If `LINE` is not provided or does not exist in `YAML_FILE`, an error will be displayed, along with available lines.
+
+---
+
+### 2. `check_file`
+Validate the existence of `YAML_FILE`.
+
+**Usage:**
+```bash
+make check_file
+```
+
+---
+
+### 3. `build`
+Build Docker images using the resolved Docker Compose file. Optionally, skip the build cache.
+
+**Usage:**
+```bash
+make build
+make build NO-CACHE=y
+```
+
+---
+
+### 4. `pull`
+Pull Docker images as defined in the resolved Docker Compose file.
+
+**Usage:**
+```bash
+make pull
+```
+
+---
+
+### 5. `up`
+Start the services in the resolved Docker Compose file.
+
+**Usage:**
+```bash
+make up
+```
+
+---
+
+### 6. `down`
+Stop and remove containers using the resolved Docker Compose file.
+
+**Usage:**
+```bash
+make down
+```
+
+---
+
+### 7. `restart`
+Restart services defined in the resolved Docker Compose file. You can specify a `SERVICE` to restart only that service.
+
+**Usage:**
+- Restart all services:
+  ```bash
+  make restart
+  ```
+- Restart a specific service:
+  ```bash
+  make restart SERVICE=<service_name>
+  ```
+
+---
+
+### 8. `help`
+Display available targets and their descriptions.
+
+**Usage:**
+```bash
+make help
+```
+
+---
+
+## Environment and Compose File Resolution
+
+The Makefile dynamically resolves the Docker Compose file using a `SUBFOLDER` value from `ENV_FILE`. If `SUBFOLDER` is not specified, it defaults to `./default/docker-compose.yaml`.
+
+## Notes
+- Ensure `line_config.yaml` exists before running `init`.
+- Use `make help` to view a summary of available targets.
+- The Makefile is designed to handle multiple configurations and is extensible for more targets.
