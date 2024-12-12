@@ -5,3 +5,4 @@ __pycache__
 image_archive
 models/*
 pipeline/trt-generation/**/*.engine
+custom.env
