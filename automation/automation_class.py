@@ -42,7 +42,7 @@ class AutomationClass():
     def decision_mapping(self, msg: str) -> Tuple[str, List[str]]:
         pass
 
-    def send_action(self, action: str, aux_info: List[str]) -> bool:
+    def send_action(self, action: str, aux_info: List[str]) -> List[str]:
         pass
 
     

@@ -14,8 +14,8 @@ The automation server API is a list of methods that the automation class must im
   - Checks if connection is still active. Doesn't take any arguments returns a bool. True if connection is still good, false otherwise.
 - def decision_mapping(self, mgs: str) -> Tuple[str, List[str]]
   - Translates the model pipeline result to an automation *action*. Takes as an argument a string representation of gadget_core pipeline message. Returns a tuple, a string representing the *action* and a list of strings representing any metadata associated with the action.
-- def send_action(self, action: str, aux_info: List[str]) -> bool:
-  - Sends the action to the automation machine. It takes the result of decision_mapping as its arguments, a string representing the action and a list of strings representing any metadata. It returns a bool. True if the action was sent, False otherwise
+- def send_action(self, action: str, aux_info: List[str]) -> List[str]:
+  - Sends the action to the automation machine. It takes the result of decision_mapping as its arguments, a string representing the action and a list of strings representing any metadata. Optionally returns list of tags to send to GoFactory
 
 ## Configs JSON File
 
@@ -47,7 +47,7 @@ To define a config with a handler, add to the configs_with_handlers list an obje
                 "default_value": 5,
                 "handler": "line_speed_handler"
             }
-    }
+    ]
 
 The value associated with the key *handler* must be a method defined in the automation class. The method must take the config value as an argument and not return anything. The automation server will call that handler whenever the config is updated in the database. The complete JSON file from the examples would look like:
 
@@ -64,7 +64,7 @@ The value associated with the key *handler* must be a method defined in the auto
                 "default_value": 5,
                 "handler": "line_speed_handler"
             }
-        }
+        ]
     }
 
 ## Dockerfile
