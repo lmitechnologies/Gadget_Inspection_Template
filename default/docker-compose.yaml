@@ -66,7 +66,7 @@ services:
     image: dev-registry.factorysmart.com/linux/amd64/gadget/app_frontend:0.0.0.dev1156055067065066060
     restart: unless-stopped
     environment:
-      - GADGET_APP_TITLE=${GADGETAPP_TITLE}
+      - GADGET_APP_TITLE=${GADGET_APP_TITLE}
     ports:
       - 80:80
     volumes:
