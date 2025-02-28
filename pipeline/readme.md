@@ -33,7 +33,7 @@ The pipeline folder consists of the following:
 
 ## Folder Contents
 
-**example**: a folder of examples that illustrate the implmenetation of pipelines for performing inspection tasks using varying AI models.  
+**example**: a folder of examples that illustrate the implementation of pipeline classes for performing inspection tasks using varying AI models.  
 **test**: a folder containing the testing scripts (optional).  
 **trt-engines**: a folder containing the generated TensorRT engines, created from the models in the **trt-generation** folder. These engines are intended for deployment to production edge devices, such as GoMax.  
 **trt-generation**: a folder containing model weights and additional files required for generating TensorRT engines.  
@@ -93,23 +93,17 @@ This function initializes two class variables:
     - `self.models`: a dictionary containing model names as keys and their corresponding models as values.
     - `self.results`: a results dictionary to be returned by the **predict** function in the pipeline class.
 2. **def init_results(self) -> None:**  
-This function initializes a `self.results` class variable and fulfills the requirements in the [Pipeline Result Dictionary](#pipeline-result-dictionary) section.
+This function initializes a `self.results` variable and fulfills the requirements in the [Pipeline Result Dictionary](#pipeline-result-dictionary) section.
 3. **def track_exception(cls, logger=logging.getLogger(\_\_name\_\_)):**  
 This function is a decorator for tracking exceptions and sending error messages to GoFactory for debugging. It's recommended to apply this decorator for **every** required function in the pipeline class.
 4. **def clean_up(self, configs: dict) -> None:**  
 This function deletes the models from memory.
 5. **def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False, overwrite=False):**  
-This function updates the `self.results` variable using the following rules:
-    1. If the `key` does not exist in the `self.results`, create a new `key`-`value` pair.
-    2. If the `self.results[key]` is a list:
-        1. if overwrite is False, append the `value` to the list.
-        2. if overwrite is True, overwrite the list with the `value`.
-    3. If the `self.results[key]` is a dictionary and `sub_key` is not None, update the value of the sub_key.
-    4. Otherwise, overwrite the `value` of the key.
+This function updates the `self.results` variable based on predefined rules. For detailed information, refer to the function's docstring.
 
 ## Pipeline Inputs
 
-The `inputs` argument of the **predict** function is a dictionary. It includes an `image` key for data from a single 2D camera imaging system and a `surface` key for data from a single Gocator imaging system. Occasionally, it may also include a `measurement` key for Gocator tool outputs.  
+The `inputs` argument of the required **predict** function is a dictionary. It includes an `image` key for data from a single 2D camera imaging system and a `surface` key for data from a single Gocator imaging system. Occasionally, it may also include a `measurement` key for Gocator tool outputs.  
 Below is an example of inputs of a two-sensor imaging system (one 2D camera and one Gocator):
 
 ```python
@@ -164,10 +158,10 @@ For the **Required** key-value pairs,
 - The `tags` value should be a list of strings. These tags appear at the top of an event column on the inspections page and can be used to filter results. Ensure `factory_keys` includes `tags` so that this information is also sent to GoFactory.
 - The `should_archive` value is a boolean indicating whether to archive the current input. Archiving an image instructs the data manager to move the image from inline storage to offline storage, where it is retained for a longer period.
 
-For the **Custom** key-value pairs, some keys will be used as values for the **Required** keys, as described earlier. The remaining pairs will be saved directly to the database.
+For the **Custom** key-value pairs, some keys will be used as values for the **Required** keys. The remaining pairs will be saved directly to the database.
 
 Here is an example:  
-Pipeline predict result stored in Postgres database:
+The result dictionary is stored in a Postgres database:
 
 ```python
 
