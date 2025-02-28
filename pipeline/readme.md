@@ -1,86 +1,139 @@
 # Gadget Pipeline
-This is a pipeline template for AI models deployment on LMI runtime platform - **Gadget**.
+
+This pipeline template is designed for deploying AI models on the LMI runtime platform - **Gadget**. It also provides a step-by-step guide to help developers get started.
+
+## Getting Started
+
+1. Read this document thoroughly.
+2. Review the examples provided in the **example** folder.
+3. Define the **Dockerfile** for your pipeline.
+4. Populate the **pipeline_def.json** with the necessary configurations.
+5. Implement the required functions in the **pipeline_class.py** file.
+6. Add a unit test in the `main` function within **pipeline_class.py**.
+7. Run and validate the unit test.
 
 ## Top-level Folder Strcuture
-The pipeline folder consists of the followings:  
-    .  
-    ├── models  
-    ├── test  
-    ├── pipeline_def.json  
-    ├── pipeline_class.py  
-    ├── pipeline.env  
-    ├── pipeline.dockerfile  
-    ├── requirements.txt  
-    ├── sample_pipeline.py  
-    ├── utils.py  
-    ├── \_\_init\_\_.py  
-    └── README.md  
+
+The pipeline folder consists of the following:  
+
+```plaintext
+.  
+├── example  
+├── test  
+├── trt-engines  
+├── trt-generation  
+├── __init__.py  
+├── pipeline_base.py  
+├── pipeline_class.py  
+├── pipeline_def.json  
+├── pipeline.dockerfile  
+├── README.md  
+└── requirements.txt  
+```
 
 ## Folder Contents
-**models**: a folder contains the trained models.  
-**test**: a folder contains the testing scripts (optional).  
-**pipeline_def.json**: it defines the pipeline configurations, such as the paths to the trained models or confidence thresholds of classes. It must has a list named `configs_def`. The elements are dictionaries of key-value pairs and each dictionary must has two keys: `name` and `default_value`. Here is an example:
+
+**example**: a folder of examples that illustrate the implmenetation of pipelines for performing inspection tasks using varying AI models.  
+**test**: a folder containing the testing scripts (optional).  
+**trt-engines**: a folder containing the generated TensorRT engines, created from the models in the **trt-generation** folder. These engines are intended for deployment to production edge devices, such as GoMax.  
+**trt-generation**: a folder containing model weights and additional files required for generating TensorRT engines.  
+**pipeline_base.py**: the pipeline base class, which typically does **not** require modification.  
+**pipeline_class.py**: the implementation of the pipeline class. Several required functions must be implemented.  
+**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` key, whose value is a list. Each element in this list is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Here is an example:
+
 ```json
 {
     "configs_def":
     [
         {
-            "name": "model_path",
-            "default_value": "PATH_TO_THE_TRAINED_MODEL"
-        },
-        {
-            "name": "confidence_defect",
-            "default_value": 0.5
+            "name": "od_model",
+            "default_value": {
+                "path": "PATH_TO_THE_TRAINED_MODEL",
+                "hw": [640,640], // model height and width
+                "confidence": {
+                    "defect1": 0.5,
+                    "defect2": 0.8,
+                }
+            }
         }
     ]
 }
-
-```
-**pipeline_class.py**: the implementation of the pipeline class. There are several required functions to be implemented. Check the details in the section - [Pipeline API](#pipeline-api).  
-**pipeline.env**: the environmental file used by the docker container. Below is the content of the environmental file. `PIPELINE_SERVER_INSTANCE_NUMBER` is the instance index of the pipeline (default to 0). `PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS` is the subscriber topic. It currently subscribes to the gocator sensor. Modify it if other type of sensors is used. `PIPELINE_SERVER_SETTINGS_MODELS_ROOT` is the path to the trained models.
-
-```bash
-# these settings are usually changed according to your application
-PIPELINE_SERVER_SERVICE_NAME=pipeline
-PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
-PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/workspace/pipeline/models
-# the following settings shouldn't be changed often
-PIPELINE_SERVER_SERVICE_TYPE=pipeline
-PIPELINE_SERVER_SETTINGS_DATA_STORAGE_ROOT=/app/data/inline
-PIPELINE_SERVER_SETTINGS_GADGET_DATABASE_API_HOST=api-gateway
-PIPELINE_SERVER_SETTINGS_GADGET_DATABASE_API_PORT=8080
-PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_HOST=127.0.0.1
-PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/workspace/pipeline
-PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
-PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
-TZ=utc
 ```
 
-**pipeline.dockerfile**: the dockerfile defines the pipeline container.
-**requirements.txt**: it defines what python libraries will be installed in the docker container.  
-**sample_pipeline.py**: the example pipeline class, where it loads two models, and makes prediction using all models.  
-**utils.py**: it defines all the utility functions that will be used in the **pipeline_class.py**.  
+**pipeline.dockerfile**: the Dockerfile that defines the pipeline container.  
+**requirements.txt**: this file specifies the Python libraries to be installed in the Docker container.  
 
-## Pipeline API
+## Pipeline Class API
 
-The gadget pipeline is the class to load the configurations (confidence levels, trained AI models paths, class map, etc.), load and warm up the models, make predictions, and clean up the models. 
-To complete these taks, below are the required methods to be implemented:
+The Gadget pipeline class, to be implemented in the **pipeline_class.py**, is responsible for loading configurations (e.g., confidence thresholds, paths to trained AI models, model hyperparameters, etc.), loading and warming up models, making predictions, and cleaning up models. The pipeline class inherits from the base class defined in the **pipeline_base.py** to simplify implementation. Refer to the [Pipeline Base Class](#pipeline-base-class) section for details.  
+To complete these tasks listed above, the following functions must be implemented in the pipeline class:
 
 1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
-    This is the function to load and initialize the pipeline class configurations, where `kwargs` are keyword arguments and it contains the key-value pairs that are defined in the **pipeline_def.json**.
+    This function initializes the pipeline class. The `kwargs` argument contains the key-value pairs defined in the **pipeline_def.json**.
 2. **def load(self, `configs`: dict) -> None:**  
-    This function receives `configs` and loads the models.
+    This function loads the models and stores them in the `self.models` variable defined in the pipeline base class. The `configs` argument contains runtime key-value pairs, where the keys match those in the **pipeline_def.json** and the values may differ. The following functions use the same `configs` argument unless otherwise stated.
 3. **def warm_up(self, `configs`: dict) -> None:**  
-    This function receives `configs` and runs the models the first time.
+    This function receives the `configs` and runs the models for the first time using dummy inputs.
 4. **def predict(self, `configs`: dict, `inputs`: dict) -> dict:**  
-    This function receives the `inputs` and `configs`, make predictions, add annotations to the image, and returns the annotated image with the model results. This function must return a dictionary. See the details in section - [Pipeline Result Dictionary](#pipeline-result-dictionary).  
-    Besides, It would be helpful for developers to define a unit test in the main function. Refer to the main function in the **sample_pipeline.py**. 
-5. **def clean_up(self, `configs`: dict):**  
-    This function receives `configs` and deletes the models from memory.
+    This function receives the `inputs` and `configs`, makes predictions, adds annotations to the image, and returns the annotated image along with the model results. Refer to the [Pipeline Inputs](#pipeline-inputs) section for the details of `inputs`. This function must return a `self.results` dictionary defined in the pipeline base class.  
+
+The following function is already implemented in the pipeline base class. While it is recommended to use the base class, developers who choose not to use it must implement this function themselves:
+
+- **def clean_up(self, `configs`: dict):**  
+This function receives `configs` and deletes the models from memory.
+
+Additionally, it is recommended that developers define a unit test in the main function within the pipeline class. Refer to the main function in the **example/pipeline_class.py** for guidance.
+
+## Pipeline Base Class
+
+The pipeline base class, defined in the **pipeline_base.py**, serves as a base class to help developers quickly implementing the required functions in the pipeline class. This base class typically does **not** require modification and includes the following major functions:
+
+1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
+This function initializes two class variables:
+    - `self.models`: a dictionary containing model names as keys and their corresponding models as values.
+    - `self.results`: a results dictionary to be returned by the **predict** function in the pipeline class.
+2. **def init_results(self) -> None:**  
+This function initializes a `self.results` class variable and fulfills the requirements in the [Pipeline Result Dictionary](#pipeline-result-dictionary) section.
+3. **def track_exception(cls, logger=logging.getLogger(\_\_name\_\_)):**  
+This function is a decorator for tracking exceptions and sending error messages to GoFactory for debugging. It's recommended to apply this decorator for **every** required function in the pipeline class.
+4. **def clean_up(self, configs: dict) -> None:**  
+This function deletes the models from memory.
+5. **def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False, overwrite=False):**  
+This function updates the `self.results` variable using the following rules:
+    1. If the `key` does not exist in the `self.results`, create a new `key`-`value` pair.
+    2. If the `self.results[key]` is a list:
+        1. if overwrite is False, append the `value` to the list.
+        2. if overwrite is True, overwrite the list with the `value`.
+    3. If the `self.results[key]` is a dictionary and `sub_key` is not None, update the value of the sub_key.
+    4. Otherwise, overwrite the `value` of the key.
+
+## Pipeline Inputs
+
+The `inputs` argument of the **predict** function is a dictionary. It includes an `image` key for data from a single 2D camera imaging system and a `surface` key for data from a single Gocator imaging system. Occasionally, it may also include a `measurement` key for Gocator tool outputs.  
+Below is an example of inputs of a two-sensor imaging system (one 2D camera and one Gocator):
+
+```python
+inputs = {
+    # 2D RGB image
+    'image':{
+        'pixels': numpy,
+    },
+    # Gocator 3D data
+    'surface':{
+        'profile': numpy,
+        'resolution': list,
+        'offset': list,
+    },
+    # Gocator tool outputs
+    'measurement':{
+        'data': dict,
+    }
+}
+```
 
 ## Pipeline Result Dictionary
 
-The pipeline predict method will return a dictionary that follows this pattern:  
+The pipeline's **predict** function returns a dictionary following this structure:
 
 ```python
 {
@@ -94,25 +147,27 @@ The pipeline predict method will return a dictionary that follows this pattern:
     "should_archive":bool,
 
     # Custom
-    "key-1": VALUE,
-    "key-2": VALUE,
-    "key-3": VALUE,
+    "key1": VALUE,
+    "key2": VALUE,
+    "key3": VALUE,
 }
 
 ```
 
-The key-value pairs in the dictionary must contain a literal or a list. No other object is allowed. The key-value pairs are grouped into two categories: **Required** and **Custom**.
+The key-value pairs in the dictionary must contain literals or lists. No other object types are allowed. The key-value pairs are grouped into two categories: **Required** and **Custom**.
 
-For the **Required** key-value pairs, the value of `annotated_output` is a numpy array of the annotated image. The value of `automation_keys` is a list of strings that are a subset of **Custom** keys that will be sent to the automation service. They should be information that is specifically needed by the automation service. The value of `factory_keys` is a list of strings that are a subset of **Custom** keys that will be consumed by GoFactory. They should be values that are actually useful in GoFactory and will not overly inflate the size of the database. The values in factory_keys are what populate the Grafana dashboards and appear when you over over an thumbnail in the inspections page. The values in tags appear at the top of an event column in the inspections page. They can be used to filter what results get shown. The value of `tags` should be a list of strings. `factory_keys` should also include `tags` so that information is also sent to GoFactory.
+For the **Required** key-value pairs,  
 
-![Alt text](./markdown_images/image.png "Optional title")
+- The `outputs` value is a dictionary that must include an `annotated` key, with its corresponding value being a NumPy array or None. It may also contain additional key-value pairs.
+- The `automation_keys` value is a list of strings, which are a subset of **Custom** keys. These keys are sent to the automation service to interact with automation devices, such as PLCs.
+- The `factory_keys` value is a list of strings, which are a subset of **Custom** keys consumed by GoFactory. These keys should represent values that are genuinely useful in GoFactory and do not unnecessarily inflate the database size. The values in `factory_keys` populate Grafana dashboards and appear when hovering over a thumbnail on the inspections page.
+- The `tags` value should be a list of strings. These tags appear at the top of an event column on the inspections page and can be used to filter results. Ensure `factory_keys` includes `tags` so that this information is also sent to GoFactory.
+- The `should_archive` value is a boolean indicating whether to archive the current input. Archiving an image instructs the data manager to move the image from inline storage to offline storage, where it is retained for a longer period.
 
-The value of `should_archive` is a boolean indicating whether to archive current input. Archiving an image means telling the data manager to move the image from inline storage to offline storage. Images in offline storage are kept around for much longer.
-
-For the **Custom** key-value pairs, the keys of some pairs will be used as the values of the **Required** keys as mentioned in the previous paragraph. The rest of pairs will be saved to the database.  
+For the **Custom** key-value pairs, some keys will be used as values for the **Required** keys, as described earlier. The remaining pairs will be saved directly to the database.
 
 Here is an example:  
-Pipeline predict result and stored in Postgres database:
+Pipeline predict result stored in Postgres database:
 
 ```python
 
