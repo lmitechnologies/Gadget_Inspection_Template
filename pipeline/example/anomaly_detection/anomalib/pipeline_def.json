@@ -1,0 +1,16 @@
+{
+    "configs_def":[
+        {
+            "name": "ad_model",
+            "default_value": {
+                "path": "/home/gadget/pipeline/trt-engines/best.pt",
+                "configs":{
+                    "err_threshold": 5,
+                    "err_max": 12,
+                    "err_size": 10
+                }
+            },
+            "comment": "none"
+        }
+    ]
+}

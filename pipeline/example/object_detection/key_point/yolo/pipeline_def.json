@@ -1,0 +1,23 @@
+{
+    "configs_def":[
+        {
+            "name": "pose_model",
+            "default_value": {
+                "path": "/home/gadget/pipeline/trt-engines/best.pt",
+                "hw": [256,256],
+                "iou": 0.45,
+                "classes": {
+                    "class1": {
+                        "confidence": 0.5,
+                        "rgb": [0,0,255]
+                    },
+                    "class2": {
+                        "confidence": 0.5,
+                        "rgb": [255,0,0]
+                    }
+                }
+            },
+            "comment": "none"
+        }
+    ]
+}
