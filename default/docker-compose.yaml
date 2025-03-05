@@ -55,27 +55,28 @@ services:
       - inline-storage:/app/data
       - static-volume:/app/static
       - user-volume:/app/db/
+      - ../jobs:/app/jobs
     environment:
       - VERBOSE=False
     depends_on:
       api-gateway:
         condition: service_healthy
 
-  # app-frontend:
-  #   container_name: gadget-app-frontend
-  #   command: tail -f /dev/null
-  #   image: node:18-alpine
-  #   restart: unless-stopped
-  #   ports:
-  #     - 80:80
-  #   volumes:
-  #     - static-volume:/usr/share/nginx/html/static
-  #     - ./gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
-  #     - /home/trevor/fsp/gadget/app_frontend:/home
+  app-frontend-dev:
+    container_name: gadget-app-frontend-dev
+    command: tail -f /dev/null
+    image: node:18-alpine
+    restart: unless-stopped
+    ports:
+      - 5173:5173
+    volumes:
+      - static-volume:/usr/share/nginx/html/static
+      - ./gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
+      - /home/trevor/fsp/gadget/app_frontend:/home
 
   app-frontend:
     container_name: gadget-app-frontend
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_backend/gadget/app_frontend:${PACKAGE_VER}
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_frontend:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - GADGET_APP_TITLE=${GADGETAPP_TITLE}
@@ -84,6 +85,7 @@ services:
     volumes:
       - static-volume:/usr/share/nginx/html/static
       - ../gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
+      - ../custom_components:/opt/front_end/custom_components
 
   data-broker:
     container_name: gadget-data-broker
@@ -158,6 +160,7 @@ services:
     build: 
       context: ../pipeline
       args:
+        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
       dockerfile: pipeline.dockerfile
