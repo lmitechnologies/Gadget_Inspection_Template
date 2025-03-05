@@ -3,6 +3,7 @@ import functools
 import logging
 import traceback
 from abc import ABCMeta, abstractmethod
+import json
 
 
 
@@ -140,4 +141,29 @@ class PipelineBase(metaclass=ABCMeta):
             
         if to_automation and key not in self.results['automation_keys']:
             self.results['automation_keys'].append(key)
+        
+        
+    def check_return_types(self) -> bool:
+        """check if the return types are json serializable for debugging purpose.
+        """
+        def is_json_serializable(obj):
+            """Check if an object can be serialized to JSON."""
+            try:
+                json.dumps(obj)
+                return True
+            except (TypeError, OverflowError):
+                return False
+        
+        def helper(data, key=None):
+            if isinstance(data, dict):
+                for k,v in data.items():
+                    if not helper(v, k if key is None else key):
+                        return False
+            
+            if not is_json_serializable(data):
+                self.logger.info(f'key: {key} is not json serializable')
+                return False
+            return True
+        
+        return helper({k: v for k, v in self.results.items() if k != 'outputs'})
     
