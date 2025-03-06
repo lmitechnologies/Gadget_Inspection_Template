@@ -1,9 +1,9 @@
 {
     "configs_def":[
         {
-            "name": "pose_model",
+            "name": "seg_model",
             "default_value": {
-                "path": "/home/gadget/pipeline/trt-engines/yolo11n-pose.pt",
+                "path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt",
                 "hw": [640,640],
                 "iou": 0.45,
                 "classes": {

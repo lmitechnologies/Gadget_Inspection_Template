@@ -4,7 +4,7 @@
             "name": "cls_model",
             "default_value": {
                 "path": "/home/gadget/pipeline/trt-engines/best.pt",
-                "hw": [256,256]
+                "hw": [224,224]
             },
             "comment": "none"
         }

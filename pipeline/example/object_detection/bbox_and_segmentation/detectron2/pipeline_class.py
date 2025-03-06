@@ -4,22 +4,21 @@ import sys
 import cv2
 import logging
 import torch
+import json
 
 sys.path.append('/home/gadget/pipeline')
 sys.path.append('/home/gadget/LMI_AI_Solutions/object_detectors')
-sys.path.append('/home/gadget/LMI_AI_Solutions/classifiers')
 sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
 
 from pipeline_base import PipelineBase as Base
 
 # functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-from yolov8_cls.model import Yolov8_cls
+from detectron2_lmi.model import Detectron2Model
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
 PASS = 'PASS'
 FAIL = 'FAIL'
-FAILED_CLASS = 'class1'
 
 
 class ModelPipeline(Base):
@@ -44,7 +43,9 @@ class ModelPipeline(Base):
         Args:
             configs (dict): runtime configs
         """
-        self.models['cls'] = Yolov8_cls(configs['cls_model']['path'])
+        path = configs['od_model']['path']
+        self.class_map = {v['index']:k for k,v in configs['od_model']['classes'].items()}
+        self.models['od'] = Detectron2Model(path, class_map=self.class_map)
         self.logger.info('models are loaded')
     
     
@@ -56,8 +57,8 @@ class ModelPipeline(Base):
             configs (dict): runtime configs
         """
         t1 = time.time()
-        imgsz = configs['cls_model']['hw']
-        self.models['cls'].warmup(imgsz)
+        imgsz = configs['od_model']['hw']
+        self.models['od'].warmup(img_size=imgsz)
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
         
@@ -71,10 +72,13 @@ class ModelPipeline(Base):
 
         Returns:
             img (numpy): a resized image
+            operators (list): a list of operators for converting back to original image size
         """
+        h0,w0 = image.shape[:2]
         th,tw = hw
         img = cv2.resize(image, (tw,th))
-        return img
+        operators = [{'resize':[tw,th,w0,h0]}]
+        return img, operators
     
     
     @torch.inference_mode()
@@ -102,24 +106,65 @@ class ModelPipeline(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        hw = configs['cls_model']['hw']
+        hw = configs['od_model']['hw']
+        confs = {k:v['confidence'] for k,v in configs['od_model']['classes'].items()} # confidence thresholds
         
         # run the object detection model
-        processed_im = self.preprocess(image, hw)
-        results_dict, time_info = self.models['cls'].predict(processed_im)
+        processed_im, operators = self.preprocess(image, hw)
+        # the results are all in the original image space
+        results_dict = self.models['od'].predict(processed_im, confs=confs, operators=operators, return_segments=True)
+        
+        # annotate the image using bounding boxes
+        results_dict = {k:v[0] for k,v in results_dict.items()}
+        annotated_image = self.models['od'].annotate_image(results_dict, image)
+        
+        # upload annotated image to GadgetAPP and GoFactory
+        self.update_results('outputs', annotated_image, sub_key='annotated')
+        
+        # grab the results
+        objects = results_dict['classes']
+        boxes = results_dict['boxes']   # bounding boxes
+        scores = results_dict['scores']
+        masks = results_dict['masks'] # binary masks for instance segmentation
+        segments = results_dict['segments'] # polygons according to the masks
+        
+        # upload predicted labels to Label Studio for further manual labeling
+        pred_annots = {
+            'image_width': image.shape[1],
+            'image_height': image.shape[0],
+            'boxes': [],
+            'polygons': []
+        }
+        label_obj = {
+            'type': 'object',
+            'format': 'json',
+            'extension': '.label.json',
+            'content': pred_annots
+        }
+        for i,name in enumerate(objects):
+            box = boxes[i].tolist()
+            seg = segments[i]
+            score = scores[i].item()
+            pred_annots['boxes'].append({
+                'object': name,
+                'x': box[0],
+                'y': box[1],
+                'width': box[2]-box[0],
+                'height': box[3]-box[1],
+                'score': score,
+            })
+            xs,ys = seg[:,0],seg[:,1]
+            pred_annots['polygons'].append({
+                'object': name,
+                'x': xs.tolist(),
+                'y': ys.tolist(),
+                'score': score,
+            })
+        self.update_results('outputs', label_obj, sub_key='labels')
         
         # upload decision to the Gadget automation service
-        object_cls = results_dict['classes'][0]
-        score = results_dict['scores'][0]
-        decision = FAIL if object_cls == FAILED_CLASS else PASS
+        decision = PASS if len(objects) == 0 else FAIL # assume no object is PASS
         self.update_results('decision', decision, to_automation=True)
-        
-        # add text to image
-        annotated_image = image.copy()
-        cv2.putText(annotated_image, f'{object_cls}: {score:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        
-        # add the annotated image to the results
-        self.update_results('outputs',annotated_image, sub_key='annotated')
         
         # upload tags to GoFactory
         tag = PASS if decision == PASS else FAIL
@@ -127,7 +172,9 @@ class ModelPipeline(Base):
         
         total_proc_time = time.time()-start_time
         
-        self.logger.info(f'found class: {object_cls} with confidence: {score}')
+        self.logger.info(f'found objects: {objects}')
+        self.logger.info(f'boxes: {boxes}')
+        self.logger.info(f'scores: {scores}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
         if not self.check_return_types():

@@ -3,10 +3,10 @@
         {
             "name": "ad_model",
             "default_value": {
-                "path": "/home/gadget/pipeline/trt-engines/best.pt",
+                "path": "/home/gadget/pipeline/trt-engines/model_v1.pt",
                 "configs":{
-                    "err_threshold": 5,
-                    "err_max": 12,
+                    "err_threshold": 5.1,
+                    "err_max": 12.1,
                     "err_size": 10
                 }
             },

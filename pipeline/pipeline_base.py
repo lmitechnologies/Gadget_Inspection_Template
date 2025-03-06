@@ -157,7 +157,7 @@ class PipelineBase(metaclass=ABCMeta):
         def helper(data, key=None):
             if isinstance(data, dict):
                 for k,v in data.items():
-                    if not helper(v, k if key is None else key):
+                    if not helper(v, k):
                         return False
             
             if not is_json_serializable(data):
@@ -165,5 +165,15 @@ class PipelineBase(metaclass=ABCMeta):
                 return False
             return True
         
-        return helper({k: v for k, v in self.results.items() if k != 'outputs'})
+        dt = {}
+        for k,v in self.results.items():
+            # only check labels in outputs
+            if k == 'outputs':
+                if 'labels' in v:
+                    if k not in dt:
+                        dt[k] = {}
+                    dt[k]['labels'] = v['labels']
+            else:
+                dt[k] = v
+        return helper(dt)
     

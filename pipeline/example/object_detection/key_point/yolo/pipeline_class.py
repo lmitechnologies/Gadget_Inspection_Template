@@ -82,14 +82,13 @@ class ModelPipeline(Base):
         hw = configs['pose_model']['hw']
         class_info = configs['pose_model']['classes']
         confs = {k:v['confidence'] for k,v in class_info.items()}
-        colormap = {k:v['rgb'] for k,v in class_info.items()}
         
         # run the object detection model
         processed_im, operators = self.preprocess(image, hw)
         results_kp, time_info = self.models['pose'].predict(processed_im, confs, operators, iou)
         
         # annotate the image using key points
-        annotated_image = self.models['pose'].annotate_image(results_kp, image, colormap)
+        annotated_image = self.models['pose'].annotate_image(results_kp, image)
         
         # upload annotated image to GadgetAPP and GoFactory
         self.update_results('outputs', annotated_image, sub_key='annotated')
@@ -124,7 +123,7 @@ if __name__ == '__main__':
     pipeline_def_file = './pipeline/pipeline_def.json'
     image_dir = './data'
     output_dir = './outputs'
-    fmt = 'png'
+    fmt = 'jpg'
     
     logging.basicConfig()
     logger = logging.getLogger()

@@ -11,7 +11,7 @@ sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
 
 from pipeline_base import PipelineBase as Base
 
-# functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
+# functions from LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
 from ultralytics_lmi.yolo.model import Yolo
 import gadget_utils.pipeline_utils as pipeline_utils
 
@@ -27,35 +27,21 @@ class ModelPipeline(Base):
     
     @Base.track_exception(logger)
     def __init__(self, **kwargs) -> None:
-        """initialize the pipeline
-        
-        Args:
-            kwargs: configs defined in the pipeline_def.json
-        """
         super().__init__()
         
     
     @Base.track_exception(logger)
     def load(self, configs):
-        """load the model(s)
-
-        Args:
-            configs (dict): runtime configs
-        """
-        self.models['od'] = Yolo(configs['od_model']['path'])
+        """load the models"""
+        self.models['seg'] = Yolo(configs['seg_model']['path'])
         self.logger.info('models are loaded')
     
     
     @Base.track_exception(logger)
     def warm_up(self, configs):
-        """warm up the model for the first time
-
-        Args:
-            configs (dict): runtime configs
-        """
         t1 = time.time()
-        imgsz = configs['od_model']['hw']
-        self.models['od'].warmup(imgsz)
+        imgsz = configs['seg_model']['hw']
+        self.models['seg'].warmup(imgsz)
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
         
@@ -69,7 +55,7 @@ class ModelPipeline(Base):
 
         Returns:
             img (numpy): a resized image
-            operators (list): a list of operators for converting back to original image size
+            operators (list): a list of operators used for converting back to original image size
         """
         h0,w0 = image.shape[:2]
         th,tw = hw
@@ -80,19 +66,7 @@ class ModelPipeline(Base):
     
     @torch.inference_mode()
     @Base.track_exception(logger)
-    def predict(self, configs: dict, inputs:dict) -> dict:
-        """predict the result based on the inputs
-
-        Args:
-            configs (dict): runtime configs
-            inputs (dict): inputs
-
-        Raises:
-            Exception: failed to load pipeline model(s)
-
-        Returns:
-            dict: a result dictionary
-        """
+    def predict(self, configs: dict, inputs) -> dict:
         start_time = time.time()
         # init a result dict
         self.init_results()
@@ -103,27 +77,62 @@ class ModelPipeline(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        iou = configs['od_model']['iou']
-        hw = configs['od_model']['hw']
-        class_info = configs['od_model']['classes']
-        confs = {k:v['confidence'] for k,v in class_info.items()}
-        colormap = {k:v['rgb'] for k,v in class_info.items()}
+        iou = configs['seg_model']['iou']
+        hw = configs['seg_model']['hw']
+        class_info = configs['seg_model']['classes']
+        confs = {k:v['confidence'] for k,v in class_info.items()}   # confidence thresholds
         
         # run the object detection model
         processed_im, operators = self.preprocess(image, hw)
-        # the results are all in the original image space
-        results_dict, time_info = self.models['od'].predict(processed_im, confs, operators, iou)
+        results_dict, time_info = self.models['seg'].predict(processed_im, confs, operators, iou)
         
-        # annotate the image using bounding boxes
-        annotated_image = self.models['od'].annotate_image(results_dict, image, colormap)
+        # annotate the image using polygons
+        annotated_image = self.models['seg'].annotate_image(results_dict, image)
+        
+        # grab the results
+        masks = results_dict['masks']   # binary masks for instance segmentation
+        segs = results_dict['segments'] # polygons according to the masks
+        boxes = results_dict['boxes']   # bounding boxes
+        scores = results_dict['scores'] # model confidence scores
+        objects = results_dict['classes']   # class labels
+        
+        # upload labels to Label Studio for further manual labeling
+        annots = {
+            'image_width': image.shape[1],
+            'image_height': image.shape[0],
+            'boxes': [],
+            'polygons': []
+        }
+        annot_obj = {
+            'type': 'object',
+            'format': 'json',
+            'extension': '.label.json',
+            'content': annots
+        }
+        for i,name in enumerate(objects):
+            box = boxes[i].tolist()
+            seg = segs[i]
+            score = scores[i].item()
+            dt = {
+                'object': name,
+                'x': box[0],
+                'y': box[1],
+                'width': box[2]-box[0],
+                'height': box[3]-box[1],
+                'score': score,
+            }
+            annots['boxes'].append(dt)
+            xs,ys = seg[:,0],seg[:,1]
+            annots['polygons'].append({
+                'object': name,
+                'x': xs.tolist(),
+                'y': ys.tolist(),
+                'score': score,
+            })
+        self.update_results('outputs', annot_obj, sub_key='labels')
         
         # upload annotated image to GadgetAPP and GoFactory
         self.update_results('outputs', annotated_image, sub_key='annotated')
-        
-        # grab the results
-        objects = results_dict['classes']
-        boxes = results_dict['boxes']
-        scores = results_dict['scores']
         
         # upload decision to the Gadget automation service
         decision = PASS if len(objects) == 0 else FAIL # assume no object is PASS
@@ -136,8 +145,6 @@ class ModelPipeline(Base):
         total_proc_time = time.time()-start_time
         
         self.logger.info(f'found objects: {objects}')
-        self.logger.info(f'boxes: {boxes}')
-        self.logger.info(f'scores: {scores}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
         if not self.check_return_types():
@@ -147,49 +154,42 @@ class ModelPipeline(Base):
 
 
 if __name__ == '__main__':
-    # unit test
     BATCH_SIZE = 1
     pipeline_def_file = './pipeline/pipeline_def.json'
     image_dir = './data'
     output_dir = './outputs'
-    fmt = 'png'
+    fmt = 'jpg'
     
     logging.basicConfig()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     
-    # load the pipeline definition
     kwargs = pipeline_utils.load_pipeline_def(pipeline_def_file)
-    
-    # initialize the pipeline
     pipeline = ModelPipeline(**kwargs)
     
-    # load and warmup the model
+    logger.info('start loading the pipeline...')
     pipeline.load(kwargs)
     pipeline.warm_up(kwargs)
 
-    # load test images
     image_path_batches = pipeline_utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt=fmt)
+    z_scores = []
+    FOMs = []
+    filenames = []
     for batch in image_path_batches:
         for image_path in batch:
-            # load a image
             fname = os.path.basename(image_path)
             logger.info(f'processing {fname}...')
             im_bgr = cv2.imread(image_path)
             im = cv2.cvtColor(im_bgr, cv2.COLOR_BGR2RGB)
             
-            # convert to the input format
             inputs = {
                 'image':{'pixels':im},
             }
-            
-            # run the pipeline
             results = pipeline.predict(kwargs, inputs)
             
-            # save the annotated image
             annotated_image = results['outputs']['annotated']
-            bgr = cv2.cvtColor(annotated_image,cv2.COLOR_RGB2BGR)
-            cv2.imwrite(os.path.join(output_dir, fname.replace(f'.{fmt}',f'_annotated.{fmt}')), bgr)
+            tmp = cv2.cvtColor(annotated_image,cv2.COLOR_RGB2BGR)
+            cv2.imwrite(os.path.join(output_dir, fname.replace(f'.{fmt}',f'_annotated.{fmt}')), tmp)
     
     pipeline.clean_up(kwargs)
     
