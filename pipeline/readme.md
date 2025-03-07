@@ -86,7 +86,7 @@ The following function is already implemented in the pipeline base class. While 
 - **def clean_up(self, `configs`: dict):**  
 This function receives `configs` and deletes the models from memory.
 
-Additionally, it is recommended that developers define a unit test in the main function within the pipeline class. Refer to the main function in the **example/pipeline_class.py** for guidance.
+Additionally, it is recommended that developers define a unit test in the main function within the pipeline class. Refer to the main function of **pipeline_class.py** in the **example** folder for guidance.
 
 ## Upload Predictions to Label Studio
 
