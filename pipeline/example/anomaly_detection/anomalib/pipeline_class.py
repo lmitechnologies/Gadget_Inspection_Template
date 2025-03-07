@@ -122,7 +122,7 @@ if __name__ == '__main__':
     pipeline_def_file = './pipeline/pipeline_def.json'
     image_dir = './data'
     output_dir = './outputs'
-    fmt = 'jpg'
+    fmt = 'png'
     
     logging.basicConfig()
     logger = logging.getLogger()

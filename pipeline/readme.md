@@ -5,7 +5,7 @@ This pipeline template is designed for deploying AI models on the LMI runtime pl
 ## Getting Started
 
 1. Read this document thoroughly.
-2. Review the examples provided in the **example** folder.
+2. Learn the pipeline examples in the **example** folder.
 3. Define the **Dockerfile** for your pipeline.
 4. Populate the **pipeline_def.json** with the necessary configurations.
 5. Implement the required functions in the **pipeline_class.py** file.
@@ -33,7 +33,7 @@ The pipeline folder consists of the following:
 
 ## Folder Contents
 
-**example**: a folder of examples that illustrate the implementation of pipeline classes for performing inspection tasks using varying AI models.  
+**example**: a folder of examples that illustrate the implementation of pipeline classes for performing inspection tasks using varying AI models including object detection, instance segmentation, classification and anomaly detection.  
 **test**: a folder containing the testing scripts (optional).  
 **trt-engines**: a folder containing the generated TensorRT engines, created from the models in the **trt-generation** folder. These engines are intended for deployment to production edge devices, such as GoMax.  
 **trt-generation**: a folder containing model weights and additional files required for generating TensorRT engines.  
@@ -48,11 +48,15 @@ The pipeline folder consists of the following:
         {
             "name": "od_model",
             "default_value": {
-                "path": "PATH_TO_THE_TRAINED_MODEL",
-                "hw": [640,640], // model height and width
-                "confidence": {
-                    "defect1": 0.5,
-                    "defect2": 0.8,
+                "path": "/home/gadget/pipeline/trt-engines/model.pt",
+                "hw": [640,640],
+                "objects": {
+                    "car": {
+                        "confidence":0.5,
+                    },
+                    "bus": {
+                        "confidence": 0.6,
+                    }
                 }
             }
         }
@@ -83,6 +87,101 @@ The following function is already implemented in the pipeline base class. While 
 This function receives `configs` and deletes the models from memory.
 
 Additionally, it is recommended that developers define a unit test in the main function within the pipeline class. Refer to the main function in the **example/pipeline_class.py** for guidance.
+
+## Upload Predictions to Label Studio
+
+The Gadget supports uploading model prediction results to [Label Studo](https://labelstud.io) for human labeling enabling dataset expansion and model performance improvement. 
+
+### Label Object
+
+The label_obj is a dictionary that encapsulates the prediction results for an image. It contains metadata about the image and the detected objects in the form of bounding boxes (boxes) and polygons (polygons).
+
+Structure:
+
+```python
+label_obj = {
+    'type': 'object',
+    'format': 'json',
+    'extension': '.label.json',
+    'content': {
+        'image_width': int,
+        'image_height': int,
+        'boxes': list,
+        'polygons': list
+    }
+}
+```
+
+Fields:
+
+- `type`: Specifies the type of the object. Always set to 'object'.
+- `format`: Specifies the format of the object. Always set to 'json'.
+- `extension`: Specifies the file extension for the label file. Always set to '.label.json'.
+- `content`:
+  - Contains the actual prediction data for the image.
+  - Subfields:
+    - `image_width`: Width of the image in pixels.  
+    - `image_height`: Height of the image in pixels.  
+    - `boxes`: A list of bounding box objects.  
+    - `polygons`: A list of polygon objects.  
+
+### Bounding Box Object
+
+The `box_obj` represents a detected object in the form of a bounding box. Each bounding box is defined by its top-left corner coordinates, width, height, and a confidence score.
+
+Structure:
+
+```python
+box_obj = {
+    'object': str,
+    'x': float,
+    'y': float,
+    'width': float,
+    'height': float,
+    'score': float,
+}
+```
+
+Fields:
+
+- `object`: The class name of the detected object (e.g., "car", "person").  
+- `x`: The x-coordinate of the top-left corner of the bounding box.
+- `y`: The y-coordinate of the top-left corner of the bounding box.  
+- `width`: The width of the bounding box.
+- `height`: The height of the bounding box.  
+- `score`: The model's confidence score for the prediction (range: 0 to 1).  
+
+### Polygon Object
+
+The `polygon_obj` represents a detected object in the form of a polygon. Each polygon is defined by a list of vertices (x and y coordinates) and a confidence score.
+
+Structure:
+
+```python
+polygon_obj = {
+    'object': str,
+    'x': list,
+    'y': list,
+    'score': float,
+}
+```
+
+Fields:
+
+- `object`: The class name of the detected object (e.g., "car", "person").  
+- `x`: A list of x-coordinates for the vertices of the polygon.
+- `y`: A list of y-coordinates for the vertices of the polygon.  
+- `score`: The model's confidence score for the prediction (range: 0 to 1).  
+
+### Upload to Label Studio
+
+Once `label_obj` is populated with the model's prediction results, use the **update_results** function defined in the pipeline base class to transfer prediction data to Label Studio. Here is the example:
+
+```python
+
+self.update_results('outputs', label_obj, sub_key='labels')
+
+```
 
 ## Pipeline Base Class
 

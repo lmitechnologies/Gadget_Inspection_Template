@@ -5,8 +5,8 @@ services:
       dockerfile: ../../x86.dockerfile
     volumes:
       - ../../data/coco:/home/gadget/data/
-      - ./outputs:/home/gadget/outputs/
       - ./weights:/home/gadget/pipeline/trt-engines/
+      - ./outputs:/home/gadget/outputs/
       - ./pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
       - ./pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
       - ../../../pipeline_base.py:/home/gadget/pipeline/pipeline_base.py

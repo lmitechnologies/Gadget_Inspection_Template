@@ -5,9 +5,9 @@
             "default_value": {
                 "path": "/home/gadget/pipeline/trt-engines/model_v1.pt",
                 "configs":{
-                    "err_threshold": 5.1,
-                    "err_max": 12.1,
-                    "err_size": 10
+                    "err_threshold": 30,
+                    "err_max": 40,
+                    "err_size": 20
                 }
             },
             "comment": "none"

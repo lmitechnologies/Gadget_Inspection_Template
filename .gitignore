@@ -6,4 +6,5 @@ image_archive
 models/*
 pipeline/trt-generation/**/*.engine
 custom.env
-pipeline/example/**/weights/*.pt
+pipeline/example/**/*.pt
+pipeline/example/data
