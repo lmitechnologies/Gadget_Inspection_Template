@@ -44,7 +44,11 @@ services:
 ```
 
 Ensure that `PATH_TO_DATA` and `PATH_TO_MODEL` point to the correct paths for the data folder containing test images, and the model weights file respectively.  
-Run this command:
+
+To run the example pipeline, follow the steps below:
+
+1. Step into a folder containing a docker-compose file.  
+2. Run this command:
 
 ```bash
 docker compose build --no-cache
