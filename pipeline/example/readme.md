@@ -8,7 +8,6 @@ This folder contains pipeline examples using different types of AI models for va
 .  
 ├── anomaly_detection  
 ├── classification
-├── data
 ├── object_detection 
 └── x86.dockerfile  
 ```
@@ -17,12 +16,12 @@ This folder contains pipeline examples using different types of AI models for va
 
 **anomaly_detection:** contain examples of using anomaly detection models in the pipeline.  
 **classification:** contain examples of using classification models in the pipeline.  
-**data:** contain test images.  
-**object_detection:** contain examples of using object detection models, including object detection, instance segmentation and key point detection in the pipeline.  
+**object_detection:** contain examples of using object detection models, including object detection, instance segmentation and key point detection in the pipeline.
+**x86.dockerfile:** the example Dockerfile that defines the necessary dependencies for the environment.
 
 ## Run Example Pipelines
 
-We provide a docker-compose.yaml file for runing the corresponding example pipeline in each of the **anomaly_detection**, **classification** and **object_detection** folders.
+We provide docker-compose.yaml files for runing example pipelines in each of the **anomaly_detection**, **classification** and **object_detection** folders.
 
 Here is an example:
 
