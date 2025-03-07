@@ -16,7 +16,7 @@ This folder contains pipeline examples using different types of AI models for va
 
 **anomaly_detection:** contain examples of using anomaly detection models in the pipeline.  
 **classification:** contain examples of using classification models in the pipeline.  
-**object_detection:** contain examples of using object detection models, including object detection, instance segmentation and key point detection in the pipeline.
+**object_detection:** contain examples of using object detection models, including object detection, instance segmentation and key point detection in the pipeline.  
 **x86.dockerfile:** the example Dockerfile that defines the necessary dependencies for the environment.
 
 ## Run Example Pipelines
