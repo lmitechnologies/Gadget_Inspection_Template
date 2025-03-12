@@ -81,33 +81,41 @@ Displays a numeric or string value
 
 - **metricName**: the name of the metric to be displayed
 
-#### LineChart
+#### Chart
+
+The umbrella component that encompasses a number of different chart options
+
+- **chartType**: specifies which type of chart to use
+
+Chart types include:
+
+##### LineChart
 
 A line chart with a single line. Used to chart a numeric value over time.
 
 - **decisionKey**: the name of the value to be charted (it expects the value to be a number)
 - **historyLen**: the number of inspection events to track before over writing them. Default 10
 
-#### MultiLineChart
+##### MultiLineChart
 
 A line chart with multiple lines. Used to chart the number of times something occurs during an inspection event.
 
 - **decisionKey**: the name of the value to be charted.
 
-#### BarChart
+##### BarChart
 
 A bar chart that creates a new bar for each unique value it receives
 
 - **decisionKey**: the name of the value to be charted. Expects value to be a literal or an array of literals.
 
-#### Histogram
+##### HistogramChart
 
 A bar chart with a predefined list of labels.
 
 - **decisionKey**: the name of the value to be charted.
 - **labelList**: an ordered list of all the values to chart. If it receives a value that is not in the list it will be ignored.
 
-#### PieChart
+##### PieChart
 
 A pie chart
 

@@ -26,13 +26,15 @@
             "columnSize": 2,
             "components": [
                 {
-                    "componentName": "LineChart",
+                    "componentName": "Chart",
+                    "chartType": "LineChart",
                     "topic": "pipeline/gadget-pipeline/0",
                     "decisionKey": "decision",
                     "historyLen": 50
                 },
                 {
-                    "componentName": "HistogramChart",
+                    "componentName": "Chart",
+                    "chartType": "HistogramChart",
                     "topic": "pipeline/gadget-pipeline/0",
                     "decisionKey": "decision",
                     "labelList": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
