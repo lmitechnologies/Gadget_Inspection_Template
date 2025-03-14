@@ -1,4 +1,4 @@
-FROM python:3.8.12-buster
+FROM python:3.12.9
 
 # Argument defition corresponding to Docker Compose
 ARG PACKAGE_VER
