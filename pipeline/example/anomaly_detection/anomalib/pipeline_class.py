@@ -13,6 +13,7 @@ from pipeline_base import PipelineBase as Base
 
 # functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
 from anomalib_lmi.anomaly_model2 import AnomalyModel2
+from ad_core.anomaly_detector import AnomalyDetector
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
@@ -42,7 +43,8 @@ class ModelPipeline(Base):
         Args:
             configs (dict): runtime configs
         """
-        self.models['ad'] = AnomalyModel2(configs['ad_model']['path'])
+        # self.logger.info(f'registry: {AnomalyDetector._registry.keys()}')
+        self.models['ad'] = AnomalyDetector(configs['ad_model']['metadata'],configs['ad_model']['path'])
         self.logger.info('models are loaded')
     
     
