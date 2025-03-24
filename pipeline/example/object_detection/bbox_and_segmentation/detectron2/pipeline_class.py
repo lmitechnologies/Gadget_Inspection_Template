@@ -14,6 +14,7 @@ from pipeline_base import PipelineBase as Base
 
 # functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
 from detectron2_lmi.model import Detectron2Model
+from od_core.object_detector import ObjectDetector
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
@@ -45,7 +46,7 @@ class ModelPipeline(Base):
         """
         path = configs['od_model']['path']
         self.class_map = {v['index']:k for k,v in configs['od_model']['classes'].items()}
-        self.models['od'] = Detectron2Model(path, class_map=self.class_map)
+        self.models['od'] = ObjectDetector(configs['od_model']['metadata'],path, class_map=self.class_map)
         self.logger.info('models are loaded')
     
     

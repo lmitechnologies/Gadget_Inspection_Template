@@ -5,6 +5,12 @@
             "default_value": {
                 "path": "/home/gadget/pipeline/trt-engines/model.pt",
                 "hw": [1024,1024],
+                "metadata":{
+                    "version": "v0",
+                    "model_name": "mask_rcnn",
+                    "task": "seg",
+                    "framework": "detectron2"
+                },
                 "classes": {
                     "person": {"index": 0, "confidence": 0.5},
                     "bicycle": {"index": 1, "confidence": 0.5},

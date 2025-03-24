@@ -4,6 +4,12 @@
             "name": "seg_model",
             "default_value": {
                 "path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt",
+                "metadata":{
+                    "version": "v1",
+                    "model_name": "yolov11",
+                    "task": "od",
+                    "framework": "ultralytics"
+                },
                 "hw": [640,640],
                 "iou": 0.45,
                 "classes": {

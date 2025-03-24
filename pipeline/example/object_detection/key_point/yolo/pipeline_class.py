@@ -13,6 +13,7 @@ from pipeline_base import PipelineBase as Base
 
 # functions from LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
 from ultralytics_lmi.yolo.model import YoloPose
+from od_core.object_detector import ObjectDetector
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
@@ -34,7 +35,7 @@ class ModelPipeline(Base):
     @Base.track_exception(logger)
     def load(self, configs):
         """load the models"""
-        self.models['pose'] = YoloPose(configs['pose_model']['path'])
+        self.models['pose'] = ObjectDetector(configs['pose_model']['metadata'],configs['pose_model']['path'])
         self.logger.info('models are loaded')
     
     
@@ -110,6 +111,7 @@ class ModelPipeline(Base):
         total_proc_time = time.time()-start_time
         
         self.logger.info(f'found objects: {objects}')
+        self.logger.info(f'pts shape: {pts.shape}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
         if not self.check_return_types():

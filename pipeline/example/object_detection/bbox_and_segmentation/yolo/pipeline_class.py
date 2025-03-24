@@ -12,8 +12,9 @@ sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
 from pipeline_base import PipelineBase as Base
 
 # functions from LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-from ultralytics_lmi.yolo.model import Yolo
 import gadget_utils.pipeline_utils as pipeline_utils
+from ultralytics_lmi.yolo.model import Yolo
+from od_core.object_detector import ObjectDetector
 
 
 PASS = 'PASS'
@@ -33,7 +34,8 @@ class ModelPipeline(Base):
     @Base.track_exception(logger)
     def load(self, configs):
         """load the models"""
-        self.models['seg'] = Yolo(configs['seg_model']['path'])
+        # self.logger.info(f'registry: {ObjectDetector._registry.keys()}')
+        self.models['seg'] = ObjectDetector(configs['seg_model']['metadata'], configs['seg_model']['path'])
         self.logger.info('models are loaded')
     
     

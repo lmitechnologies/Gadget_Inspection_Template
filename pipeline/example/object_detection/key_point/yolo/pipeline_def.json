@@ -5,6 +5,12 @@
             "default_value": {
                 "path": "/home/gadget/pipeline/trt-engines/yolo11n-pose.pt",
                 "hw": [640,640],
+                "metadata":{
+                    "version": "v1",
+                    "model_name": "yolov11",
+                    "task": "pose",
+                    "framework": "ultralytics"
+                },
                 "iou": 0.45,
                 "classes": {
                     "person": {"confidence": 0.5},
