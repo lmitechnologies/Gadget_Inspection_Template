@@ -113,7 +113,7 @@ class ModelPipeline(Base):
         }
         for i,name in enumerate(objects):
             box = boxes[i].astype(int).tolist()
-            seg = segs[i]
+            seg = segs[i].astype(int)
             score = scores[i].item()
             dt = {
                 'object': name,
