@@ -7,19 +7,22 @@ import torch
 
 sys.path.append('/home/gadget/pipeline')
 sys.path.append('/home/gadget/LMI_AI_Solutions/object_detectors')
-sys.path.append('/home/gadget/LMI_AI_Solutions/classifiers')
 sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
 
 from pipeline_base import PipelineBase as Base
-from yolov8_lmi.model import Yolov8
+
+# functions from LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
+from ultralytics_lmi.yolo.model import YoloPose
+from od_core.object_detector import ObjectDetector
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
 PASS = 'PASS'
 FAIL = 'FAIL'
+MIN_PTS = 4
 
 
-class pipeline_test1(Base):
+class ModelPipeline(Base):
     
     logger = logging.getLogger(__name__)
     
@@ -27,26 +30,35 @@ class pipeline_test1(Base):
     @Base.track_exception(logger)
     def __init__(self, **kwargs) -> None:
         super().__init__()
-        # frame index
-        self.index = 0
         
     
     @Base.track_exception(logger)
     def load(self, configs):
-        self.models['od'] = Yolov8(configs['middle_model']['path'])
+        """load the models"""
+        self.models['pose'] = ObjectDetector(configs['pose_model']['metadata'],configs['pose_model']['path'])
         self.logger.info('models are loaded')
     
     
     @Base.track_exception(logger)
     def warm_up(self, configs):
         t1 = time.time()
-        imgsz = configs['middle_model']['hw']
-        self.models['od'].warmup(imgsz)
+        imgsz = configs['pose_model']['hw']
+        self.models['pose'].warmup(imgsz)
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
         
         
-    def od_preprocess(self, image, hw):
+    def preprocess(self, image, hw):
+        """preprocess the image for object detection
+
+        Args:
+            image (numpy): a numpy array of image
+            hw (list): a list of [height, width]
+
+        Returns:
+            img (numpy): a resized image
+            operators (list): a list of operators used for converting back to original image size
+        """
         h0,w0 = image.shape[:2]
         th,tw = hw
         img = cv2.resize(image, (tw,th))
@@ -54,13 +66,12 @@ class pipeline_test1(Base):
         return img, operators
     
     
-    @torch.no_grad()
+    @torch.inference_mode()
     @Base.track_exception(logger)
-    def predict(self, configs: dict, inputs, **kwargs) -> dict:
+    def predict(self, configs: dict, inputs) -> dict:
         start_time = time.time()
         # init a result dict
         self.init_results()
-        self.index += 1
         
         image = inputs['image']['pixels']
         
@@ -68,51 +79,60 @@ class pipeline_test1(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        iou = configs['middle_model']['iou']
-        hw = configs['middle_model']['hw']
-        class_info = configs['middle_model']['classes']
+        iou = configs['pose_model']['iou']
+        hw = configs['pose_model']['hw']
+        class_info = configs['pose_model']['classes']
         confs = {k:v['confidence'] for k,v in class_info.items()}
-        colormap = {k:v['rgb'] for k,v in class_info.items()}
         
-        # stage 1: detection the foreground
-        img_middle, operators_middle = self.od_preprocess(image, hw)
-        results_dict1, time_info1 = self.models['od'].predict(img_middle, confs, operators_middle, iou)
+        # run the object detection model
+        processed_im, operators = self.preprocess(image, hw)
+        results_kp, time_info = self.models['pose'].predict(processed_im, confs, operators, iou)
         
-        # annotate the image
-        annotated_image = self.models['od'].annotate_image(results_dict1, image, colormap)
+        # annotate the image using key points
+        annotated_image = self.models['pose'].annotate_image(results_kp, image)
+        
+        # upload annotated image to GadgetAPP and GoFactory
         self.update_results('outputs', annotated_image, sub_key='annotated')
         
-        # upload decision to automation
-        objects = results_dict1['classes']
-        decision = PASS if len(objects) == 0 else FAIL
+        # obtain the results
+        pts = results_kp['points']
+        boxes = results_kp['boxes']
+        objects = results_kp['classes']
+        scores = results_kp['scores']
+        
+        # upload decision to the automation service
+        decision = PASS if len(pts)>MIN_PTS else FAIL 
         self.update_results('decision', decision, to_automation=True)
         
-        # update factory tags
+        # upload tags to GoFactory
         tag = PASS if decision == PASS else FAIL
         self.update_results('tags', tag, to_factory=True)
         
         total_proc_time = time.time()-start_time
         
         self.logger.info(f'found objects: {objects}')
+        self.logger.info(f'pts shape: {pts.shape}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
+        if not self.check_return_types():
+            raise Exception('invalid return types')
         return self.results
 
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-
     BATCH_SIZE = 1
     pipeline_def_file = './pipeline/pipeline_def.json'
     image_dir = './data'
     output_dir = './outputs'
-    fmt = 'png'
+    fmt = 'jpg'
+    
+    logging.basicConfig()
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
     
     kwargs = pipeline_utils.load_pipeline_def(pipeline_def_file)
-    pipeline = pipeline_test1(**kwargs)
+    pipeline = ModelPipeline(**kwargs)
     
     logger.info('start loading the pipeline...')
     pipeline.load(kwargs)
@@ -138,5 +158,5 @@ if __name__ == '__main__':
             tmp = cv2.cvtColor(annotated_image,cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(output_dir, fname.replace(f'.{fmt}',f'_annotated.{fmt}')), tmp)
     
-    pipeline.clean_up(None)
+    pipeline.clean_up(kwargs)
     
