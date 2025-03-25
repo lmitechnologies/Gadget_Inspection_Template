@@ -143,8 +143,8 @@ class ModelPipeline(Base):
             'content': pred_annots
         }
         for i,name in enumerate(objects):
-            box = boxes[i].tolist()
-            seg = segments[i]
+            box = boxes[i].astype(int).tolist()
+            seg = segments[i].astype(int)
             score = scores[i].item()
             pred_annots['boxes'].append({
                 'object': name,

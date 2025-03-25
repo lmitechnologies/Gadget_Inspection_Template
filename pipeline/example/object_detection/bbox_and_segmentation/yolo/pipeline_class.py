@@ -112,7 +112,7 @@ class ModelPipeline(Base):
             'content': annots
         }
         for i,name in enumerate(objects):
-            box = boxes[i].tolist()
+            box = boxes[i].astype(int).tolist()
             seg = segs[i]
             score = scores[i].item()
             dt = {
