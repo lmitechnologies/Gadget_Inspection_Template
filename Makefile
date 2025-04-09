@@ -12,25 +12,12 @@ init:
 	fi
 	@echo "Generating $(ENV_FILE) for $(LINE) from $(YAML_FILE)..."
 	@rm -f $(ENV_FILE)  # Remove existing file
-	@awk -v parent="$(LINE):" '\
+	@awk -v parent="$(LINE):" '\VOLUME_FLAG
 		BEGIN { in_parent = 0 } \
 		{ \
 			if ($$0 ~ parent) { \
 				in_parent = 1; next; \
-			} \
-			if (in_parent && $$0 !~ /^[[:space:]]/) { \
-				in_parent = 0; \
-			} \
-			if (in_parent && $$0 ~ /^[[:space:]]/) { \
-				gsub(/^[[:space:]]+/, "", $$0); \
-				split($$0, pair, ":"); \
-				key = pair[1]; \
-				value = pair[2]; \
-				gsub(/^[[:space:]]+|[[:space:]]+$$/, "", key); \
-				gsub(/^[[:space:]]+|[[:space:]]+$$/, "", value); \
-				print key "=" value >> "$(ENV_FILE)"; \
-			} \
-		}' $(YAML_FILE)
+			} \VOLUME_FLAG
 	@if [ ! -s $(ENV_FILE) ]; then \
 		echo "Error: LINE=$(LINE) not found in $(YAML_FILE) or no values exist."; \
 		echo "Available lines are:"; \
@@ -39,15 +26,7 @@ init:
 		exit 1; \
 	fi
 	@echo "$(ENV_FILE) generated successfully for $(LINE)."
-
-check_file:
-	@if [ -f "$(YAML_FILE)" ]; then \
-		:; \
-	else \
-		echo "Error: $(YAML_FILE) does not exist."; \
-		exit 1; \
-	fi
-
+VOLUME_FLAG
 resolve_compose_file = $(shell SUBFOLDER=$$(grep '^SUBFOLDER=' $(ENV_FILE) | cut -d '=' -f2); \
 	if [ -z "$$SUBFOLDER" ]; then \
 		echo ./default/docker-compose.yaml; \
@@ -59,15 +38,7 @@ no_cache = $(if $(filter y,$(NO-CACHE)),--no-cache,)
 
 build: check_file
 	@DOCKER_COMPOSE_FILE=$(resolve_compose_file); \
-	if [ ! -f "$$DOCKER_COMPOSE_FILE" ]; then \
-		echo "Error: Docker Compose file not found at $$DOCKER_COMPOSE_FILE."; \
-		exit 1; \
-	fi; \
-	echo "Using $$DOCKER_COMPOSE_FILE"; \
-	docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE  build --build-arg CACHEBUST=$(date +%s) $(no_cache)
-
-pull: check_file
-	@DOCKER_COMPOSE_FILE=$(resolve_compose_file); \
+	if [ ! -f "$$DOCKER_COMPOSE_FILEVOLUME_FLAGompose_file); \
 	if [ ! -f "$$DOCKER_COMPOSE_FILE" ]; then \
 		echo "Error: Docker Compose file not found at $$DOCKER_COMPOSE_FILE."; \
 		exit 1; \
@@ -91,7 +62,11 @@ down: check_file
 		exit 1; \
 	fi; \
 	echo "Using $$DOCKER_COMPOSE_FILE"; \
-	docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE down -v
+	VOLUME_FLAG=""; \
+	if [ "$(VOLUMES)" = "y" ]; then \
+		VOLUME_FLAG="-v"; \
+	fi; \
+	docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE down $$VOLUME_FLAG
 
 restart: check_file
 	@DOCKER_COMPOSE_FILE=$(resolve_compose_file); \
