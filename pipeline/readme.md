@@ -303,3 +303,18 @@ What get consumed by GoFactory:
     "total_proc_time": 100,
 }
 ```
+# Configuring a dockerfile
+
+The pipeline class is run by the **Pipeline Server** which is a python project made of up two whls. 
+
+- gadget_pipeline_server
+- gadget_pipeline_adapter
+
+**gadget_pipeline_server** can only run in Python 3.12 but **gadget_pipeline_adapter** can run in any Python 3 version. For standard single python version pipelines the Pipeline Adapter is installed along side the Pipeline Server so there is no noticeable difference to the dockerfile setup. To support multiple versions of python, use python deadsnakes to install the python versions and install the Pipeline Adapter into the new version.
+
+To tell the pipeline server to use a separate python version it must be specified using the ADAPTER_PYTHON_PROCESS env variable. Give it the path to the desired python interpreter. 
+
+````
+ADAPTER_PYTHON_PROCESS=/usr/bin/python3.10
+````
+If left blank it will default to use the same python instance the Pipeline Server is running in.
