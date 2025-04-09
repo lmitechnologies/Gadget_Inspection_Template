@@ -1,0 +1,19 @@
+{
+    "configs_def": [
+        {
+            "name": "ip_address",
+            "default_value": "192.168.0.19"
+        },
+        {
+            "name": "port",
+            "default_value": 502
+        }
+       
+    ],
+    "custom_tasks": [
+        {
+            "name": "check_plc_status",
+            "args": {}
+        }
+    ]
+}
