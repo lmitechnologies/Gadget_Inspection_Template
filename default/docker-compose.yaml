@@ -55,6 +55,7 @@ services:
       - inline-storage:/app/data
       - static-volume:/app/static
       - user-volume:/app/db/
+      - ../jobs:/app/jobs
     environment:
       - VERBOSE=False
     depends_on:

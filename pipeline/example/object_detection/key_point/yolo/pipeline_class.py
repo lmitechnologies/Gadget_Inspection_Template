@@ -33,7 +33,7 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, configs):
+    def load(self, model_roles, configs):
         """load the models"""
         self.models['pose'] = ObjectDetector(configs['pose_model']['metadata'],configs['pose_model']['path'])
         self.logger.info('models are loaded')

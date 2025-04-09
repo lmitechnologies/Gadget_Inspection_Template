@@ -20,7 +20,7 @@ The pipeline folder consists of the following:
 .  
 ├── example  
 ├── test  
-├── trt-engines  
+├── trt-engines
 ├── trt-generation  
 ├── __init__.py  
 ├── pipeline_base.py  
@@ -39,7 +39,7 @@ The pipeline folder consists of the following:
 **trt-generation**: a folder containing model weights and additional files required for generating TensorRT engines.  
 **pipeline_base.py**: the pipeline base class, which typically does **not** require modification.  
 **pipeline_class.py**: the implementation of the pipeline class. Several required functions must be implemented.  
-**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` key, whose value is a list. Each element in this list is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Here is an example:
+**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` and `model_roles` keys. `model_roles` is a list of model role strings. `configs_def` is a list where each element is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Here is an example:
 
 ```json
 {
@@ -74,7 +74,7 @@ To complete these tasks listed above, the following functions must be implemente
 
 1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
     This function initializes the pipeline class. The `kwargs` argument contains the key-value pairs defined in the **pipeline_def.json**.
-2. **def load(self, `configs`: dict) -> None:**  
+2. **def load(self, `model_roles`: dict, `configs`: dict) -> None:**  
     This function loads the models and stores them in the `self.models` variable defined in the pipeline base class. The `configs` argument contains runtime key-value pairs, where the keys match those in the **pipeline_def.json** and the values may differ. The following functions use the same `configs` argument unless otherwise stated.
 3. **def warm_up(self, `configs`: dict) -> None:**  
     This function receives the `configs` and runs the models for the first time using dummy inputs.

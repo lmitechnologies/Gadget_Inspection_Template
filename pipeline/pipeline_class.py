@@ -27,7 +27,7 @@ class ModelPipeline(Base):
         
         
     @Base.track_exception(logger)
-    def load(self, configs: dict):
+    def load(self, model_roles: dict, configs: dict):
         """
         create model instances with weight files
         if loading files fail, then don't create model instances

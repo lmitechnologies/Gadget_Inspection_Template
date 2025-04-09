@@ -37,7 +37,7 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, configs):
+    def load(self, model_roles, configs):
         """load the model(s)
 
         Args:

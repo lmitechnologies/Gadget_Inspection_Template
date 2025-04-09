@@ -74,7 +74,7 @@ class PipelineBase(metaclass=ABCMeta):
     
     
     @abstractmethod
-    def load(self, configs: dict):
+    def load(self, model_roles: dict, configs: dict):
         """
         load models
         """

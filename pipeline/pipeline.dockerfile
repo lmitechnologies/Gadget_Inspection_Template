@@ -1,6 +1,8 @@
 # CHANGE PARENT IMAGE TO MEET MODEL NEEDS
-FROM  python:3.8.12-buster
-# Argument defition corresponding to Docker Compose
+ARG DOCKER_PLATFORM=${DOCKER_PLATFORM}
+FROM --platform=${DOCKER_PLATFORM} python:3.8.12-buster
+
+# Argument definition corresponding to Docker Compose
 ARG PACKAGE_VER
 ARG PYPI_SERVER
 
