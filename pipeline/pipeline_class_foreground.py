@@ -32,7 +32,8 @@ class ModelPipeline(Base):
         create model instances with weight files
         if loading files fail, then don't create model instances
         """
-        self.logger.info(f"Model Roles: {model_roles}")
+        self.logger.info(f"CONFIGS {configs}")
+
 
     @Base.track_exception(logger)
     def warm_up(self, configs):
@@ -58,24 +59,13 @@ class ModelPipeline(Base):
         self.index += 1
         return {
             "outputs": {
-                "annotated": inputs['foreground'],
+                "foreground": inputs['image'],
             },
-            "automation_keys": [ "decision", "color_data", "pair_data", "defect", "temp", "table_data"],
-            "factory_keys":  ["tags", "decision"],
-            "tags": ["round", "square"], 
+            "automation_keys": [],
+            "factory_keys":  [],
+            "tags": ["foreground"], 
             "should_archive": False,
 
-            "decision": random.randint(0, 10),
-            "color_data": [[random.randint(1, 60), "Yellow", [255,255,0]],[random.randint(1, 20), "Green", [34,139,34]],[random.randint(1, 20), "Blue", [30,144,255]]],
-            "pair_data": [["Blister", random.randint(0, 5)], ["Crack", random.randint(0, 5)], ["Wane", random.randint(0, 5)], ["FishEye", random.randint(0, 5)]],
-            "defect": self.arr[random.randint(0,3)],
-            "table_data": {
-                "Blister": random.randint(0, 10),
-                "Crack": random.randint(0, 10),
-                "Wane": random.randint(0, 10),
-                "FishEye": random.randint(0, 10)
-            },
-            "temp": random.randint(0, 100)
         } 
 
 

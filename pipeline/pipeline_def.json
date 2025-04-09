@@ -1,4 +1,5 @@
 {
+    "model_roles": ["defect", "anomaly"],
     "configs_def": [
         {
             "name": "od_scan_engine_file",
