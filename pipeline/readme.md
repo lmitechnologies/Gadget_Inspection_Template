@@ -318,3 +318,14 @@ To tell the pipeline server to use a separate python version it must be specifie
 ADAPTER_PYTHON_PROCESS=/usr/bin/python3.10
 ````
 If left blank it will default to use the same python instance the Pipeline Server is running in.
+
+### Model conversion
+
+To run model conversion **gadget_conversion_utils** must be installed in the same python version as **gadget_pipeline_adapter**. 
+
+To configure the pipeline server to handle conversion requests use the env variable
+
+```
+MODEL_CONVERTER=true
+```
+It defaults to false
