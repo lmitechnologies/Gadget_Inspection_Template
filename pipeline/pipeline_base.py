@@ -89,7 +89,7 @@ class PipelineBase(metaclass=ABCMeta):
         pass
     
     
-    def clean_up(self, configs: dict):
+    def clean_up(self):
         """
         clean up the pipeline in REVERSED order, i.e., the last models get destroyed first
         """
