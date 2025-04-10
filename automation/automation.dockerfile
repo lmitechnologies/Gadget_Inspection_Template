@@ -1,5 +1,4 @@
-ARG DOCKER_PLATFORM=${DOCKER_PLATFORM}
-FROM --platform=${DOCKER_PLATFORM} python:3.12.10-bullseye
+FROM python:3.12.10-bullseye
 
 # Argument defition corresponding to Docker Compose
 ARG PACKAGE_VER

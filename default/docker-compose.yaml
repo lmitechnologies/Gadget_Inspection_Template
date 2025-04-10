@@ -132,6 +132,7 @@ services:
       - DATA_STORAGE_ROOT=/app/data/models
       - CONVERT_TO=engine
       - CONVERSION_SERVICE_NAME=pipeline
+      - ALERT_NEW_CLOUD_MODEL=false
       - TZ=utc
     volumes:
       - model-storage:/app/models
@@ -179,7 +180,6 @@ services:
       context: ../automation
       dockerfile: automation.dockerfile
       args:
-        DOCKER_PLATFORM: ${DOCKER_PLATFORM}
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
     image: everything_automation:${PACKAGE_VER}
@@ -214,7 +214,7 @@ services:
       - TZ=utc
     volumes:
       - ../test_images:/home/gadget/test_images
-      - inline-storage:/app/data/inline
+      - inline-storage:/app/data
     depends_on:
       api-gateway: 
         condition: service_healthy
