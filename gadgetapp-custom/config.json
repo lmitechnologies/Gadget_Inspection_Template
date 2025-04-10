@@ -2,7 +2,7 @@
     "version": 1,
     "configForms": {
         "sensor": {
-            "configs": ["verbose"]
+            "configs": []
         },
         "pipeline": {
             "configs": []
@@ -17,7 +17,7 @@
             "components": [
                 {
                     "componentName": "ImageCanvas",
-                    "topic": "pipeline/gadget-pipeline/0",
+                    "topic": "pipeline/pipeline",
                     "fileName": "annotated"
                 }
             ]
@@ -28,14 +28,14 @@
                 {
                     "componentName": "Chart",
                     "chartType": "LineChart",
-                    "topic": "pipeline/gadget-pipeline/0",
+                    "topic": "pipeline/pipeline",
                     "decisionKey": "decision",
                     "historyLen": 50
                 },
                 {
                     "componentName": "Chart",
                     "chartType": "HistogramChart",
-                    "topic": "pipeline/gadget-pipeline/0",
+                    "topic": "pipeline/pipeline",
                     "decisionKey": "decision",
                     "labelList": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
                 }
