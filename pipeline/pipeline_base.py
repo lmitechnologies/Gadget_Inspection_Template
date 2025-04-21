@@ -99,7 +99,7 @@ class PipelineBase(metaclass=ABCMeta):
             self.logger.info(f'{model_name} is cleaned up')
 
         del self.models
-        self.models = dict()
+        self.models = collections.OrderedDict()
         self.logger.info('pipeline is cleaned up')
         
         
