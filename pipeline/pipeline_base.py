@@ -99,7 +99,7 @@ class PipelineBase(metaclass=ABCMeta):
             self.logger.info(f'{model_name} is cleaned up')
 
         del self.models
-        self.models = None
+        self.models = dict()
         self.logger.info('pipeline is cleaned up')
         
         
@@ -107,7 +107,7 @@ class PipelineBase(metaclass=ABCMeta):
         """ 
         modify the self.results with the following rules:
         1: If the key is not in the self.results, create the key-value pair.
-        2: If the self.results[key] is a list, 
+        2: If the self.results[key] is a list, sss
             2.1: if overwrite is False, append the value to the list.
             2.2: if overwrite is True, overwrite the list with the value.
         3: If the self.results[key] is a dictionary and sub_key is not None, update the value of the sub_key.
