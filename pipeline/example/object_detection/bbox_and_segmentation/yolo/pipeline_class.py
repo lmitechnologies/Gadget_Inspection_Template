@@ -37,7 +37,10 @@ class ModelPipeline(Base):
         # self.logger.info(f'registry: {ObjectDetector._registry.keys()}')
         seg_model_configs = configs['seg_model']
         if seg_model_configs['use_factory']:
-            self.models['seg'] = ObjectDetector(model_roles['seg_model'])
+            if 'seg_model' in model_roles:
+                self.models['seg'] = ObjectDetector(model_roles['seg_model'])
+            else:
+                self.models['seg'] = ObjectDetector(model_roles['seg_model']['metadata'], model_roles['seg_model']['path'])
         else:
             # load the model from local path
             self.models['seg'] = ObjectDetector(model_roles['seg_model']['metadata'], model_roles['seg_model']['path'])
