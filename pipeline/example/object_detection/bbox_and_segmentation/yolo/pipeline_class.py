@@ -32,18 +32,32 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, configs):
+    def load(self, model_roles, configs):
         """load the models"""
         # self.logger.info(f'registry: {ObjectDetector._registry.keys()}')
-        self.models['seg'] = ObjectDetector(configs['seg_model']['metadata'], configs['seg_model']['path'])
+        seg_model_configs = configs['seg_model']
+        if seg_model_configs['use_factory']:
+            self.models['seg'] = ObjectDetector(model_roles['seg_model'])
+        else:
+            # load the model from local path
+            self.models['seg'] = ObjectDetector(model_roles['seg_model']['metadata'], model_roles['seg_model']['path'])
         self.logger.info('models are loaded')
     
     
     @Base.track_exception(logger)
-    def warm_up(self, configs):
+    def warm_up(self, model_roles, configs):
         t1 = time.time()
-        imgsz = configs['seg_model']['hw']
-        self.models['seg'].warmup(imgsz)
+        seg_model_configs = configs['seg_model']
+        if seg_model_configs['use_factory']:
+            if 'seg_model' in model_roles:
+                imgsize = model_roles['seg_model'].get('image_size')
+            else:
+                imgsize = seg_model_configs['hw']
+        else:
+            imgsize = seg_model_configs['hw']
+            
+        self.logger.info(f'imgsize: {imgsize}')
+        self.models['seg'].warmup(imgsize)
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
         

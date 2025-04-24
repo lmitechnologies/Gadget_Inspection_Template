@@ -4,6 +4,7 @@
             "name": "seg_model",
             "default_value": {
                 "path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt",
+                "use_factory": false,
                 "metadata":{
                     "version": "v1",
                     "model_name": "yolov11",
