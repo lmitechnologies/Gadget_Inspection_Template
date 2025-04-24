@@ -35,7 +35,7 @@ class ModelPipeline(Base):
 
 
     @Base.track_exception(logger)
-    def warm_up(self, configs: dict):
+    def warm_up(self, model_roles: dict, configs: dict):
         """
         warm up all the models in the pipeline
         """

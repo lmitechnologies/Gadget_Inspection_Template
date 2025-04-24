@@ -76,7 +76,7 @@ To complete these tasks listed above, the following functions must be implemente
     This function initializes the pipeline class. The `kwargs` argument contains the key-value pairs defined in the **pipeline_def.json**.
 2. **def load(self, `model_roles`: dict, `configs`: dict) -> None:**  
     This function loads the models and stores them in the `self.models` variable defined in the pipeline base class. The `configs` argument contains runtime key-value pairs, where the keys match those in the **pipeline_def.json** and the values may differ. The following functions use the same `configs` argument unless otherwise stated.
-3. **def warm_up(self, `configs`: dict) -> None:**  
+3. **def warm_up(self, `model_roles`: dict, `configs`: dict) -> None:**  
     This function receives the `configs` and runs the models for the first time using dummy inputs.
 4. **def predict(self, `configs`: dict, `inputs`: dict) -> dict:**  
     This function receives the `inputs` and `configs`, makes predictions, adds annotations to the image, and returns the annotated image along with the model results. Refer to the [Pipeline Inputs](#pipeline-inputs) section for the details of `inputs`. This function must return a `self.results` dictionary defined in the pipeline base class.  
@@ -88,9 +88,26 @@ This function receives `configs` and deletes the models from memory.
 
 Additionally, it is recommended that developers define a unit test in the main function within the pipeline class. Refer to the main function of **pipeline_class.py** in the **example** folder for guidance.
 
+## Model Roles
+A model role is a part of the inspection process that is associated with a AI model. A single inspection might consist of multiple model roles: an anomaly detector and an object detector. Model roles are defined in GoFactory and are associated with a pipeline in the pipeline_def.json using the **model_roles** key. The key's value must be a list of strings. 
+
+The model_roles dictionary that is passed to the load and warm_up methods is generated using the models selected using the GadgetApp's Model Manager page and the model roles defined for the pipeline. The dictionary is structured like this:
+
+```python
+{
+    "model_type": str,
+    "model_path": str,
+    "package": str,
+    "algorithm": str,
+    "image_size": [int, int], #HightxWidth
+}
+```
+
+The LMI_AI_Solutions repo provides wrappers for several of the most popular model architectures. Those wrappers are designed to consume the model_role dictionary when initialized. 
+
 ## Upload Predictions to Label Studio
 
-The Gadget supports uploading model prediction results to [Label Studo](https://labelstud.io) for human labeling enabling dataset expansion and model performance improvement. 
+The Gadget supports uploading model prediction results to [Label Studio](https://labelstud.io) for human labeling enabling dataset expansion and model performance improvement. 
 
 ### Label Object
 
