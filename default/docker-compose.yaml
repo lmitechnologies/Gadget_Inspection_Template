@@ -118,6 +118,7 @@ services:
     volumes:
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline
+      - /:/app/data/host
     depends_on:
       api-gateway: 
         condition: service_healthy
