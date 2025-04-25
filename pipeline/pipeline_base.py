@@ -229,7 +229,7 @@ class PipelineBase(metaclass=ABCMeta):
     
     
     @abstractmethod
-    def warm_up(self, configs: dict):
+    def warm_up(self, model_roles:dict,configs: dict):
         """
         warmup the pipeline
         """
