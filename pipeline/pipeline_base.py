@@ -3,8 +3,8 @@ import functools
 import logging
 import traceback
 from abc import ABCMeta, abstractmethod
-import json
-
+from dataset_utils.representations import PipelinePredictions, Box, Polygon, Mask, Point2d
+from datetime import datetime
 
 
 class PipelineBase(metaclass=ABCMeta):
@@ -12,6 +12,7 @@ class PipelineBase(metaclass=ABCMeta):
     logger = logging.getLogger(__name__)
     models: collections.OrderedDict
     results: dict
+    labels: dict
     
     def __init__(self):
         """
@@ -21,7 +22,6 @@ class PipelineBase(metaclass=ABCMeta):
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
         """
         self.models = collections.OrderedDict()
-        self.init_results()
     
     
     def init_results(self):
@@ -38,6 +38,7 @@ class PipelineBase(metaclass=ABCMeta):
             "should_archive": True,
             "errors": [],
         }
+    
     
     
     @classmethod
@@ -63,7 +64,6 @@ class PipelineBase(metaclass=ABCMeta):
                         return self.results
             return wrapper
         return deco
-    
     
     @abstractmethod
     def warm_up(self, configs: dict):
@@ -101,7 +101,8 @@ class PipelineBase(metaclass=ABCMeta):
         del self.models
         self.models = collections.OrderedDict()
         self.logger.info('pipeline is cleaned up')
-        
+    
+    
         
     def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False, overwrite=False):
         """ 
@@ -141,8 +142,122 @@ class PipelineBase(metaclass=ABCMeta):
             
         if to_automation and key not in self.results['automation_keys']:
             self.results['automation_keys'].append(key)
+    
+
         
+
+    def add_predictions(self, predictions, image_height:int,image_width:int,key='outputs', sub_key='labels'):
+        """add predictions to the results.
+        Args:
+            predictions (dict): the predictions to be added in the following format in the form of {"<type>": {"classes": [], "objects": [], "confidences"}} for ex: {"boxes": {"classes": [], "objects": [], "confidences"}}.
+            image_height (int): the height of the image.
+            image_width (int): the width of the image.
+            key (str, optional): the key of the self.results. Defaults to 'outputs'.
+            sub_key (str, optional): the key of the sub dictionary to be updated. Defaults to 'labels'.
+        """
+        if key not in self.results:
+            self.results[key] = {
+                sub_key: {
+                    'type': 'object',
+                    'format': 'json',
+                    'extension': '.label.json',
+                    'content': PipelinePredictions(
+                        image_height=image_height,
+                        image_width=image_width,
+                        predictions=[],
+                    )
+                }
+            }
+        elif sub_key not in self.results[key]:
+            self.results[key][sub_key] = {
+                'type': 'object',
+                'format': 'json',
+                'extension': '.label.json',
+                'content': PipelinePredictions(
+                    height=image_height,
+                    width=image_width,
+                    predictions=[],
+                )
+            }
         
+        if isinstance(self.results[key][sub_key]['content'], dict):
+            self.results[key][sub_key]['content'] = PipelinePredictions.from_dict(self.results[key][sub_key]['content'])
+            if self.results[key][sub_key]['content'].height != image_height or self.results[key][sub_key]['content'].width != image_width:
+                raise ValueError('image height and width are not the same as the previous predictions')
+
+        if 'boxes' in predictions:
+            boxes = predictions['boxes']["objects"]
+            labels = predictions['boxes']['labels']
+            confidences = predictions['boxes']['confidences']
+            for idx, value in enumerate(boxes):
+                conf = confidences[idx] if isinstance(confidences, list) else confidences
+                label = labels[idx] if isinstance(labels, list) else labels
+                self.results[key][sub_key]['content'].create_prediction(
+                    Box(
+                        x_min=value[0],
+                        y_min=value[1],
+                        x_max=value[2],
+                        y_max=value[3],
+                        angle=0 if len(value) <= 4 else value[4],
+                    ),
+                    label_id=label,
+                    confidence=conf,
+                )
+                
+        
+        elif 'polygons' in predictions:
+            polygons = predictions['polygons']["objects"]
+            labels = predictions['polygons']['labels']
+            confidences = predictions['polygons']['confidences']
+            for idx, value in enumerate(polygons):
+                conf = confidences[idx] if isinstance(confidences, list) else confidences
+                label = labels[idx] if isinstance(labels, list) else labels
+                self.results[key][sub_key]['content'].create_prediction(
+                    Polygon(
+                        points=value,
+                    ),
+                    label_id=label,
+                    confidence=conf,
+                )
+        
+        elif 'masks' in predictions:
+            masks = predictions['masks']["objects"]
+            labels = predictions['masks']['labels']
+            confidences = predictions['masks']['confidences']
+            for idx, value in enumerate(masks):
+                conf = confidences[idx] if isinstance(confidences, list) else confidences
+                label = labels[idx] if isinstance(labels, list) else labels
+                self.results[key][sub_key]['content'].create_prediction(
+                    Mask(
+                        mask=value,
+                    ),
+                    label_id=label,
+                    confidence=conf,
+                )
+        
+        elif 'keypoints' in predictions:
+            keypoints = predictions['keypoints']["objects"]
+            labels = predictions['keypoints']['labels']
+            confidences = predictions['keypoints']['confidences']
+            for idx, value in enumerate(keypoints):
+                conf = confidences[idx] if isinstance(confidences, list) else confidences
+                label = labels[idx] if isinstance(labels, list) else labels
+                self.results[key][sub_key]['content'].create_prediction(
+                    Point2d(
+                        x=value[0],
+                        y=value[1],
+                    ),
+                    label_id=label,
+                    confidence=conf,
+                )
+
+        else:
+            raise ValueError('predictions should contain boxes, polygons, masks or keypoints')
+        
+        self.results[key][sub_key]['content'] = self.results[key][sub_key]['content'].to_dict()
+
+    
+            
     def check_return_types(self) -> bool:
         """check if the return types are json serializable for debugging purpose.
         """
