@@ -1,7 +1,7 @@
 YAML_FILE = line_config.yaml
 ENV_FILE = custom.env
 LINE ?= default
-NO-CACHE ?= n
+NO_CACHE ?= n
 
 .PHONY: init build up down restart help
 
