@@ -19,7 +19,7 @@ The containers definition and configuration is done in a docker-compose yaml fil
     - Maintains the state of the system through file archival, file pruning, and database pruning
   - Data Broker
     - ZMQ message broker allows fast communication between services
-    Model Manager
+  - Model Manager
     - Manages state of models in GoFactory and locally. Allows users to pull pt files and convert them to engines 
 - Inspection
   - Sensor
@@ -199,9 +199,7 @@ otherwise the postgres data will not be preserved when the Gadget gets stopped.
       - static-volume:/app/static
 
 and to the front end like this:
-
-    volumes:
-      - static-volume:/usr/share/nginx/html/static
+ hare/nginx/html/static
 
 If it is not mounted to that specific location the Gadget App will not work.
 
@@ -221,6 +219,56 @@ Pipelines needs it to be mounted to the model root. It defaults to /app/models b
 
     volumes:
       - model-storage:/app/models
+
+## Static Models
+
+Static models are models that:
+
+- Do **not** originate from GoFactory  
+- Are **not** downloaded by the Model Manager  
+- Are typically default models or models trained offline  
+
+## Folder Structure & Mounting Requirements
+
+To use static models, a folder containing them must:
+
+1. Be **mounted** to both the Model Manager and the Pipelines  
+2. Contain a file named `manifest.json`, which defines the available static models  
+
+### Model Manager Mount
+
+- **Environment Variable:** The mount location can be customized via an environment variable  
+- **Default Mount Path:** `/app/static_models`  
+
+### Pipeline Mount
+
+- Must be mounted **inside the model volume**  
+- **Default Model Volume Mount Point:** `/app/models`  
+- **Static Models Mount Point:** `/app/models/static_models`  
+
+
+### `manifest.json`
+
+The static models folder must contain a `manifest.json` file that defines all the static models.  
+This file must be a list of dictionary objects, each following this pattern:
+
+```json
+{
+    "model_role": "default",
+    "model_type": "ObjectDetection",
+    "model_name": "Default",
+    "model_version": "Default",
+    "info": {
+        "model_path": "default/model.pt",
+        "trainingPackage": "",
+        "trainingAlgorithm": ""
+    }
+}
+```
+
+- The model_path must be relative to the location of the manifest.json file.
+
+- Depending on the model type, additional fields may be included under info.
 
 ## Environment variables
 
@@ -295,7 +343,7 @@ Validate the existence of `YAML_FILE`.
 ```bash
 make check_file
 ```
-
+t
 ---
 
 ### 3. `build`
