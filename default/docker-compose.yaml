@@ -68,6 +68,7 @@ services:
     restart: unless-stopped
     environment:
       - GADGET_APP_TITLE=${GADGET_APP_TITLE}
+      - GADGET_APP_TITLE=${GADGET_APP_TITLE}
     ports:
       - 80:80
     volumes:
@@ -137,6 +138,7 @@ services:
       - TZ=utc
     volumes:
       - model-storage:/app/models
+      - ../static_models:/app/static_models
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -167,6 +169,7 @@ services:
       - TZ=utc
     volumes:
       - ../pipeline/:/home/gadget/pipeline
+      - ../static_models:/app/models/static_models
       - model-storage:/app/models 
       - inline-storage:/app/data
     depends_on:

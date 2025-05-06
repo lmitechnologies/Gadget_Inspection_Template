@@ -1,0 +1,53 @@
+[
+    {
+
+        "model_role": "foreground-od",
+        "model_type": "ObjectDetection",
+        "model_name": "Default",
+        "model_version": "Default",
+        "info": {
+            "model_path": "default/model.pt",
+            "trainingPackage": "Ultralytics8",
+            "trainingAlgorithm": "Yolo",
+            "confidenceThreshold": 0.67,
+            "imageSize": [
+                384,
+                384
+            ]
+        }
+    },
+    {
+
+        "model_role": "foreground-od",
+        "model_type": "ObjectDetection",
+        "model_name": "stuff",
+        "model_version": "1",
+        "info": {
+            "model_path": "default/model.pt",
+            "trainingPackage": "Ultralytics8",
+            "trainingAlgorithm": "Yolo",
+            "confidenceThreshold": 0.67,
+            "imageSize": [
+                384,
+                384
+            ]
+        }
+    },
+    {
+
+        "model_role": "forecasting-ad",
+        "model_type": "ObjectDetection",
+        "model_name": "Default",
+        "model_version": "Default",
+        "info": {
+            "model_path": "default/model.pt",
+            "trainingPackage": "Ultralytics8",
+            "trainingAlgorithm": "Yolo",
+            "confidenceThreshold": 0.67,
+            "imageSize": [
+                384,
+                384
+            ]
+        }
+    }
+]
