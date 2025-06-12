@@ -38,10 +38,11 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, configs):
+    def load(self, model_roles, configs):
         """load the model(s)
 
         Args:
+            model_roles (dict): model roles
             configs (dict): runtime configs
         """
         path = configs['od_model']['path']
@@ -203,7 +204,7 @@ if __name__ == '__main__':
     pipeline = ModelPipeline(**kwargs)
     
     # load and warmup the model
-    pipeline.load(kwargs)
+    pipeline.load({},kwargs)
     pipeline.warm_up(kwargs)
 
     # load test images
@@ -223,11 +224,12 @@ if __name__ == '__main__':
             
             # run the pipeline
             results = pipeline.predict(kwargs, inputs)
+            assert pipeline.check_return_types(), 'invalid return types'
             
             # save the annotated image
             annotated_image = results['outputs']['annotated']
             bgr = cv2.cvtColor(annotated_image,cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(output_dir, fname.replace(f'.{fmt}',f'_annotated.{fmt}')), bgr)
     
-    pipeline.clean_up(kwargs)
+    pipeline.clean_up()
     

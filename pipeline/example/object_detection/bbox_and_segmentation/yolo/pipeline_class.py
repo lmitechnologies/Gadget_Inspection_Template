@@ -32,7 +32,7 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, configs):
+    def load(self, model_roles, configs):
         """load the models"""
         # self.logger.info(f'registry: {ObjectDetector._registry.keys()}')
         self.models['seg'] = ObjectDetector(configs['seg_model']['metadata'], configs['seg_model']['path'])
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     pipeline = ModelPipeline(**kwargs)
     
     logger.info('start loading the pipeline...')
-    pipeline.load(kwargs)
+    pipeline.load({},kwargs)
     pipeline.warm_up(kwargs)
 
     image_path_batches = pipeline_utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt=fmt)
@@ -188,10 +188,11 @@ if __name__ == '__main__':
                 'image':{'pixels':im},
             }
             results = pipeline.predict(kwargs, inputs)
+            assert pipeline.check_return_types(), 'invalid return types'
             
             annotated_image = results['outputs']['annotated']
             tmp = cv2.cvtColor(annotated_image,cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(output_dir, fname.replace(f'.{fmt}',f'_annotated.{fmt}')), tmp)
     
-    pipeline.clean_up(kwargs)
+    pipeline.clean_up()
     
