@@ -3,16 +3,17 @@
         {
             "name": "pose_model",
             "default_value": {
-                "path": "/home/gadget/pipeline/trt-engines/yolo11n-pose.pt",
-                "hw": [640,640],
+                "use_factory": false,
                 "metadata":{
                     "version": "v1",
                     "model_name": "yolov11",
-                    "task": "pose",
-                    "framework": "ultralytics"
+                    "model_type": "pose",
+                    "framework": "ultralytics",
+                    "image_size": [640,640],
+                    "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-pose.pt"
                 },
                 "iou": 0.45,
-                "classes": {
+                "object_configs": {
                     "person": {"confidence": 0.5},
                     "bicycle": {"confidence": 0.5},
                     "car": {"confidence": 0.5},

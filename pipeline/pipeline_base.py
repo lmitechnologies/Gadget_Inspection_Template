@@ -77,7 +77,17 @@ class PipelineBase(metaclass=ABCMeta):
         self.logger.info(f'Loaded models: {self.models.keys()}')
         
     
-    def update_predictions(self, key:str, value, score, label, image_height:int, image_width:int):
+    def update_predictions(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):
+        """update the predictions in the results by adding a new prediction.
+        
+        Args:
+            key (str): the key of the predictions to be updated, e.g., 'boxes', 'polygons', 'masks', 'keypoints'.
+            value (object): the value of the prediction, e.g., a list of coordinates for boxes, polygons, and keypoints; a numpy array for masks.
+            score (float): the confidence score of the prediction.
+            label (str): the label of the prediction.
+            image_height (int): the height of the image that the prediction is made on.
+            image_width (int): the width of the image that the prediction is made on.
+        """
         predictions = {
             'boxes': {"classes": [], "objects": [], "confidences": []},
             'polygons': {"classes": [], "objects": [], "confidences": []},
@@ -90,10 +100,10 @@ class PipelineBase(metaclass=ABCMeta):
         predictions[key]['objects'] = [value]
         predictions[key]['confidences'] = [score]
         
-        self.add_predictions(predictions, image_height=image_height, image_width=image_width, key='outputs', sub_key='labels')
+        self.add_predictions(predictions, image_height, image_width, key='outputs', sub_key='labels')
         
         
-    def add_predictions(self, predictions, image_height:int,image_width:int,key='outputs', sub_key='labels'):
+    def add_predictions(self, predictions, image_height:int, image_width:int, key='outputs', sub_key='labels'):
         """add predictions to the results.
         Args:
             predictions (dict): the predictions to be added in the following format in the form of {"<type>": {"classes": [], "objects": [], "confidences"}} for ex: {"boxes": {"classes": [], "objects": [], "confidences": []}}.
@@ -130,88 +140,45 @@ class PipelineBase(metaclass=ABCMeta):
         if self.results[key][sub_key]['content']['height'] != image_height or self.results[key][sub_key]['content']['width'] != image_width:
             raise ValueError(f'Image size mismatch: {self.results[key][sub_key]["content"]["height"]}x{self.results[key][sub_key]["content"]["width"]} != {image_height}x{image_width}')
         
-        if 'boxes' in predictions:
-            boxes = predictions['boxes']["objects"]
-            labels = predictions['boxes']['classes']
-            confidences = predictions['boxes']['confidences']
-            for idx, value in enumerate(boxes):
-                conf = confidences[idx] if isinstance(confidences, list) else confidences
-                label = labels[idx] if isinstance(labels, list) else labels
-                box = Box(
-                    x_min=value[0],
-                    y_min=value[1],
-                    x_max=value[2],
-                    y_max=value[3],
-                    angle=0,
-                )
-                self.results[key][sub_key]['content']['predictions'].append(
-                    Annotation(
-                        id = str(len(self.results[key][sub_key]['content']['predictions'])),
-                        value=box,
-                        label_id=label,
-                        confidence=conf,
-                        type=AnnotationType.BOX.value
-                    ).to_dict()
-                )
-        if 'polygons' in predictions:
-            polygons = predictions['polygons']["objects"]
-            labels = predictions['polygons']['classes']
-            confidences = predictions['polygons']['confidences']
-            for idx, value in enumerate(polygons):
-                conf = confidences[idx] if isinstance(confidences, list) else confidences
-                label = labels[idx] if isinstance(labels, list) else labels
-                polygon = Polygon(
-                    points=value,
-                )
-                self.results[key][sub_key]['content']['predictions'].append(
-                    Annotation(
-                        id = str(len(self.results[key][sub_key]['content']['predictions'])),
-                        value=polygon,
-                        label_id=label,
-                        confidence=conf,
-                        type=AnnotationType.POLYGON.value
-                    ).to_dict()
-                )
-        if 'masks' in predictions:
-            masks = predictions['masks']["objects"]
-            labels = predictions['masks']['classes']
-            confidences = predictions['masks']['confidences']
-            for idx, value in enumerate(masks):
-                conf = confidences[idx] if isinstance(confidences, list) else confidences
-                label = labels[idx] if isinstance(labels, list) else labels
-                mask = Mask(
-                    mask=value,
-                )
-                self.results[key][sub_key]['content']['predictions'].append(
-                    Annotation(
-                        id = str(len(self.results[key][sub_key]['content']['predictions'])),
-                        value=mask,
-                        label_id=label,
-                        confidence=conf,
-                        type=AnnotationType.MASK.value
-                    ).to_dict()
-                )
-        if 'keypoints' in predictions:
-            keypoints = predictions['keypoints']["objects"]
-            labels = predictions['keypoints']['classes']
-            confidences = predictions['keypoints']['confidences']
-            for idx, value in enumerate(keypoints):
-                conf = confidences[idx] if isinstance(confidences, list) else confidences
-                label = labels[idx] if isinstance(labels, list) else labels
-                keypoint = Point2d(
-                    x=value[0],
-                    y=value[1],
-                )
-                self.results[key][sub_key]['content']['predictions'].append(
-                    Annotation(
-                        id = str(len(self.results[key][sub_key]['content']['predictions'])),
-                        value=keypoint,
-                        label_id=label,
-                        confidence=conf,
-                        type=AnnotationType.KEYPOINT.value
-                    ).to_dict()
-                )
+        # Maps prediction keys to the specific classes and types needed for annotation.
+        PREDICTION_HANDLERS = {
+            'boxes': {
+                'value_factory': lambda v: Box(x_min=v[0], y_min=v[1], x_max=v[2], y_max=v[3], angle=v[4] if len(v) > 4 else 0),
+                'type': AnnotationType.BOX.value
+            },
+            'polygons': {
+                'value_factory': lambda v: Polygon(points=v),
+                'type': AnnotationType.POLYGON.value
+            },
+            'masks': {
+                'value_factory': lambda v: Mask(mask=v),
+                'type': AnnotationType.MASK.value
+            },
+            'keypoints': {
+                'value_factory': lambda v: Point2d(x=v[0], y=v[1]),
+                'type': AnnotationType.KEYPOINT.value
+            }
+        }
         
+        for pred_type, handler in PREDICTION_HANDLERS.items():
+            if pred_type in predictions:
+                # Extract data for the current prediction type
+                data = predictions[pred_type]
+                objects = data["objects"]
+                labels = data['classes']
+                confidences = data['confidences']
+                
+                prediction_list = self.results[key][sub_key]['content']['predictions']
+                for idx, value_data in enumerate(objects):
+                    value_object = handler['value_factory'](value_data)
+                    annotation = Annotation(
+                        id=str(len(prediction_list)),
+                        value=value_object,
+                        label_id=labels[idx],
+                        confidence=confidences[idx],
+                        type=handler['type']
+                    )
+                    prediction_list.append(annotation.to_dict())
                     
 
     def init_results(self):
