@@ -6,14 +6,9 @@ import logging
 import torch
 
 sys.path.append('/home/gadget/pipeline')
-sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
-sys.path.append('/home/gadget/LMI_AI_Solutions/anomaly_detectors')
-
 from pipeline_base import PipelineBase as Base
 
 # functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-from anomalib_lmi.anomaly_model2 import AnomalyModel2
-from ad_core.anomaly_detector import AnomalyDetector
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
@@ -44,7 +39,7 @@ class ModelPipeline(Base):
             configs (dict): runtime configs
         """
         # self.logger.info(f'registry: {AnomalyDetector._registry.keys()}')
-        self.models['ad'] = AnomalyDetector(configs['ad_model']['metadata'],configs['ad_model']['path'])
+        self.load_models(model_roles, configs, 'ad_model')
         self.logger.info('models are loaded')
     
     
@@ -56,7 +51,7 @@ class ModelPipeline(Base):
             configs (dict): runtime configs
         """
         t1 = time.time()
-        self.models['ad'].warmup()
+        self.models['ad_model'].warmup()
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
     
@@ -92,10 +87,10 @@ class ModelPipeline(Base):
         err_size = confs['err_size']
         
         # run the object detection model
-        err_map = self.models['ad'].predict(image)
+        err_map = self.models['ad_model'].predict(image)
         
         # annotate the image using err_map
-        annotated_image = self.models['ad'].annotate(image, err_map, err_threshold, err_max)
+        annotated_image = self.models['ad_model'].annotate(image, err_map, err_threshold, err_max)
         
         # upload annotated image to GadgetAPP and GoFactory
         self.update_results('outputs', annotated_image, sub_key='annotated')
@@ -112,8 +107,6 @@ class ModelPipeline(Base):
         total_proc_time = time.time()-start_time
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
-        if not self.check_return_types():
-            raise Exception('invalid return types')
         return self.results
 
 
@@ -137,7 +130,7 @@ if __name__ == '__main__':
     pipeline = ModelPipeline(**kwargs)
     
     # load and warmup the model
-    pipeline.load(kwargs)
+    pipeline.load({},kwargs)
     pipeline.warm_up(kwargs)
 
     # load test images
@@ -157,11 +150,12 @@ if __name__ == '__main__':
             
             # run the pipeline
             results = pipeline.predict(kwargs, inputs)
+            assert pipeline.check_return_types(), 'invalid return types'
             
             # save the annotated image
             annotated_image = results['outputs']['annotated']
             bgr = cv2.cvtColor(annotated_image,cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(output_dir, fname.replace(f'.{fmt}',f'_annotated.{fmt}')), bgr)
     
-    pipeline.clean_up(kwargs)
+    pipeline.clean_up()
     
