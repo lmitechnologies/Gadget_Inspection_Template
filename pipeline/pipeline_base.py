@@ -26,9 +26,15 @@ class PipelineBase(metaclass=ABCMeta):
         self.init_results()
         
     
-    def _load_model(self,model_name:str, metadata:dict):
-        """
-        load models
+    def _load_model(self, model_name:str, metadata:dict, **kwargs):
+        """ load a model with the given metadata.
+        
+        args:
+            model_name (str): the name of the model to be loaded.
+            metadata (dict): the metadata of the model to be loaded.
+            kwargs (dict): additional arguments to be passed to the model constructor.
+        Raises:
+            ValueError: if the model_type is not supported.
         """
         if model_name in self.models:
             self.logger.info(f'{model_name} is already loaded')
@@ -39,17 +45,17 @@ class PipelineBase(metaclass=ABCMeta):
                 if metadata['image_size'] is None:
                     metadata['image_size'] = [224, 224]
             self.models[model_name] = AnomalyDetector(
-                metadata,
+                metadata, **kwargs
             )
         elif metadata.get('model_type', '').lower() in ['objectdetection', 'instancesegmentation', 'pose', 'obb', 'od', 'seg']:
             self.models[model_name] = ObjectDetector(
-                metadata,
+                metadata, **kwargs
             )
         else:
             raise ValueError(f'model_type {metadata.get("model_type", "")} is not supported')
         
         
-    def load_models(self, model_roles: dict, configs: dict, filter: str = '-model'):
+    def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', **kwargs):
         self.logger.info(f'Model Roles: {model_roles}')
         model_config_keys = [k for k in configs.keys() if f'{filter}' in k]
         for model_key in model_config_keys:
@@ -57,16 +63,16 @@ class PipelineBase(metaclass=ABCMeta):
             if use_factory:
                 if model_key in model_roles:
                     if model_roles[model_key].get('model_type', None) is not None:
-                        self._load_model(model_key, model_roles[model_key])
+                        self._load_model(model_key, model_roles[model_key], **kwargs)
                         self.logger.info(f'GoFactory model: {model_key} loaded')
                     else:
                         self.logger.warning(f'{model_key} role is not in GoFactory, loading default model')
-                        self._load_model(model_key, configs[model_key]['metadata'])
+                        self._load_model(model_key, configs[model_key]['metadata'], **kwargs)
                 else:
                     self.logger.warning(f'{model_key} role is not in GoFactory, loading default model')
-                    self._load_model(model_key, configs[model_key]['metadata'])
+                    self._load_model(model_key, configs[model_key]['metadata'], **kwargs)
             else:
-                self._load_model(model_key, configs[model_key]['metadata'])
+                self._load_model(model_key, configs[model_key]['metadata'], **kwargs)
                 self.logger.info(f'Default model: {model_key} loaded')
         self.logger.info(f'Loaded models: {self.models.keys()}')
         
