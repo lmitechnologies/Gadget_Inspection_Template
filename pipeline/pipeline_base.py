@@ -75,25 +75,40 @@ class PipelineBase(metaclass=ABCMeta):
         
         
     def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', **kwargs):
+        """load models based on the provided model roles and configurations.
+        
+        Args:
+            model_roles (dict): a dictionary from gofactory
+            configs (dict): the configs from pipeline definition json file.
+            filter (str, optional): a model filter. Defaults to '-model'.
+        """
         self.logger.info(f'Model Roles: {model_roles}')
         model_config_keys = [k for k in configs.keys() if f'{filter}' in k]
         for model_key in model_config_keys:
-            use_factory = configs[model_key].get('use_factory', False)
-            if use_factory:
-                if model_key in model_roles:
-                    if model_roles[model_key].get('model_type', None) is not None:
-                        self._load_model(model_key, model_roles[model_key], **kwargs)
-                        self.logger.info(f'GoFactory model: {model_key} loaded')
-                    else:
-                        self.logger.warning(f'{model_key} role is not in GoFactory, loading default model')
-                        self._load_model(model_key, configs[model_key]['metadata'], **kwargs)
-                else:
-                    self.logger.warning(f'{model_key} role is not in GoFactory, loading default model')
-                    self._load_model(model_key, configs[model_key]['metadata'], **kwargs)
-            else:
-                self._load_model(model_key, configs[model_key]['metadata'], **kwargs)
-                self.logger.info(f'Default model: {model_key} loaded')
-        self.logger.info(f'Loaded models: {self.models.keys()}')
+            model_config = configs[model_key]
+            use_factory = model_config.get('use_factory', False)
+            # Start with the default configuration.
+            config_to_use = model_config['metadata']
+            model_source = "default"
+            
+            can_use_factory_role = (
+                use_factory and
+                model_key in model_roles and
+                model_roles[model_key].get('model_type') is not None
+            )
+            
+            if can_use_factory_role:
+                config_to_use = model_roles[model_key]
+                model_source = "GoFactory"
+            elif use_factory:
+                self.logger.warning(
+                    f"'{model_key}' was configured to use GoFactory, but its role was invalid or not found. "
+                    "Falling back to default model."
+                )
+                
+            self._load_model(model_key, config_to_use, **kwargs)
+            self.logger.info(f"Successfully loaded {model_source} model: '{model_key}'")
+        self.logger.info(f'Final loaded models: {list(self.models.keys())}')
         
     
     def add_one_prediction(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):
