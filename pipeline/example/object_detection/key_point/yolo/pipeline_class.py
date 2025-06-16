@@ -12,8 +12,6 @@ sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
 from pipeline_base import PipelineBase as Base
 
 # functions from LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-from ultralytics_lmi.yolo.model import YoloPose
-from od_core.object_detector import ObjectDetector
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
@@ -104,9 +102,10 @@ class ModelPipeline(Base):
         for i, c in enumerate(objects):
             box = boxes[i]
             score = scores[i].item()
-            self.update_predictions('boxes', box, score, c, h0, w0)
+            self.add_one_prediction('boxes', box, score, c, h0, w0)
             for pt in pts[i]:
-                self.update_predictions('keypoints', pt, score, c, h0, w0)
+                self.add_one_prediction('keypoints', pt, score, c, h0, w0)
+        self.logger.info(f'predictions length: {len(self.results["outputs"]["labels"]["content"]["predictions"])}')
         
         # upload decision to the automation service
         decision = PASS if len(pts)>MIN_PTS else FAIL 

@@ -97,8 +97,9 @@ class ModelPipeline(Base):
             box = boxes[i].astype(int)
             seg = segs[i].astype(int)
             score = scores[i].item()
-            self.update_predictions('boxes', box, score, name, h0, w0)
-            self.update_predictions('polygons', seg, score, name, h0, w0)
+            self.add_one_prediction('boxes', box, score, name, h0, w0)
+            self.add_one_prediction('polygons', seg, score, name, h0, w0)
+        self.logger.info(f'predictions length: {len(self.results["outputs"]["labels"]["content"]["predictions"])}')
         
         # upload annotated image to GadgetAPP and GoFactory
         self.update_results('outputs', annotated_image, sub_key='annotated')

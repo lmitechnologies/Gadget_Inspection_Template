@@ -130,8 +130,9 @@ class ModelPipeline(Base):
             box = boxes[i].astype(int)
             seg = segments[i].astype(int)
             score = scores[i].item()
-            self.update_predictions('boxes', box, score, name, h0, w0)
-            self.update_predictions('polygons', seg, score, name, h0, w0)
+            self.add_one_prediction('boxes', box, score, name, h0, w0)
+            self.add_one_prediction('polygons', seg, score, name, h0, w0)
+        self.logger.info(f'predictions length: {len(self.results["outputs"]["labels"]["content"]["predictions"])}')
         
         # upload decision to the Gadget automation service
         decision = PASS if len(objects) == 0 else FAIL # assume no object is PASS
@@ -144,8 +145,6 @@ class ModelPipeline(Base):
         total_proc_time = time.time()-start_time
         
         self.logger.info(f'found objects: {objects}')
-        self.logger.info(f'boxes: {boxes}')
-        self.logger.info(f'scores: {scores}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
         return self.results

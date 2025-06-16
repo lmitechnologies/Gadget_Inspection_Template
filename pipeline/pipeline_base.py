@@ -14,6 +14,25 @@ class PipelineBase(metaclass=ABCMeta):
     logger = logging.getLogger(__name__)
     models: collections.OrderedDict
     results: dict
+    # Maps prediction keys to the specific classes and types needed for annotation.
+    _PREDICTION_HANDLERS = {
+        'boxes': {
+            'value_func': lambda v: Box(x_min=v[0], y_min=v[1], x_max=v[2], y_max=v[3], angle=v[4] if len(v) > 4 else 0),
+            'type': AnnotationType.BOX.value
+        },
+        'polygons': {
+            'value_func': lambda v: Polygon(points=v),
+            'type': AnnotationType.POLYGON.value
+        },
+        'masks': {
+            'value_func': lambda v: Mask(mask=v),
+            'type': AnnotationType.MASK.value
+        },
+        'keypoints': {
+            'value_func': lambda v: Point2d(x=v[0], y=v[1]),
+            'type': AnnotationType.KEYPOINT.value
+        }
+    }
     
     def __init__(self):
         """
@@ -77,8 +96,8 @@ class PipelineBase(metaclass=ABCMeta):
         self.logger.info(f'Loaded models: {self.models.keys()}')
         
     
-    def update_predictions(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):
-        """update the predictions in the results by adding a new prediction.
+    def add_one_prediction(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):
+        """add a new prediction in the self.results
         
         Args:
             key (str): the key of the predictions to be updated, e.g., 'boxes', 'polygons', 'masks', 'keypoints'.
@@ -88,94 +107,60 @@ class PipelineBase(metaclass=ABCMeta):
             image_height (int): the height of the image that the prediction is made on.
             image_width (int): the width of the image that the prediction is made on.
         """
-        predictions = {
-            'boxes': {"classes": [], "objects": [], "confidences": []},
-            'polygons': {"classes": [], "objects": [], "confidences": []},
-            'masks': {"classes": [], "objects": [], "confidences": []},
-            'keypoints': {"classes": [], "objects": [], "confidences": []},
-        }
-        if key not in predictions:
-            raise ValueError(f'key {key} is not in predictions')
-        predictions[key]['classes'] = [label]
-        predictions[key]['objects'] = [value]
-        predictions[key]['confidences'] = [score]
+        if key not in self._PREDICTION_HANDLERS:
+            raise ValueError(f'Unsupported prediction type: "{key}"')
         
+        predictions = {
+            key: {
+                'classes': [label],
+                'objects': [value],
+                'confidences': [score]
+            }
+        }
         self.add_predictions(predictions, image_height, image_width, key='outputs', sub_key='labels')
         
         
     def add_predictions(self, predictions, image_height:int, image_width:int, key='outputs', sub_key='labels'):
         """add predictions to the results.
+        
         Args:
-            predictions (dict): the predictions to be added in the following format in the form of {"<type>": {"classes": [], "objects": [], "confidences"}} for ex: {"boxes": {"classes": [], "objects": [], "confidences": []}}.
+            predictions (dict): a dictionary of predictions with one of these keys: boxes, polygons, masks and keypoints. e.g., {"boxes": {"classes": [], "objects": [], "confidences": []}}.
             image_height (int): the height of the image.
             image_width (int): the width of the image.
             key (str, optional): the key of the self.results. Defaults to 'outputs'.
             sub_key (str, optional): the key of the sub dictionary to be updated. Defaults to 'labels'.
         """
+        default_entry = {
+            'type': 'object',
+            'format': 'json',
+            'extension': '.label.json',
+            'content': {
+                'height': image_height,
+                'width': image_width,
+                'predictions': [],
+            }
+        }
+        
         if key not in self.results:
-            self.results[key] = {
-                sub_key: {
-                    'type': 'object',
-                    'format': 'json',
-                    'extension': '.label.json',
-                    'content': dict(
-                        height=image_height,
-                        width=image_width,
-                        predictions=[],
-                    )
-                }
-            }
+            self.results[key] = {sub_key: default_entry}
         elif sub_key not in self.results[key]:
-            self.results[key][sub_key] = {
-                'type': 'object',
-                'format': 'json',
-                'extension': '.label.json',
-                'content': dict(
-                    height=image_height,
-                    width=image_width,
-                    predictions=[],
-                )
-            }
+            self.results[key][sub_key] = default_entry
         
         if self.results[key][sub_key]['content']['height'] != image_height or self.results[key][sub_key]['content']['width'] != image_width:
             raise ValueError(f'Image size mismatch: {self.results[key][sub_key]["content"]["height"]}x{self.results[key][sub_key]["content"]["width"]} != {image_height}x{image_width}')
         
-        # Maps prediction keys to the specific classes and types needed for annotation.
-        PREDICTION_HANDLERS = {
-            'boxes': {
-                'value_factory': lambda v: Box(x_min=v[0], y_min=v[1], x_max=v[2], y_max=v[3], angle=v[4] if len(v) > 4 else 0),
-                'type': AnnotationType.BOX.value
-            },
-            'polygons': {
-                'value_factory': lambda v: Polygon(points=v),
-                'type': AnnotationType.POLYGON.value
-            },
-            'masks': {
-                'value_factory': lambda v: Mask(mask=v),
-                'type': AnnotationType.MASK.value
-            },
-            'keypoints': {
-                'value_factory': lambda v: Point2d(x=v[0], y=v[1]),
-                'type': AnnotationType.KEYPOINT.value
-            }
-        }
-        
-        for pred_type, handler in PREDICTION_HANDLERS.items():
+        prediction_list = self.results[key][sub_key]['content']['predictions']
+        for pred_type, handler in self._PREDICTION_HANDLERS.items():
             if pred_type in predictions:
-                # Extract data for the current prediction type
                 data = predictions[pred_type]
-                objects = data["objects"]
-                labels = data['classes']
-                confidences = data['confidences']
                 
-                prediction_list = self.results[key][sub_key]['content']['predictions']
-                for idx, value_data in enumerate(objects):
-                    value_object = handler['value_factory'](value_data)
+                for idx, value_data in enumerate(data['objects']):
+                    value_object = handler['value_func'](value_data)
                     annotation = Annotation(
                         id=str(len(prediction_list)),
                         value=value_object,
-                        label_id=labels[idx],
-                        confidence=confidences[idx],
+                        label_id=data['classes'][idx],
+                        confidence=data['confidences'][idx],
                         type=handler['type']
                     )
                     prediction_list.append(annotation.to_dict())
@@ -300,8 +285,11 @@ class PipelineBase(metaclass=ABCMeta):
             self.results['automation_keys'].append(key)
             
     
-    def check_return_types(self) -> bool:
-        """check if the return types are json serializable for debugging purpose.
+    def check_return_types(self, check_sub_keys=['labels']) -> bool:
+        """check if the return types are json serializable
+        
+        Args:
+            check_sub_keys (list, optional): a list of sub keys to check in the self.results['outputs']. Defaults to ['labels'].
         """
         def is_json_serializable(obj, key):
             """Check if an object can be serialized to JSON."""
@@ -309,14 +297,16 @@ class PipelineBase(metaclass=ABCMeta):
                 json.dumps(obj)
                 return True
             except (TypeError, OverflowError):
-                self.logger.error(f'{key} is not json serializable, with data: {obj}')
+                self.logger.error(f'{key} is not json serializable. Data: {obj}')
                 return False
         
         for k,v in self.results.items():
             if k == 'outputs':
-                # only check labels in outputs
-                if 'labels' in v:
-                    if not is_json_serializable(v['labels'], 'labels in outputs'):
+                for sub_key in check_sub_keys:
+                    if sub_key not in v:
+                        self.logger.error(f'{sub_key} is not found in outputs')
+                        return False
+                    if not is_json_serializable(v[sub_key], f'{sub_key} in outputs'):
                         return False
             else:
                 if not is_json_serializable(v,k):
