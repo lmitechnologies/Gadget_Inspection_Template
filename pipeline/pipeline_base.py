@@ -175,7 +175,7 @@ class PipelineBase(metaclass=ABCMeta):
                         id=str(len(prediction_list)),
                         value=value_object,
                         label_id=data['classes'][idx],
-                        confidence=data['confidences'][idx],
+                        confidence=float(data['confidences'][idx]),
                         type=handler['type']
                     )
                     prediction_list.append(annotation.to_dict())
@@ -301,10 +301,10 @@ class PipelineBase(metaclass=ABCMeta):
             
     
     def check_return_types(self, check_sub_keys=['labels']) -> bool:
-        """check if the return types are json serializable
+        """check if the result dictionary is json serializable
         
         Args:
-            check_sub_keys (list, optional): a list of sub keys to check in the self.results['outputs']. Defaults to ['labels'].
+            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to ['labels'].
         """
         def is_json_serializable(obj, key):
             """Check if an object can be serialized to JSON."""
@@ -312,16 +312,15 @@ class PipelineBase(metaclass=ABCMeta):
                 json.dumps(obj)
                 return True
             except (TypeError, OverflowError):
-                self.logger.error(f'{key} is not json serializable. Data: {obj}')
+                self.logger.error(f'{key} is not json serializable.')
                 return False
         
         for k,v in self.results.items():
             if k == 'outputs':
                 for sub_key in check_sub_keys:
                     if sub_key not in v:
-                        self.logger.error(f'{sub_key} is not found in outputs')
-                        return False
-                    if not is_json_serializable(v[sub_key], f'{sub_key} in outputs'):
+                        self.logger.warning(f'{sub_key} is not found in outputs, skip checking it')
+                    elif not is_json_serializable(v[sub_key], f'"{sub_key}" in "outputs"'):
                         return False
             else:
                 if not is_json_serializable(v,k):

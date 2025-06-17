@@ -101,7 +101,7 @@ class ModelPipeline(Base):
         h0,w0 = image.shape[:2]
         for i, c in enumerate(objects):
             box = boxes[i]
-            score = scores[i].item()
+            score = scores[i]
             self.add_one_prediction('boxes', box, score, c, h0, w0)
             for pt in pts[i]:
                 self.add_one_prediction('keypoints', pt, score, c, h0, w0)

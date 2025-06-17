@@ -96,7 +96,7 @@ class ModelPipeline(Base):
         for i,name in enumerate(objects):
             box = boxes[i].astype(int)
             seg = segs[i].astype(int)
-            score = scores[i].item()
+            score = scores[i]
             self.add_one_prediction('boxes', box, score, name, h0, w0)
             self.add_one_prediction('polygons', seg, score, name, h0, w0)
         self.logger.info(f'predictions length: {len(self.results["outputs"]["labels"]["content"]["predictions"])}')
