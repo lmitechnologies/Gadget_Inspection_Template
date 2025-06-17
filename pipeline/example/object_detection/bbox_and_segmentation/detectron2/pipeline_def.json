@@ -1,4 +1,7 @@
 {
+    "model_roles":[
+        "od_model"
+    ],
     "configs_def":[
         {
             "name": "od_model",

@@ -112,7 +112,7 @@ class PipelineBase(metaclass=ABCMeta):
         
     
     def add_one_prediction(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):
-        """add a new prediction in the self.results
+        """add a new prediction to Label Studio.
         
         Args:
             key (str): the key of the predictions to be updated, e.g., 'boxes', 'polygons', 'masks', 'keypoints'.
@@ -136,7 +136,7 @@ class PipelineBase(metaclass=ABCMeta):
         
         
     def add_predictions(self, predictions, image_height:int, image_width:int, key='outputs', sub_key='labels'):
-        """add predictions to the results.
+        """add predictions to Label Studio.
         
         Args:
             predictions (dict): a dictionary of predictions with one of these keys: boxes, polygons, masks and keypoints. e.g., {"boxes": {"classes": [], "objects": [], "confidences": []}}.

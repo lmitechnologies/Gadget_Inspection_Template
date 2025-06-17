@@ -1,4 +1,7 @@
 {
+    "model_roles":[
+        "pose_model"
+    ],
     "configs_def":[
         {
             "name": "pose_model",

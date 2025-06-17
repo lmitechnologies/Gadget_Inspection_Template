@@ -1,4 +1,7 @@
 {
+    "model_roles":[
+        "ad_model"
+    ],
     "configs_def":[
         {
             "name": "ad_model",

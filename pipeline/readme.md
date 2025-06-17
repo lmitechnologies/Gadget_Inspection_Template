@@ -19,8 +19,7 @@ The pipeline folder consists of the following:
 ```plaintext
 .  
 ├── example  
-├── test  
-├── trt-engines
+├── trt-engines  
 ├── trt-generation  
 ├── __init__.py  
 ├── pipeline_base.py  
@@ -34,29 +33,35 @@ The pipeline folder consists of the following:
 ## Folder Contents
 
 **example**: a folder of examples that illustrate the implementation of pipeline classes for performing inspection tasks using varying AI models including object detection, instance segmentation, classification and anomaly detection.  
-**test**: a folder containing the testing scripts (optional).  
 **trt-engines**: a folder containing the generated TensorRT engines, created from the models in the **trt-generation** folder. These engines are intended for deployment to production edge devices, such as GoMax.  
 **trt-generation**: a folder containing model weights and additional files required for generating TensorRT engines.  
 **pipeline_base.py**: the pipeline base class, which typically does **not** require modification.  
 **pipeline_class.py**: the implementation of the pipeline class. Several required functions must be implemented.  
-**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` and `model_roles` keys. `model_roles` is a list of model role strings. `configs_def` is a list where each element is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Here is an example:
+**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` and `model_roles` keys. `model_roles` is a list of model role strings. Check more details in the [model role](#model-roles) section. `configs_def` is a list where each element is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Here is an example:
 
 ```json
 {
-    "configs_def":
-    [
+    "model_roles":[
+        "seg_model"
+    ],
+    "configs_def":[
         {
-            "name": "od_model",
+            "name": "seg_model",
             "default_value": {
-                "path": "/home/gadget/pipeline/trt-engines/model.pt",
-                "hw": [640,640],
-                "objects": {
-                    "car": {
-                        "confidence":0.5,
-                    },
-                    "bus": {
-                        "confidence": 0.6,
-                    }
+                "use_factory": false,
+                "metadata":{
+                    "version": "v1",
+                    "model_name": "yolov11",
+                    "model_type": "instancesegmentation",
+                    "framework": "ultralytics",
+                    "image_size": [640, 640],
+                    "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt"
+                },
+                "iou": 0.45,
+                "object_configs": {
+                    "person": {"confidence": 0.5},
+                    "bicycle": {"confidence": 0.5},
+                    "car": {"confidence": 0.5},
                 }
             }
         }
@@ -75,13 +80,13 @@ To complete these tasks listed above, the following functions must be implemente
 1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
     This function initializes the pipeline class. The `kwargs` argument contains the key-value pairs defined in the **pipeline_def.json**.
 2. **def load(self, `model_roles`: dict, `configs`: dict) -> None:**  
-    This function loads the models and stores them in the `self.models` variable defined in the pipeline base class. The `configs` argument contains runtime key-value pairs, where the keys match those in the **pipeline_def.json** and the values may differ. The following functions use the same `configs` argument unless otherwise stated.
+    This function loads the models and stores them in the `self.models` variable defined in the pipeline base class. The `configs` argument contains runtime key-value pairs, where the keys match those in the **pipeline_def.json** and the values may differ. 
 3. **def warm_up(self, `model_roles`: dict, `configs`: dict) -> None:**  
     This function receives the `configs` and runs the models for the first time using dummy inputs.
 4. **def predict(self, `configs`: dict, `inputs`: dict) -> dict:**  
     This function receives the `inputs` and `configs`, makes predictions, adds annotations to the image, and returns the annotated image along with the model results. Refer to the [Pipeline Inputs](#pipeline-inputs) section for the details of `inputs`. This function must return a `self.results` dictionary defined in the pipeline base class.  
 
-The following function is already implemented in the pipeline base class. While it is recommended to use the base class, developers who choose not to use it must implement this function themselves:
+This required function has implemented in the pipeline base class:
 
 - **def clean_up(self, `configs`: dict):**  
 This function receives `configs` and deletes the models from memory.
@@ -95,12 +100,15 @@ The model_roles dictionary that is passed to the load and warm_up methods is gen
 
 ```python
 {
-    "model_type": str,
-    "model_path": str,
-    "package": str,
-    "algorithm": str,
-    "image_size": [int, int], #HightxWidth
+    'model_role':{
+        "model_type": str,
+        "model_path": str,
+        "package": str,
+        "algorithm": str,
+        "image_size": [int, int], # Hight x Width
+    }
 }
+
 ```
 
 The LMI_AI_Solutions repo provides wrappers for several of the most popular model architectures. Those wrappers are designed to consume the model_role dictionary when initialized. 
@@ -109,95 +117,19 @@ The LMI_AI_Solutions repo provides wrappers for several of the most popular mode
 
 The Gadget supports uploading model prediction results to [Label Studio](https://labelstud.io) for human labeling enabling dataset expansion and model performance improvement. 
 
-### Label Object
-
-The label_obj is a dictionary that encapsulates the prediction results for an image. It contains metadata about the image and the detected objects in the form of bounding boxes (boxes) and polygons (polygons).
-
-Structure:
+Use the **add_one_prediction** function defined in the pipeline base class to add prediction data to Label Studio. Here is the example:
 
 ```python
-label_obj = {
-    'type': 'object',
-    'format': 'json',
-    'extension': '.label.json',
-    'content': {
-        'image_width': int,
-        'image_height': int,
-        'boxes': list,
-        'polygons': list
-    }
-}
-```
+# assume that a model returns the following:
+box = [100,150,450,400] 
+polygon = [[10,3],[11,4],[14,6],[20,9]]
+score = 0.95
+name = 'people'
+h,w = 1024,1204 # height and width of the input image
 
-Fields:
-
-- `type`: Specifies the type of the object. Always set to 'object'.
-- `format`: Specifies the format of the object. Always set to 'json'.
-- `extension`: Specifies the file extension for the label file. Always set to '.label.json'.
-- `content`:
-  - Contains the actual prediction data for the image.
-  - Subfields:
-    - `image_width`: Width of the image in pixels.  
-    - `image_height`: Height of the image in pixels.  
-    - `boxes`: A list of bounding box objects.  
-    - `polygons`: A list of polygon objects.  
-
-### Bounding Box Object
-
-The `box_obj` represents a detected object in the form of a bounding box. Each bounding box is defined by its top-left corner coordinates, width, height, and a confidence score.
-
-Structure:
-
-```python
-box_obj = {
-    'object': str,
-    'x': float,
-    'y': float,
-    'width': float,
-    'height': float,
-    'score': float,
-}
-```
-
-Fields:
-
-- `object`: The class name of the detected object (e.g., "car", "person").  
-- `x`: The x-coordinate of the top-left corner of the bounding box.
-- `y`: The y-coordinate of the top-left corner of the bounding box.  
-- `width`: The width of the bounding box.
-- `height`: The height of the bounding box.  
-- `score`: The model's confidence score for the prediction (range: 0 to 1).  
-
-### Polygon Object
-
-The `polygon_obj` represents a detected object in the form of a polygon. Each polygon is defined by a list of vertices (x and y coordinates) and a confidence score.
-
-Structure:
-
-```python
-polygon_obj = {
-    'object': str,
-    'x': list,
-    'y': list,
-    'score': float,
-}
-```
-
-Fields:
-
-- `object`: The class name of the detected object (e.g., "car", "person").  
-- `x`: A list of x-coordinates for the vertices of the polygon.
-- `y`: A list of y-coordinates for the vertices of the polygon.  
-- `score`: The model's confidence score for the prediction (range: 0 to 1).  
-
-### Upload to Label Studio
-
-Once `label_obj` is populated with the model's prediction results, use the **update_results** function defined in the pipeline base class to transfer prediction data to Label Studio. Here is the example:
-
-```python
-
-self.update_results('outputs', label_obj, sub_key='labels')
-
+# add both to label studio
+self.add_one_prediction('boxes',box,score,name,h,w)
+self.add_one_prediction('polygons',polygon,score,name,h,w)
 ```
 
 ## Pipeline Base Class
@@ -211,11 +143,13 @@ This function initializes two class variables:
 2. **def init_results(self) -> None:**  
 This function initializes a `self.results` variable and fulfills the requirements in the [Pipeline Result Dictionary](#pipeline-result-dictionary) section.
 3. **def track_exception(cls, logger=logging.getLogger(\_\_name\_\_)):**  
-This function is a decorator for tracking exceptions and sending error messages to GoFactory for debugging. It's recommended to apply this decorator for **every** required function in the pipeline class.
-4. **def clean_up(self, configs: dict) -> None:**  
-This function deletes the models from memory.
-5. **def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False, overwrite=False):**  
+This function is a decorator for tracking exceptions and sending error messages to GoFactory for debugging. **It's recommended to apply this decorator for every required function in the pipeline class.**
+4. **def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False, overwrite=False):**  
 This function updates the `self.results` variable based on predefined rules. For detailed information, refer to the function's docstring.
+5. **def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', \*\*kwargs):**
+This function loads multiple models based on the `filter`.
+6. **def add_one_prediction(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):**
+This function adds one prediction to label studio.
 
 ## Pipeline Inputs
 
@@ -320,7 +254,8 @@ What get consumed by GoFactory:
     "total_proc_time": 100,
 }
 ```
-# Configuring a dockerfile
+
+## Configuring a dockerfile
 
 The pipeline class is run by the **Pipeline Server** which is a python project made of up two whls. 
 
