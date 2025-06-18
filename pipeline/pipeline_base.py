@@ -17,19 +17,19 @@ class PipelineBase(metaclass=ABCMeta):
     # Maps prediction keys to the specific classes and types needed for annotation.
     _PREDICTION_HANDLERS = {
         'boxes': {
-            'value_func': lambda v: Box(x_min=v[0], y_min=v[1], x_max=v[2], y_max=v[3], angle=v[4] if len(v) > 4 else 0),
+            'value_factory': lambda v: Box(x_min=v[0], y_min=v[1], x_max=v[2], y_max=v[3], angle=v[4] if len(v) > 4 else 0),
             'type': AnnotationType.BOX.value
         },
         'polygons': {
-            'value_func': lambda v: Polygon(points=v),
+            'value_factory': lambda v: Polygon(points=v),
             'type': AnnotationType.POLYGON.value
         },
         'masks': {
-            'value_func': lambda v: Mask(mask=v),
+            'value_factory': lambda v: Mask(mask=v),
             'type': AnnotationType.MASK.value
         },
         'keypoints': {
-            'value_func': lambda v: Point2d(x=v[0], y=v[1]),
+            'value_factory': lambda v: Point2d(x=v[0], y=v[1]),
             'type': AnnotationType.KEYPOINT.value
         }
     }
@@ -111,32 +111,33 @@ class PipelineBase(metaclass=ABCMeta):
         self.logger.info(f'Final loaded models: {list(self.models.keys())}')
         
     
-    def add_one_prediction(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):
-        """add a new prediction to Label Studio.
+    def add_prediction(self, pred_type:str, value:object, score:float, label:str, image_height:int, image_width:int, **kwargs):
+        """add a single prediction to results for Label Studio.
         
         Args:
-            key (str): the key of the predictions to be updated, e.g., 'boxes', 'polygons', 'masks', 'keypoints'.
+            pred_type (str): the type of the predictions to be updated, e.g., 'boxes', 'polygons', 'masks', 'keypoints'.
             value (object): the value of the prediction, e.g., a list of coordinates for boxes, polygons, and keypoints; a numpy array for masks.
             score (float): the confidence score of the prediction.
             label (str): the label of the prediction.
             image_height (int): the height of the image that the prediction is made on.
             image_width (int): the width of the image that the prediction is made on.
+            kwargs (dict): additional arguments to be passed to the _add_predictions method, such as 'key' and 'sub_key'.
         """
-        if key not in self._PREDICTION_HANDLERS:
-            raise ValueError(f'Unsupported prediction type: "{key}"')
+        if pred_type not in self._PREDICTION_HANDLERS:
+            raise ValueError(f'Unsupported prediction type: "{pred_type}"')
         
         predictions = {
-            key: {
+            pred_type: {
                 'classes': [label],
                 'objects': [value],
                 'confidences': [score]
             }
         }
-        self.add_predictions(predictions, image_height, image_width, key='outputs', sub_key='labels')
+        self._add_predictions(predictions, image_height, image_width, **kwargs)
         
         
-    def add_predictions(self, predictions, image_height:int, image_width:int, key='outputs', sub_key='labels'):
-        """add predictions to Label Studio.
+    def _add_predictions(self, predictions, image_height:int, image_width:int, key='outputs', sub_key='labels'):
+        """a helper functiomn to add a batch of predictions to results for Label Studio.
         
         Args:
             predictions (dict): a dictionary of predictions with one of these keys: boxes, polygons, masks and keypoints. e.g., {"boxes": {"classes": [], "objects": [], "confidences": []}}.
@@ -155,22 +156,19 @@ class PipelineBase(metaclass=ABCMeta):
                 'predictions': [],
             }
         }
+        target_dict = self.results.setdefault(key, {}).setdefault(sub_key, default_entry)
         
-        if key not in self.results:
-            self.results[key] = {sub_key: default_entry}
-        elif sub_key not in self.results[key]:
-            self.results[key][sub_key] = default_entry
+        ch,cw = target_dict['content']['height'], target_dict['content']['width']
+        if ch != image_height or cw != image_width:
+            raise ValueError(f'Image size mismatch: {ch}x{cw} != {image_height}x{image_width}')
         
-        if self.results[key][sub_key]['content']['height'] != image_height or self.results[key][sub_key]['content']['width'] != image_width:
-            raise ValueError(f'Image size mismatch: {self.results[key][sub_key]["content"]["height"]}x{self.results[key][sub_key]["content"]["width"]} != {image_height}x{image_width}')
-        
-        prediction_list = self.results[key][sub_key]['content']['predictions']
+        prediction_list = target_dict['content']['predictions']
         for pred_type, handler in self._PREDICTION_HANDLERS.items():
             if pred_type in predictions:
                 data = predictions[pred_type]
                 
                 for idx, value_data in enumerate(data['objects']):
-                    value_object = handler['value_func'](value_data)
+                    value_object = handler['value_factory'](value_data)
                     annotation = Annotation(
                         id=str(len(prediction_list)),
                         value=value_object,

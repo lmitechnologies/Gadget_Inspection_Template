@@ -117,7 +117,7 @@ The LMI_AI_Solutions repo provides wrappers for several of the most popular mode
 
 The Gadget supports uploading model prediction results to [Label Studio](https://labelstud.io) for human labeling enabling dataset expansion and model performance improvement. 
 
-Use the **add_one_prediction** function defined in the pipeline base class to add prediction data to Label Studio. Here is the example:
+Use the **add_prediction** function defined in the pipeline base class to add prediction data to Label Studio. Here is the example:
 
 ```python
 # assume that a model returns the following:
@@ -128,8 +128,8 @@ name = 'people'
 h,w = 1024,1204 # height and width of the input image
 
 # add both to label studio
-self.add_one_prediction('boxes',box,score,name,h,w)
-self.add_one_prediction('polygons',polygon,score,name,h,w)
+self.add_prediction('boxes',box,score,name,h,w)
+self.add_prediction('polygons',polygon,score,name,h,w)
 ```
 
 ## Pipeline Base Class
@@ -148,8 +148,8 @@ This function is a decorator for tracking exceptions and sending error messages 
 This function updates the `self.results` variable based on predefined rules. For detailed information, refer to the function's docstring.
 5. **def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', \*\*kwargs):**
 This function loads multiple models based on the `filter`.
-6. **def add_one_prediction(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):**
-This function adds one prediction to label studio.
+6. **def add_prediction(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):**
+This function adds one prediction for label studio.
 
 ## Pipeline Inputs
 

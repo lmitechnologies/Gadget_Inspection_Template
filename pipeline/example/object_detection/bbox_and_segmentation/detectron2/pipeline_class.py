@@ -130,8 +130,8 @@ class ModelPipeline(Base):
             box = boxes[i].astype(int)
             seg = segments[i].astype(int)
             score = scores[i]
-            self.add_one_prediction('boxes', box, score, name, h0, w0)
-            self.add_one_prediction('polygons', seg, score, name, h0, w0)
+            self.add_prediction('boxes', box, score, name, h0, w0)
+            self.add_prediction('polygons', seg, score, name, h0, w0)
         self.logger.info(f'predictions length: {len(self.results["outputs"]["labels"]["content"]["predictions"])}')
         
         # upload decision to the Gadget automation service
