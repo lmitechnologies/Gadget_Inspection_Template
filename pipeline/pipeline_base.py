@@ -258,13 +258,7 @@ class PipelineBase(metaclass=ABCMeta):
         
     def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False, overwrite=False):
         """ 
-        modify the self.results with the following rules:
-        1: If the key is not in the self.results, create the key-value pair.
-        2: If the self.results[key] is a list, 
-            2.1: if overwrite is False, append the value to the list.
-            2.2: if overwrite is True, overwrite the list with the value.
-        3: If the self.results[key] is a dictionary and sub_key is not None, update the value of the sub_key.
-        4: Otherwise, update the value of the key.
+        modifies self.results by applying rules for creation and updates.
 
         Args:
             key (str): the key of the self.results
@@ -274,18 +268,11 @@ class PipelineBase(metaclass=ABCMeta):
             to_automation (bool, optional): add the key to the automation. Defaults to False.
             overwrite (bool, optional): if self.results[key] is a list, overwrite it with value. Defaults to False.
         """
-        if key not in self.results:
-            if sub_key is not None:
-                self.results[key] = {sub_key:value}
-            else:
-                self.results[key] = value
-        elif isinstance(self.results[key], list):
-            if overwrite:
-                self.results[key] = value
-            else:
-                self.results[key].append(value)
-        elif isinstance(self.results[key], dict) and sub_key is not None:
-            self.results[key][sub_key] = value
+        # Handle appending to an existing list.
+        if key in self.results and isinstance(self.results[key], list) and not overwrite:
+            self.results[key].append(value)
+        elif sub_key is not None:
+            self.results.setdefault(key, {})[sub_key] = value
         else:
             self.results[key] = value
             
