@@ -251,10 +251,8 @@ class PipelineBase(metaclass=ABCMeta):
         L = list(reversed(self.models.keys())) if self.models else []
         for model_name in L:
             del self.models[model_name]
-            self.logger.info(f'{model_name} is cleaned up')
-
-        del self.models
-        self.models = collections.OrderedDict()
+            self.logger.info(f'{model_name} has been cleaned up')
+        self.models.clear()
         self.logger.info('pipeline is cleaned up')
         
         
