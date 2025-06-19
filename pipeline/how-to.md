@@ -185,7 +185,7 @@ This part is specific to your model. Call the `predict` method of your model obj
 ### 5.4. Format and Return Results
 Use the `update_results()` and `add_prediction()` helper methods to correctly populate the `self.results` dictionary.
 
-- `update_results()`: Use this for updating results.
+- `update_results()`: Use this for updating results.  
     - To add the annotated image for display: `self.update_results('outputs', annotated_image, sub_key='annotated')`
     - To set the pass/fail decision for automation, such as PLCs: `self.update_results('decision', 'PASS', to_automation=True)`
     - To add a filterable tag for GoFactory: `self.update_results('tags', 'PASS', to_factory=True)`
