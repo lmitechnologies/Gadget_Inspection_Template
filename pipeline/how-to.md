@@ -35,7 +35,40 @@ You must implement the following four methods in your `ModelPipeline` class. It 
 # Step-by-Step Implementation Guide
 This section will guide you through implementing each required method, using the provided examples as a reference.
 
-## Step 1: Boilerplate and Initialization
+## Step 1: Populate the `pipeline_def.json`
+The pose model will be constructed using all the metadata inside `"metadata"`. Set `"use_factory"` to `true` if you trained a model on GoFactory and wanted to use it.
+
+```json
+{
+    "model_roles":[
+        "seg_model"
+    ],
+    "configs_def":[
+        {
+            "name": "seg_model",
+            "default_value": {
+                "use_factory": false,
+                "metadata":{
+                    "version": "v1",
+                    "model_name": "yolov11",
+                    "model_type": "instancesegmentation",
+                    "framework": "ultralytics",
+                    "image_size": [640, 640],
+                    "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt"
+                },
+                "iou": 0.45,
+                "object_configs": {
+                    "person": {"confidence": 0.5},
+                    "bicycle": {"confidence": 0.5},
+                    "car": {"confidence": 0.5},
+                }
+            }
+        }
+    ]
+}
+```
+
+## Step 2: Boilerplate and Initialization
 Start with the basic class structure. Import necessary libraries, define your class inheriting from `Base`, and implement `__init__`. Some helpful utility functions are imported from the LMI AI Solutions (AIS) repository: https://github.com/lmitechnologies/LMI_AI_Solutions. 
 
 ```python
@@ -60,10 +93,10 @@ class ModelPipeline(Base):
 
 ```
 
-## Step 2: Implementing `load()`
+## Step 3: Implementing `load()`
 The goal of `load()` is to populate the `self.models` dictionary. The easiest way is to use the `self.load_models()` helper method from the base class. It uses the `filter` argument to select which model configurations to load from `pipeline_def.json`. This works by matching the `filter` string against the `"name"` field of each configuration. For example, a `filter` of `"-model"` would match configurations named both `"pose-model"` and `"detection-model"`.
 
-### Basic Example (from YOLO Pose Pipeline)
+### 3.1 Basic Example (from YOLO Pose Pipeline)
 This call finds the configuration named `"pose_model"` in `pipeline_def.json` and loads the corresponding model into `self.models['pose_model']`.
 
 ```python
@@ -75,7 +108,7 @@ This call finds the configuration named `"pose_model"` in `pipeline_def.json` an
         self.logger.info('Models are loaded')
 ```
 
-### Advanced Example (from Detectron2 Pipeline)
+### 3.2 Advanced Example (from Detectron2 Pipeline)
 You can also perform custom setup and pass additional keyword arguments to your model's constructor through `load_models`. Here, a `class_map` is created from the configs and passed along to the model during its initialization.
 
 ```python
@@ -90,7 +123,7 @@ You can also perform custom setup and pass additional keyword arguments to your 
         self.logger.info('Models are loaded')
 ```
 
-## Step 3: Implementing `warm_up()`
+## Step 4: Implementing `warm_up()`
 Here, you access each model you loaded into `self.models` and call its `warmup()` method. The dictionary key (e.g., 'pose_model') must match the one used during the load step.
 
 ```python
@@ -102,10 +135,10 @@ Here, you access each model you loaded into `self.models` and call its `warmup()
         self.logger.info('Warm up complete')
 ```
 
-## Step 4: Implementing `predict()`
+## Step 5: Implementing `predict()`
 This is the most involved method. It follows a clear sequence: initialize, get data, predict, and format results.
 
-### 1. Initialize and Get Inputs
+### 5.1. Initialize and Get Inputs
 Always start by calling `self.init_results()` to get a clean result dictionary for the current run. Then, extract your image data from the `inputs` dictionary.
 
 ```python
@@ -119,7 +152,7 @@ Always start by calling `self.init_results()` to get a clean result dictionary f
         image = inputs['image']['pixels']
 ```
 
-### 2. Get Runtime Configurations
+### 5.2. Get Runtime Configurations
 Extract any necessary parameters (like thresholds or IoU values) from the `configs` dictionary. The keys you use will match those in your `pipeline_def.json`.
 
 ```python
@@ -130,7 +163,7 @@ Extract any necessary parameters (like thresholds or IoU values) from the `confi
         confidence_thresholds = {k:v['confidence'] for k,v in class_configs.items()}
 ```
 
-### 3. Run Inference
+### 5.3. Run Inference
 This part is specific to your model. Call the `predict` method of your model object, which you access from `self.models`.
 
 ```python
@@ -138,7 +171,7 @@ This part is specific to your model. Call the `predict` method of your model obj
         model_results = self.models['pose_model'].predict(image, confidence_thresholds, iou=iou_threshold)
 ```
 
-### 4. Format and Return Results
+### 5.4. Format and Return Results
 Use the `update_results()` and `add_prediction()` helper methods to correctly populate the `self.results` dictionary.
 
 - `update_results()`: Use this for updating results.

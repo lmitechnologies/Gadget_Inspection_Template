@@ -116,7 +116,7 @@ class PipelineBase(metaclass=ABCMeta):
         
         Args:
             pred_type (str): the type of the predictions to be updated, e.g., 'boxes', 'polygons', 'masks', 'keypoints'.
-            value (object): the value of the prediction, e.g., a list of coordinates for boxes, polygons, and keypoints; a numpy array for masks.
+            value (object): the value of the prediction, e.g., a numpy array for masks type. a list for other types.
             score (float): the confidence score of the prediction.
             label (str): the label of the prediction.
             image_height (int): the height of the image that the prediction is made on.

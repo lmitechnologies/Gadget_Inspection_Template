@@ -4,12 +4,11 @@ This pipeline template is designed for deploying AI models on the LMI runtime pl
 
 ## Getting Started
 
-1. Read this document thoroughly.
+1. Read this document.
 2. Learn the pipeline examples in the **example** folder.
 3. Define the **Dockerfile** for your pipeline.
 4. Populate the **pipeline_def.json** with the necessary configurations.
-5. Implement the required functions in the **pipeline_class.py** file.
-6. Add a unit test in the `main` function within **pipeline_class.py**.
+5. Follow the [how-to tutorial](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md) to implement the required functions for the pipeline class and implement a unit test in the `main` function within **pipeline_class.py**.
 7. Run and validate the unit test.
 
 ## Top-level Folder Strcuture
@@ -18,6 +17,7 @@ The pipeline folder consists of the following:
 
 ```plaintext
 .  
+├── how_to_guide.md  
 ├── example  
 ├── trt-engines  
 ├── trt-generation  
@@ -32,61 +32,32 @@ The pipeline folder consists of the following:
 
 ## Folder Contents
 
-**example**: a folder of examples that illustrate the implementation of pipeline classes for performing inspection tasks using varying AI models including object detection, instance segmentation, classification and anomaly detection.  
+**how_to_guide.md**: a guide showing how to populate the **pipeline_class.py** from scratch.  
+**example**: a folder of examples that illustrate the implementation of pipeline classes for performing inspection tasks using varying AI models including object detection, instance segmentation, keypoint detection, classification and anomaly detection.  
 **trt-engines**: a folder containing the generated TensorRT engines, created from the models in the **trt-generation** folder. These engines are intended for deployment to production edge devices, such as GoMax.  
 **trt-generation**: a folder containing model weights and additional files required for generating TensorRT engines.  
 **pipeline_base.py**: the pipeline base class, which typically does **not** require modification.  
 **pipeline_class.py**: the implementation of the pipeline class. Several required functions must be implemented.  
-**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` and `model_roles` keys. `model_roles` is a list of model role strings. Check more details in the [model role](#model-roles) section. `configs_def` is a list where each element is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Here is an example:
-
-```json
-{
-    "model_roles":[
-        "seg_model"
-    ],
-    "configs_def":[
-        {
-            "name": "seg_model",
-            "default_value": {
-                "use_factory": false,
-                "metadata":{
-                    "version": "v1",
-                    "model_name": "yolov11",
-                    "model_type": "instancesegmentation",
-                    "framework": "ultralytics",
-                    "image_size": [640, 640],
-                    "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt"
-                },
-                "iou": 0.45,
-                "object_configs": {
-                    "person": {"confidence": 0.5},
-                    "bicycle": {"confidence": 0.5},
-                    "car": {"confidence": 0.5},
-                }
-            }
-        }
-    ]
-}
-```
+**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` and `model_roles` keys. `model_roles` is a list of model role strings. Check more details in the [model role](#model-roles) section. `configs_def` is a list where each element is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Check one example at the [how-to tutorial](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md).
 
 **pipeline.dockerfile**: the Dockerfile that defines the pipeline container.  
 **requirements.txt**: this file specifies the Python libraries to be installed in the Docker container.  
 
 ## Pipeline Class API
 
-The Gadget pipeline class, to be implemented in the **pipeline_class.py**, is responsible for loading configurations (e.g., confidence thresholds, paths to trained AI models, model hyperparameters, etc.), loading and warming up models, making predictions, and cleaning up models. The pipeline class inherits from the base class defined in the **pipeline_base.py** to simplify implementation. Refer to the [Pipeline Base Class](#pipeline-base-class) section for details.  
+The Gadget pipeline class, to be implemented in the **pipeline_class.py**, is responsible for loading configurations (e.g., confidence thresholds, paths to trained AI models, model hyperparameters, etc.), loading and warming up models, making predictions, and cleaning up models. The pipeline class inherits from the base class defined in the **pipeline_base.py** to simplify implementation.   
 To complete these tasks listed above, the following functions must be implemented in the pipeline class:
 
 1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
     This function initializes the pipeline class. The `kwargs` argument contains the key-value pairs defined in the **pipeline_def.json**.
 2. **def load(self, `model_roles`: dict, `configs`: dict) -> None:**  
-    This function loads the models and stores them in the `self.models` variable defined in the pipeline base class. The `configs` argument contains runtime key-value pairs, where the keys match those in the **pipeline_def.json** and the values may differ. 
+    This function loads the models and stores them in the `self.models` variable defined in the base class. The `configs` argument contains runtime key-value pairs, where the keys match those in the **pipeline_def.json** and the values may differ. 
 3. **def warm_up(self, `model_roles`: dict, `configs`: dict) -> None:**  
     This function receives the `configs` and runs the models for the first time using dummy inputs.
 4. **def predict(self, `configs`: dict, `inputs`: dict) -> dict:**  
-    This function receives the `inputs` and `configs`, makes predictions, adds annotations to the image, and returns the annotated image along with the model results. Refer to the [Pipeline Inputs](#pipeline-inputs) section for the details of `inputs`. This function must return a `self.results` dictionary defined in the pipeline base class.  
+    This function receives the `inputs` and `configs`, makes predictions, adds annotations to the image, and returns the annotated image along with the model results. Refer to the [Pipeline Inputs](#pipeline-inputs) section for the details of `inputs`. This function must return a `self.results` dictionary defined in the base class.  
 
-This required function has implemented in the pipeline base class:
+This required function has implemented in the base class:
 
 - **def clean_up(self, `configs`: dict):**  
 This function receives `configs` and deletes the models from memory.
@@ -132,24 +103,6 @@ self.add_prediction('boxes',box,score,name,h,w)
 self.add_prediction('polygons',polygon,score,name,h,w)
 ```
 
-## Pipeline Base Class
-
-The pipeline base class, defined in the **pipeline_base.py**, serves as a base class to help developers quickly implementing the required functions in the pipeline class. This base class typically does **not** require modification and includes the following major functions:
-
-1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
-This function initializes two class variables:
-    - `self.models`: a dictionary containing model names as keys and their corresponding models as values.
-    - `self.results`: a results dictionary to be returned by the **predict** function in the pipeline class.
-2. **def init_results(self) -> None:**  
-This function initializes a `self.results` variable and fulfills the requirements in the [Pipeline Result Dictionary](#pipeline-result-dictionary) section.
-3. **def track_exception(cls, logger=logging.getLogger(\_\_name\_\_)):**  
-This function is a decorator for tracking exceptions and sending error messages to GoFactory for debugging. **It's recommended to apply this decorator for every required function in the pipeline class.**
-4. **def update_results(self, key:str, value, sub_key=None, to_factory=False, to_automation=False, overwrite=False):**  
-This function updates the `self.results` variable based on predefined rules. For detailed information, refer to the function's docstring.
-5. **def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', \*\*kwargs):**
-This function loads multiple models based on the `filter`.
-6. **def add_prediction(self, key:str, value:object, score:float, label:str, image_height:int, image_width:int):**
-This function adds one prediction for label studio.
 
 ## Pipeline Inputs
 
@@ -175,7 +128,7 @@ inputs = {
 }
 ```
 
-## Pipeline Result Dictionary
+## Pipeline Outputs - Result Dictionary
 
 The pipeline's **predict** function returns a dictionary following this structure:
 
