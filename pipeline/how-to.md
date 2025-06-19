@@ -50,7 +50,7 @@ The file has two main sections:
         - `metadata`: model initialization related metadata.
         - Runtime Parameters: Custom values you need for inference, such as iou thresholds, confidence scores for different classes, or other hyperparameters.
 
-Here is an example configuration for a pipeline that uses a single segmentation model:
+Here is an example configuration for a pipeline that uses a single pose model:
 ```json
 {
     "model_roles":[
@@ -186,12 +186,11 @@ This part is specific to your model. Call the `predict` method of your model obj
 Use the `update_results()` and `add_prediction()` helper methods to correctly populate the `self.results` dictionary.
 
 - `update_results()`: Use this for updating results.
-
     - To add the annotated image for display: `self.update_results('outputs', annotated_image, sub_key='annotated')`
     - To set the pass/fail decision for automation, such as PLCs: `self.update_results('decision', 'PASS', to_automation=True)`
     - To add a filterable tag for GoFactory: `self.update_results('tags', 'PASS', to_factory=True)`
     - To add custom metrics for GoFactory dashboards: `self.update_results('total_proc_time', 100.5, to_factory=True)`
-- `add_prediction()`: Use this specifically to add prediction data (boxes, polygons, masks, keypoints) for upload to **Label Studio**.
+- `add_prediction()`: Use this specifically to add prediction data (boxes, polygons, masks, keypoints) for upload to [Label Studio](https://labelstud.io).
 
 ```python
         # Populate the results dictionary using base class helpers.
