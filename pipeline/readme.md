@@ -38,8 +38,7 @@ The pipeline folder consists of the following:
 **trt-generation**: a folder containing model weights and additional files required for generating TensorRT engines.  
 **pipeline_base.py**: the pipeline base class, which typically does **not** require modification.  
 **pipeline_class.py**: the implementation of the pipeline class. Several required functions must be implemented.  
-**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` and `model_roles` keys. `model_roles` is a list of model role strings. Check more details in the [model role](#model-roles) section. `configs_def` is a list where each element is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Check one example at the [how-to tutorial](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md).
-
+**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` and `model_roles` keys. `model_roles` is a list of model role strings. Check more details in the [model role](#model-roles) section. `configs_def` is a list where each element is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Check one example at the [how-to tutorial](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md).  
 **pipeline.dockerfile**: the Dockerfile that defines the pipeline container.  
 **requirements.txt**: this file specifies the Python libraries to be installed in the Docker container.  
 
