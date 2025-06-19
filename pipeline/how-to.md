@@ -35,32 +35,43 @@ You must implement the following four methods in your `ModelPipeline` class. It 
 # Step-by-Step Implementation Guide
 This section will guide you through implementing each required method, using the provided examples as a reference.
 
-## Step 1: Populate the `pipeline_def.json`
-The pose model will be constructed using all the metadata inside `"metadata"`. Set `"use_factory"` to `true` if you trained a model on GoFactory and wanted to use it.
+## Step 1: Configure the `pipeline_def.json`
+Before writing any Python code, you must first define your pipeline's entire configuration. This file acts as the blueprint for your pipeline, specifying which models to use and what parameters to apply at runtime. Your `pipeline_class.py` code will read from this structure.
 
+The file has two main sections:
+
+- `model_roles`: A list of strings that assign a unique role name to each model in your pipeline. These roles are used to display the available models in the GadetAPP (e.g., `"detector_model"`, `"classifier_model"`).
+
+- `configs_def`: A list of configuration objects. Each object in this list represents a set of parameters that your pipeline will use.
+
+    - `name`: A string that must match a role from `model_roles`. This is how your Python code will access this specific configuration block.
+    - `default_value`: An object containing all the parameters for this model. This typically includes:
+        - `use_factory`: use the model trained using the GoFactory.
+        - `metadata`: model initialization related metadata.
+        - Runtime Parameters: Custom values you need for inference, such as iou thresholds, confidence scores for different classes, or other hyperparameters.
+
+Here is an example configuration for a pipeline that uses a single segmentation model:
 ```json
 {
     "model_roles":[
-        "seg_model"
+        "pose_model"
     ],
     "configs_def":[
         {
-            "name": "seg_model",
+            "name": "pose_model",
             "default_value": {
                 "use_factory": false,
                 "metadata":{
                     "version": "v1",
                     "model_name": "yolov11",
-                    "model_type": "instancesegmentation",
+                    "model_type": "pose",
                     "framework": "ultralytics",
                     "image_size": [640, 640],
-                    "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt"
+                    "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-pose.pt"
                 },
                 "iou": 0.45,
                 "object_configs": {
-                    "person": {"confidence": 0.5},
-                    "bicycle": {"confidence": 0.5},
-                    "car": {"confidence": 0.5},
+                    "person": {"confidence": 0.5}
                 }
             }
         }
@@ -69,7 +80,7 @@ The pose model will be constructed using all the metadata inside `"metadata"`. S
 ```
 
 ## Step 2: Boilerplate and Initialization
-Start with the basic class structure. Import necessary libraries, define your class inheriting from `Base`, and implement `__init__`. Some helpful utility functions are imported from the LMI AI Solutions (AIS) repository: https://github.com/lmitechnologies/LMI_AI_Solutions. 
+With your configuration set, you can now start writing the Python code. Import necessary libraries, define your class inheriting from `Base`, and implement `__init__`. Some helpful utility functions are imported from the LMI AI Solutions (AIS) repository: https://github.com/lmitechnologies/LMI_AI_Solutions. 
 
 ```python
 import logging
@@ -103,8 +114,8 @@ This call finds the configuration named `"pose_model"` in `pipeline_def.json` an
     @Base.track_exception(logger)
     def load(self, model_roles, configs):
         """Load the pose model."""
-        # 'pose_model' is the filter that matches the "name" in `pipeline_def.json`
-        self.load_models(model_roles, configs, 'pose_model')
+        # '_model' is the filter that matches the "name" in `pipeline_def.json`
+        self.load_models(model_roles, configs, '_model')
         self.logger.info('Models are loaded')
 ```
 

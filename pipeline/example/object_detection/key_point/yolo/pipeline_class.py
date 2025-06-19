@@ -33,7 +33,7 @@ class ModelPipeline(Base):
     @Base.track_exception(logger)
     def load(self, model_roles, configs):
         """load the models"""
-        self.load_models(model_roles, configs, 'pose_model')
+        self.load_models(model_roles, configs, '_model')
         self.logger.info('models are loaded')
     
     
