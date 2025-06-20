@@ -6,15 +6,10 @@ import logging
 import torch
 
 sys.path.append('/home/gadget/pipeline')
-sys.path.append('/home/gadget/LMI_AI_Solutions/object_detectors')
-sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
-
 from pipeline_base import PipelineBase as Base
 
 # functions from LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
 import gadget_utils.pipeline_utils as pipeline_utils
-from ultralytics_lmi.yolo.model import Yolo
-from od_core.object_detector import ObjectDetector
 
 
 PASS = 'PASS'
@@ -32,18 +27,16 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, configs):
+    def load(self, model_roles, configs):
         """load the models"""
-        # self.logger.info(f'registry: {ObjectDetector._registry.keys()}')
-        self.models['seg'] = ObjectDetector(configs['seg_model']['metadata'], configs['seg_model']['path'])
+        self.load_models(model_roles, configs, 'seg_model')
         self.logger.info('models are loaded')
     
     
     @Base.track_exception(logger)
     def warm_up(self, configs):
         t1 = time.time()
-        imgsz = configs['seg_model']['hw']
-        self.models['seg'].warmup(imgsz)
+        self.models['seg_model'].warmup()
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
         
@@ -80,16 +73,16 @@ class ModelPipeline(Base):
         
         # load runtime config
         iou = configs['seg_model']['iou']
-        hw = configs['seg_model']['hw']
-        class_info = configs['seg_model']['classes']
+        hw = self.models['seg_model'].image_size
+        class_info = configs['seg_model']['object_configs']
         confs = {k:v['confidence'] for k,v in class_info.items()}   # confidence thresholds
         
         # run the object detection model
         processed_im, operators = self.preprocess(image, hw)
-        results_dict, time_info = self.models['seg'].predict(processed_im, confs, operators, iou)
+        results_dict, time_info = self.models['seg_model'].predict(processed_im, confs, operators, iou)
         
         # annotate the image using polygons
-        annotated_image = self.models['seg'].annotate_image(results_dict, image)
+        annotated_image = self.models['seg_model'].annotate_image(results_dict, image)
         
         # grab the results
         masks = results_dict['masks']   # binary masks for instance segmentation
@@ -98,40 +91,15 @@ class ModelPipeline(Base):
         scores = results_dict['scores'] # model confidence scores
         objects = results_dict['classes']   # class labels
         
-        # upload labels to Label Studio for further manual labeling
-        annots = {
-            'image_width': image.shape[1],
-            'image_height': image.shape[0],
-            'boxes': [],
-            'polygons': []
-        }
-        annot_obj = {
-            'type': 'object',
-            'format': 'json',
-            'extension': '.label.json',
-            'content': annots
-        }
+        # upload labels to Label Studio and GoFactory
+        h0,w0 = image.shape[:2]
         for i,name in enumerate(objects):
-            box = boxes[i].astype(int).tolist()
+            box = boxes[i].astype(int)
             seg = segs[i].astype(int)
-            score = scores[i].item()
-            dt = {
-                'object': name,
-                'x': box[0],
-                'y': box[1],
-                'width': box[2]-box[0],
-                'height': box[3]-box[1],
-                'score': score,
-            }
-            annots['boxes'].append(dt)
-            xs,ys = seg[:,0],seg[:,1]
-            annots['polygons'].append({
-                'object': name,
-                'x': xs.tolist(),
-                'y': ys.tolist(),
-                'score': score,
-            })
-        self.update_results('outputs', annot_obj, sub_key='labels')
+            score = scores[i]
+            self.add_prediction('boxes', box, score, name, h0, w0)
+            self.add_prediction('polygons', seg, score, name, h0, w0)
+        self.logger.info(f'predictions length: {len(self.results["outputs"]["labels"]["content"]["predictions"])}')
         
         # upload annotated image to GadgetAPP and GoFactory
         self.update_results('outputs', annotated_image, sub_key='annotated')
@@ -149,8 +117,6 @@ class ModelPipeline(Base):
         self.logger.info(f'found objects: {objects}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
-        if not self.check_return_types():
-            raise Exception('invalid return types')
         return self.results
 
 
@@ -170,7 +136,7 @@ if __name__ == '__main__':
     pipeline = ModelPipeline(**kwargs)
     
     logger.info('start loading the pipeline...')
-    pipeline.load(kwargs)
+    pipeline.load({},kwargs)
     pipeline.warm_up(kwargs)
 
     image_path_batches = pipeline_utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt=fmt)
@@ -188,10 +154,11 @@ if __name__ == '__main__':
                 'image':{'pixels':im},
             }
             results = pipeline.predict(kwargs, inputs)
+            assert pipeline.check_return_types(), 'invalid return types'
             
             annotated_image = results['outputs']['annotated']
             tmp = cv2.cvtColor(annotated_image,cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(output_dir, fname.replace(f'.{fmt}',f'_annotated.{fmt}')), tmp)
     
-    pipeline.clean_up(kwargs)
+    pipeline.clean_up()
     

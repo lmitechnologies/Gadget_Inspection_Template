@@ -1,17 +1,21 @@
 {
+    "model_roles":[
+        "od_model"
+    ],
     "configs_def":[
         {
             "name": "od_model",
             "default_value": {
-                "path": "/home/gadget/pipeline/trt-engines/model.pt",
-                "hw": [1024,1024],
+                "use_factory": false,
                 "metadata":{
                     "version": "v0",
                     "model_name": "mask_rcnn",
-                    "task": "seg",
-                    "framework": "detectron2"
+                    "model_type": "instancesegmentation",
+                    "framework": "detectron2",
+                    "image_size": [1024, 1024],
+                    "model_path": "/home/gadget/pipeline/trt-engines/model.pt"
                 },
-                "classes": {
+                "object_configs": {
                     "person": {"index": 0, "confidence": 0.5},
                     "bicycle": {"index": 1, "confidence": 0.5},
                     "car": {"index": 2, "confidence": 0.5},

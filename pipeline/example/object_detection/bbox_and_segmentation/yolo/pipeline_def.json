@@ -1,18 +1,22 @@
 {
+    "model_roles":[
+        "seg_model"
+    ],
     "configs_def":[
         {
             "name": "seg_model",
             "default_value": {
-                "path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt",
+                "use_factory": false,
                 "metadata":{
                     "version": "v1",
                     "model_name": "yolov11",
-                    "task": "od",
-                    "framework": "ultralytics"
+                    "model_type": "instancesegmentation",
+                    "framework": "ultralytics",
+                    "image_size": [640, 640],
+                    "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt"
                 },
-                "hw": [640,640],
                 "iou": 0.45,
-                "classes": {
+                "object_configs": {
                     "person": {"confidence": 0.5},
                     "bicycle": {"confidence": 0.5},
                     "car": {"confidence": 0.5},
