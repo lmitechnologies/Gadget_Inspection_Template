@@ -3,7 +3,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
 RUN apt-get update && apt-get install libgl1 -y
-RUN pip install --upgrade pip setuptools wheel
+RUN pip install --upgrade pip
 RUN pip install --user opencv-python
 RUN pip install ultralytics
 
@@ -15,10 +15,12 @@ RUN git clone https://github.com/facebookresearch/detectron2 detectron2
 RUN pip install --user -e detectron2 
 RUN pip install tensorboard
 RUN pip install numba
+RUN pip install albumentations
 
 # Installing from anomalib src
 RUN git clone -b v1.1.1 https://github.com/openvinotoolkit/anomalib.git && cd anomalib && pip install -e .
 RUN anomalib install --option core
 
 # clone LMI AI Solutions repository
-RUN git clone https://github.com/lmitechnologies/LMI_AI_Solutions.git
+RUN git clone -b faie-2489 https://github.com/lmitechnologies/LMI_AI_Solutions.git
+RUN cd LMI_AI_Solutions && pip3 install -e object_detectors && pip3 install -e anomaly_detectors && pip3 install -e lmi_utils
