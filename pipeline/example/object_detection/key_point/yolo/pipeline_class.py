@@ -12,8 +12,6 @@ sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
 from pipeline_base import PipelineBase as Base
 
 # functions from LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-from ultralytics_lmi.yolo.model import YoloPose
-from od_core.object_detector import ObjectDetector
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
@@ -35,15 +33,14 @@ class ModelPipeline(Base):
     @Base.track_exception(logger)
     def load(self, model_roles, configs):
         """load the models"""
-        self.models['pose'] = ObjectDetector(configs['pose_model']['metadata'],configs['pose_model']['path'])
+        self.load_models(model_roles, configs, '_model')
         self.logger.info('models are loaded')
     
     
     @Base.track_exception(logger)
     def warm_up(self, configs):
         t1 = time.time()
-        imgsz = configs['pose_model']['hw']
-        self.models['pose'].warmup(imgsz)
+        self.models['pose_model'].warmup()
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
         
@@ -80,25 +77,35 @@ class ModelPipeline(Base):
         
         # load runtime config
         iou = configs['pose_model']['iou']
-        hw = configs['pose_model']['hw']
-        class_info = configs['pose_model']['classes']
+        hw = self.models['pose_model'].image_size
+        class_info = configs['pose_model']['object_configs']
         confs = {k:v['confidence'] for k,v in class_info.items()}
         
         # run the object detection model
         processed_im, operators = self.preprocess(image, hw)
-        results_kp, time_info = self.models['pose'].predict(processed_im, confs, operators, iou)
+        results_kp, time_info = self.models['pose_model'].predict(processed_im, confs, operators, iou)
         
         # annotate the image using key points
-        annotated_image = self.models['pose'].annotate_image(results_kp, image)
+        annotated_image = self.models['pose_model'].annotate_image(results_kp, image)
         
         # upload annotated image to GadgetAPP and GoFactory
         self.update_results('outputs', annotated_image, sub_key='annotated')
         
         # obtain the results
-        pts = results_kp['points']
-        boxes = results_kp['boxes']
+        pts = results_kp['points'].astype(int)
+        boxes = results_kp['boxes'].astype(int)
         objects = results_kp['classes']
         scores = results_kp['scores']
+        
+        # upload predictions to GoFactory
+        h0,w0 = image.shape[:2]
+        for i, c in enumerate(objects):
+            box = boxes[i]
+            score = scores[i]
+            self.add_prediction('boxes', box, score, c, h0, w0)
+            for pt in pts[i]:
+                self.add_prediction('keypoints', pt, score, c, h0, w0)
+        self.logger.info(f'predictions length: {len(self.results["outputs"]["labels"]["content"]["predictions"])}')
         
         # upload decision to the automation service
         decision = PASS if len(pts)>MIN_PTS else FAIL 
@@ -114,8 +121,6 @@ class ModelPipeline(Base):
         self.logger.info(f'pts shape: {pts.shape}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
-        if not self.check_return_types():
-            raise Exception('invalid return types')
         return self.results
 
 
@@ -135,7 +140,7 @@ if __name__ == '__main__':
     pipeline = ModelPipeline(**kwargs)
     
     logger.info('start loading the pipeline...')
-    pipeline.load(kwargs)
+    pipeline.load({},kwargs)
     pipeline.warm_up(kwargs)
 
     image_path_batches = pipeline_utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt=fmt)
@@ -153,10 +158,11 @@ if __name__ == '__main__':
                 'image':{'pixels':im},
             }
             results = pipeline.predict(kwargs, inputs)
+            assert pipeline.check_return_types(), 'invalid return types'
             
             annotated_image = results['outputs']['annotated']
             tmp = cv2.cvtColor(annotated_image,cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(output_dir, fname.replace(f'.{fmt}',f'_annotated.{fmt}')), tmp)
     
-    pipeline.clean_up(kwargs)
+    pipeline.clean_up()
     
