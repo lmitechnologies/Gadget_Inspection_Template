@@ -4,6 +4,7 @@ import logging
 import traceback
 from abc import ABCMeta, abstractmethod
 import json
+from core.schemas.schema_2_4 import ModelCollection
 from od_core.object_detector import ObjectDetector
 from ad_core.anomaly_detector import AnomalyDetector
 from dataset_utils.representations import Box, Polygon, Mask, Point2d, AnnotationType, Annotation
@@ -33,8 +34,12 @@ class PipelineBase(metaclass=ABCMeta):
             'type': AnnotationType.KEYPOINT.value
         }
     }
+    _CONFIG_HANDLERS = {
+        '2.3': None,  # currently handled by the base class
+        '2.4': ModelCollection.from_dict,
+    }    
     
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         init the pipeline.
         it has the following attributes:
@@ -42,9 +47,9 @@ class PipelineBase(metaclass=ABCMeta):
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
         """
         self.models = collections.OrderedDict()
+        self.version = kwargs.get('version', '2.3')
         self.init_results()
         
-    
     def _load_model(self, model_name:str, metadata:dict, **kwargs):
         """ load a model with the given metadata.
         
@@ -73,6 +78,15 @@ class PipelineBase(metaclass=ABCMeta):
         else:
             raise ValueError(f'model_type {metadata.get("model_type", "")} is not supported')
         
+    def _configs_by_version(self, configs: dict, **kwargs):
+        if self.version not in self._CONFIG_HANDLERS:
+            raise ValueError(f'Unsupported version: {self.version}')
+        
+        handler = self._CONFIG_HANDLERS[self.version]
+        if handler is None:
+            return configs
+        else:
+            return handler(configs).get_metadata()
         
     def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', **kwargs):
         """load models based on the provided model roles and configurations.
@@ -83,6 +97,7 @@ class PipelineBase(metaclass=ABCMeta):
             filter (str, optional): a model filter. Defaults to '-model'.
         """
         self.logger.info(f'Model Roles: {model_roles}\n')
+        configs = self._configs_by_version(configs, **kwargs)
         model_config_keys = [k for k in configs.keys() if f'{filter}' in k]
         for model_key in model_config_keys:
             model_config = configs[model_key]
