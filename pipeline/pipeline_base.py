@@ -79,10 +79,8 @@ class PipelineBase(metaclass=ABCMeta):
             raise ValueError(f'model_type {metadata.get("model_type", "")} is not supported')
         
     def _configs_by_version(self, configs: dict, **kwargs):
-        if self.version not in self._CONFIG_HANDLERS:
-            raise ValueError(f'Unsupported version: {self.version}')
-        
-        handler = self._CONFIG_HANDLERS[self.version]
+        version = kwargs.get('version', self.version)
+        handler = self._CONFIG_HANDLERS[version]
         if handler is None:
             return configs
         else:
