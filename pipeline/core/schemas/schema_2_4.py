@@ -105,6 +105,7 @@ class Model:
             "algorithm": self.details.training_algorithm.lower(),
             "package": self.details.training_package.lower(),
         }
+        return metadata
 
 @dataclass
 class ModelCollection:
