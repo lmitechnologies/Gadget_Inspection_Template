@@ -80,6 +80,8 @@ class PipelineBase(metaclass=ABCMeta):
         
     def _configs_by_version(self, configs: dict, **kwargs):
         version = kwargs.get('version', self.version)
+        if version not in self._CONFIG_HANDLERS:
+            raise ValueError(f'Unsupported version: {version}. Supported versions are: {list(self._CONFIG_HANDLERS.keys())}')
         handler = self._CONFIG_HANDLERS[version]
         if handler is None:
             return configs
