@@ -94,6 +94,7 @@ class PipelineBase(metaclass=ABCMeta):
             can_use_factory_role = (
                 use_factory and
                 model_key in model_roles and
+                model_roles[model_key] is not None and
                 model_roles[model_key].get('model_type') is not None
             )
             
@@ -291,11 +292,11 @@ class PipelineBase(metaclass=ABCMeta):
             self.results['automation_keys'].append(key)
             
     
-    def check_return_types(self, check_sub_keys=['labels']) -> bool:
+    def check_return_types(self, check_sub_keys=[]) -> bool:
         """check if the result dictionary is json serializable
         
         Args:
-            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to ['labels'].
+            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to [].
         """
         def is_json_serializable(obj, key):
             """Check if an object can be serialized to JSON."""
@@ -306,11 +307,14 @@ class PipelineBase(metaclass=ABCMeta):
                 self.logger.error(f'{key} is not json serializable.')
                 return False
         
-        for k,v in self.results.items():
+        # check the default subkey in 'outputs', i.e., 'labels'
+        DEFAULT_SUB_KEY = 'labels'
+        for k, v in self.results.items():
             if k == 'outputs':
-                for sub_key in check_sub_keys:
+                for sub_key in set(check_sub_keys + [DEFAULT_SUB_KEY]):
                     if sub_key not in v:
-                        self.logger.warning(f'{sub_key} is not found in outputs, skip checking it')
+                        if sub_key != DEFAULT_SUB_KEY:
+                            self.logger.warning(f'{sub_key} is not found in outputs, skip checking it')
                     elif not is_json_serializable(v[sub_key], f'"{sub_key}" in "outputs"'):
                         return False
             else:
