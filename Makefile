@@ -55,7 +55,7 @@ resolve_compose_file = $(shell SUBFOLDER=$$(grep '^SUBFOLDER=' $(ENV_FILE) | cut
 		echo $$SUBFOLDER/docker-compose.yaml; \
 	fi)
 
-no_cache = $(if $(filter y,$(NO-CACHE)),--no-cache,)
+no_cache = $(if $(filter y,$(NO_CACHE)),--no-cache,)
 
 build: check_file
 	@DOCKER_COMPOSE_FILE=$(resolve_compose_file); \
@@ -64,7 +64,7 @@ build: check_file
 		exit 1; \
 	fi; \
 	echo "Using $$DOCKER_COMPOSE_FILE"; \
-	docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE  build $(no_cache)
+	docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE build $(no_cache) 
 
 pull: check_file
 	@DOCKER_COMPOSE_FILE=$(resolve_compose_file); \

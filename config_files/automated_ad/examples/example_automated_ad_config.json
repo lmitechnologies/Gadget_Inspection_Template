@@ -1,0 +1,33 @@
+
+[
+    {
+        "model_role": "top_label_region",
+        "sources": [
+            {
+                "topic": "sensor/profiler",
+                "output_file": "image"
+            }
+        ],
+        "configs": {
+            "min_dataset_size": 50,
+            "dataset_increment": 20,
+            "max_iterations": 100,
+            "divergence_threshold": 0.9
+        }
+    },
+    {
+        "model_role": "cover_text_region",
+        "sources": [
+            {
+                "topic": "sensor/profiler",
+                "output_file": "image"
+            }
+        ],
+        "configs": {
+            "min_dataset_size": 50,
+            "dataset_increment": 20,
+            "max_iterations": 100,
+            "divergence_threshold": 0.9
+        }
+    }
+]
