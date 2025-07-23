@@ -68,12 +68,11 @@ services:
     restart: unless-stopped
     environment:
       - GADGET_APP_TITLE=${GADGET_APP_TITLE}
-      - GADGET_APP_TITLE=${GADGET_APP_TITLE}
     ports:
       - 80:80
     volumes:
       - static-volume:/usr/share/nginx/html/static
-      - ../gadgetapp-custom/config.json:/usr/share/nginx/html/config.json
+      - ../config_files/gadgetapp/config.json:/usr/share/nginx/html/config.json
 
   data-broker:
     container_name: gadget-data-broker
@@ -83,9 +82,9 @@ services:
       - 5000:5000
       - 5001:5001
     environment:
-      - ZMQ_BROKER_SETTINGS_HOST=0.0.0.0
-      - ZMQ_BROKER_SETTINGS_OUT_PORT=5001
-      - ZMQ_BROKER_SETTINGS_IN_PORT=5000
+      - HOST=0.0.0.0
+      - OUT_PORT=5001
+      - IN_PORT=5000
       - TZ=utc
     depends_on:
       api-gateway: 
@@ -96,8 +95,8 @@ services:
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/data_manager:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - DATA_MANAGER_INLINE_CAPACITY_THRESHOLD=0.5 GB
-      - DATA_MANAGER_OFFLINE_CAPACITY_THRESHOLD=50 GB
+      - INLINE_CAPACITY_THRESHOLD=0.5 GB
+      - OFFLINE_CAPACITY_THRESHOLD=50 GB
       - TZ=utc
     volumes:
       - data-manager-storage:/app/data/internal
@@ -113,8 +112,8 @@ services:
     restart: unless-stopped
     network_mode: host
     environment:
-      - SYSTEM_MONITOR_SETTINGS_DATABASE_API_HOST=0.0.0.0
-      - SYSTEM_MONITOR_SETTINGS_DATABASE_API_PORT=8080
+      - DATABASE_API_HOST=0.0.0.0
+      - DATABASE_API_PORT=8080
       - TZ=utc
     volumes:
       - inline-storage:/app/data/inline
@@ -134,11 +133,11 @@ services:
       - DATA_STORAGE_ROOT=/app/data/models
       - CONVERT_TO=engine
       - CONVERSION_SERVICE_NAME=pipeline
-      - ALERT_NEW_CLOUD_MODEL=false
       - TZ=utc
     volumes:
       - model-storage:/app/models
       - ../static_models:/app/static_models
+      - ../config_files/automated_ad/automated_ad_config.json:/app/automated_ad_config.json
     depends_on:
       api-gateway: 
         condition: service_healthy
@@ -154,22 +153,23 @@ services:
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
       dockerfile: pipeline.dockerfile
-    image: everything_pipeline:${PACKAGE_VER}
+    image: pipeline:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - PIPELINE_SERVER_SERVICE_TYPE=pipeline
-      - PIPELINE_SERVER_SERVICE_NAME=pipeline
-      - PIPELINE_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=sensor/profiler
-      - PIPELINE_SERVER_SETTINGS_MODELS_ROOT=/home/gadget/pipeline/trt-engines
-      - PIPELINE_SERVER_SETTINGS_PIPELINE_PATH=/home/gadget/pipeline
-      - PIPELINE_SERVER_SETTINGS_PIPELINE_CLASS=pipeline_class.ModelPipeline
-      - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
-      - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=false
-      - PIPELINE_SERVER_PARAMS_ARCHIVE_PERIOD=1
+      - SERVICE_TYPE=pipeline
+      - SERVICE_NAME=pipeline
+      - DATA_BROKER_SUB_TOPICS=sensor/profiler
+      - MODELS_ROOT=/home/gadget/pipeline/trt-engines
+      - PIPELINE_PATH=/home/gadget/pipeline
+      - PIPELINE_CLASS=pipeline_class.ModelPipeline
+      - PIPELINE_DEFINITION_JSON=pipeline_def.json
+      - PASS_THROUGH_ENABLED=false
+      - ARCHIVE_PERIOD=1
+      - MODEL_CONVERTER=false
       - TZ=utc
     volumes:
       - ../pipeline/:/home/gadget/pipeline
-      - ../static_models:/app/models/static_models
+      - ../static_models:/app/models/static
       - model-storage:/app/models 
       - inline-storage:/app/data
     depends_on:
@@ -186,17 +186,14 @@ services:
       args:
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
-    image: everything_automation:${PACKAGE_VER}
+    image: automation:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - AUTOMATION_SERVER_SERVICE_TYPE=gadget-automation
-      - AUTOMATION_SERVER_SERVICE_NAME=automation
-      - AUTOMATION_SERVER_SETTINGS_GADGET_DATABASE_API_HOST=127.0.0.1
-      - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_HOST=127.0.0.1
-      - AUTOMATION_SERVER_SETTINGS_GADGET_DATA_BROKER_SUB_TOPICS=pipeline/pipeline
-      - AUTOMATION_SERVER_SETTINGS_AUTOMATION_PATH=/home/gadget/automation/
-      - AUTOMATION_SERVER_SETTINGS_AUTOMATION_CLASS=automation_class.AutomationClass
-      - AUTOMATION_SERVER_SETTINGS_AUTOMATION_DEFINITION_JSON=automation_class_def.json
+      - SERVICE_NAME=automation
+      - DATA_BROKER_SUB_TOPICS=pipeline/pipeline
+      - AUTOMATION_PATH=/home/gadget/automation/
+      - AUTOMATION_CLASS=automation_class.AutomationClass
+      - AUTOMATION_DEFINITION_JSON=automation_class_def.json
       - TZ=utc
     volumes:
       - ../automation:/home/gadget/automation
@@ -211,10 +208,10 @@ services:
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - SENSOR_GOCATOR_SERVICE_NAME=profiler
-      - SENSOR_GOCATOR_PARAMS_START=true
-      - SENSOR_GOCATOR_PARAMS_EMULATION_ENABLED=true
-      - SENSOR_GOCATOR_PARAMS_CAM_IP=192.168.1.10
+      - SERVICE_NAME=profiler
+      - START=true
+      - EMULATION_ENABLED=true
+      - CAM_IP=192.168.1.10
       - TZ=utc
     volumes:
       - ../test_images:/home/gadget/test_images
@@ -240,9 +237,9 @@ services:
     image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - MQTT_BRIDGE_SETTINGS_CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
-      - MQTT_BRIDGE_SETTINGS_CLIENT_ID=${FACTORY_CLIENT_ID}
-      - MQTT_BRIDGE_SETTINGS_BROKER_HOSTNAME=${FACTORY_HOST}
+      - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
+      - CLIENT_ID=${FACTORY_CLIENT_ID}
+      - BROKER_HOSTNAME=${FACTORY_HOST}
     volumes:
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline

@@ -5,8 +5,8 @@
         "model_type": "ObjectDetection",
         "model_name": "Default",
         "model_version": "Default",
-        "info": {
-            "model_path": "default/model.pt",
+        "details": {
+            "model_path": "./model.pt",
             "trainingPackage": "Ultralytics8",
             "trainingAlgorithm": "Yolo",
             "confidenceThreshold": 0.67,
@@ -22,8 +22,8 @@
         "model_type": "ObjectDetection",
         "model_name": "stuff",
         "model_version": "1",
-        "info": {
-            "model_path": "default/model.pt",
+        "details": {
+            "model_path": "./model.pt",
             "trainingPackage": "Ultralytics8",
             "trainingAlgorithm": "Yolo",
             "confidenceThreshold": 0.67,
@@ -39,8 +39,8 @@
         "model_type": "ObjectDetection",
         "model_name": "Default",
         "model_version": "Default",
-        "info": {
-            "model_path": "default/model.pt",
+        "details": {
+            "model_path": "./model.pt",
             "trainingPackage": "Ultralytics8",
             "trainingAlgorithm": "Yolo",
             "confidenceThreshold": 0.67,
