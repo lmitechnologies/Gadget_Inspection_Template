@@ -68,7 +68,6 @@ services:
     restart: unless-stopped
     environment:
       - GADGET_APP_TITLE=${GADGET_APP_TITLE}
-      - GADGET_APP_TITLE=${GADGET_APP_TITLE}
     ports:
       - 80:80
     volumes:
@@ -134,7 +133,6 @@ services:
       - DATA_STORAGE_ROOT=/app/data/models
       - CONVERT_TO=engine
       - CONVERSION_SERVICE_NAME=pipeline
-      - ALERT_NEW_CLOUD_MODEL=false
       - TZ=utc
     volumes:
       - model-storage:/app/models
@@ -166,6 +164,7 @@ services:
       - PIPELINE_SERVER_SETTINGS_PIPELINE_DEFINITION_JSON=pipeline_def.json
       - PIPELINE_SERVER_PARAMS_PASS_THROUGH_ENABLED=false
       - PIPELINE_SERVER_PARAMS_ARCHIVE_PERIOD=1
+      - MODEL_CONVERTER=false
       - TZ=utc
     volumes:
       - ../pipeline/:/home/gadget/pipeline
