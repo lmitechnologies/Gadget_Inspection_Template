@@ -4,11 +4,10 @@ GadgetApp customization is done primarily in the config.json file. To overwrite 
 
     /usr/share/nginx/html/config.json
 
-The config file must contain the top level keys **version**, **appName**, **configForms**, and **body**. There is also an optional key **metricRow** The most basic version of this would look like this
+The config file must contain the top level keys **version**, **configForms**, and **body**. There is also an optional key **metricRow** The most basic version of this would look like this
 
     {
         "version": 1,
-        "appName": "New Gadget App",
         "configForms": {},
         "body": [],
         "metricRow": {}

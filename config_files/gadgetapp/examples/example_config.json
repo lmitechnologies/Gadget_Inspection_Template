@@ -1,0 +1,108 @@
+{
+    "version": 1,
+    "configForms": {
+        "sensor": {
+            "gocator-sensor": {
+                "profiler": {
+                    "configs": ["frame_rate"]
+                }
+               
+            },
+            "configs": ["enabled"]
+        },
+        "pipeline": {
+            "configs": ["log_level"]
+        },
+        "automation": {
+        }
+    },
+    "body": [
+        {
+            "columnSize": 3,
+            "components": [
+                {
+                    "componentName": "Chart",
+                    "chartType": "PieChart",
+                    "topic": "pipeline/pipeline",
+                    "decisionKey": "color_data"
+                },
+                {
+                    "componentName": "Metric",
+                    "topic": "pipeline/pipeline",
+                    "metricName": "decision"
+                }
+            ]
+        },
+        {
+            "columnSize": 3,
+            "components": [
+                {
+                    "componentName": "Chart",
+                    "chartType": "BarChart",
+                    "topic": "pipeline/pipeline",
+                    "decisionKey": "decision"
+                },
+                {
+                    "componentName": "Chart",
+                    "chartType": "HistogramChart",
+                    "topic": "pipeline/pipeline",
+                    "decisionKey": "decision",
+                    "labelList": ["-1", "0", "1", "2", "3", "4"]
+                }
+            ]
+        },
+        {
+            "columnSize": 3,
+            "components": [
+                
+                {
+                    "componentName": "Chart",
+                    "chartType": "MultiLineChart",
+                    "topic": "pipeline/pipeline",
+                    "decisionKey": "pair_data",
+                    "historyLen": 20
+                },
+                {
+                    "componentName": "ImageCanvas",
+                    "topic": "pipeline/pipeline",
+                    "fileName": "annotated"
+                }
+            ]
+        },
+        {
+            "columnSize": 3,
+            "components": [
+                {
+                    "componentName": "Chart",
+                    "chartType": "LineChart",
+                    "topic": "pipeline/pipeline",
+                    "decisionKey": "decision",
+                    "historyLen": 20
+                },
+                {
+                    "componentName": "Table",
+                    "topic": "pipeline/pipeline",
+                    "title": "Table",
+                    "displayName": "table_data"
+                }
+            ]
+        }
+    ],
+    "metricRow": {
+        "show": true,
+        "content": [
+            {
+                "topic": "pipeline/pipeline",
+                "metricKey": "decision",
+                "label": "Name",
+                "cumulative": true
+            },
+            {
+                "topic": "pipeline/pipeline",
+                "metricKey": "temp",
+                "label": "Temp",
+                "cumulative": false
+            }
+        ]
+    }
+}
