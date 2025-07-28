@@ -47,7 +47,7 @@ class PipelineBase(metaclass=ABCMeta):
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
         """
         self.models = collections.OrderedDict()
-        self.version = kwargs.get('version')
+        self.version = kwargs.get('version', '1')
         self.init_results()
         
     def _load_model(self, model_name:str, metadata:dict, **kwargs):
@@ -311,7 +311,7 @@ class PipelineBase(metaclass=ABCMeta):
         """check if the result dictionary is json serializable
         
         Args:
-            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to [].
+            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to []. It checks the default sub key 'labels' anyway.
         """
         def is_json_serializable(obj, key):
             """Check if an object can be serialized to JSON."""

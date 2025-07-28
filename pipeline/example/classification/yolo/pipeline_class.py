@@ -6,9 +6,7 @@ import logging
 import torch
 
 sys.path.append('/home/gadget/pipeline')
-sys.path.append('/home/gadget/LMI_AI_Solutions/object_detectors')
 sys.path.append('/home/gadget/LMI_AI_Solutions/classifiers')
-sys.path.append('/home/gadget/LMI_AI_Solutions/lmi_utils')
 
 from pipeline_base import PipelineBase as Base
 
@@ -19,7 +17,7 @@ import gadget_utils.pipeline_utils as pipeline_utils
 
 PASS = 'PASS'
 FAIL = 'FAIL'
-FAILED_CLASS = 'class1'
+FAILED_CLASS = 'class1' # the class that indicates a failure
 
 
 class ModelPipeline(Base):
