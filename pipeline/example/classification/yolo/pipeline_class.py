@@ -128,8 +128,6 @@ class ModelPipeline(Base):
         self.logger.info(f'found class: {object_cls} with confidence: {score}')
         self.logger.info(f'total proc time: {total_proc_time:.4f}s\n')
         
-        if not self.check_return_types():
-            raise Exception('invalid return types')
         return self.results
 
 
