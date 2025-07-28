@@ -22,7 +22,7 @@ RUN git clone -b v1.1.1 https://github.com/openvinotoolkit/anomalib.git && cd an
 RUN anomalib install --option core
 
 # clone LMI AI Solutions repository
-RUN git clone -b faie-2041 https://github.com/lmitechnologies/LMI_AI_Solutions.git
+RUN git clone -b ais https://github.com/lmitechnologies/LMI_AI_Solutions.git
 RUN cd LMI_AI_Solutions && git submodule update --init object_detectors/submodules/yolov5
-RUN cd LMI_AI_Solutions && git pull
 RUN cd LMI_AI_Solutions && pip3 install -e object_detectors && pip3 install -e anomaly_detectors && pip3 install -e lmi_utils
+RUN pip install numpy==1.23.5
