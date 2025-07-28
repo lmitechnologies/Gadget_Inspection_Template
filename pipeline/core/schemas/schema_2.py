@@ -12,7 +12,7 @@ class Artifact:
         """Creates an Artifact instance from a dictionary."""
         return cls(
             model_path=data.get("model_path", ""),
-            image_size=data.get("image_size", [])
+            image_size=data.get("imageSize", [])
         )
 
 @dataclass
@@ -29,8 +29,8 @@ class Details:
         """Creates a Details instance from a dictionary."""
         return cls(
             preprocessing_steps=data.get("preprocessing_steps", []),
-            training_package=data.get("training_package", ""),
-            training_algorithm=data.get("training_algorithm", ""),
+            training_package=data.get("trainingPackage", ""),
+            training_algorithm=data.get("trainingAlgorithm", ""),
             base_model=data.get("base_model", ""),
             defect_class_list=data.get("defect_class_list")
         )
@@ -53,12 +53,12 @@ class Configs:
         Creates a Configs instance from a dictionary, separating known fields
         from dynamic defect confidence scores.
         """
-        known_fields = {"threshold_min", "threshold_max"}
+        known_fields = {"thresholdMin", "thresholdMax"}
         
         # Initialize with known fields
         instance = cls(
-            threshold_min=data.get("threshold_min"),
-            threshold_max=data.get("threshold_max")
+            threshold_min=data.get("thresholdMin"),
+            threshold_max=data.get("thresholdMax")
         )
 
         for key, value in data.items():
@@ -116,12 +116,23 @@ class ModelCollection:
     def from_dict(cls, data: Dict[str, Any]) -> 'ModelCollection':
         """Creates a ModelCollection from the root dictionary."""
         # The root dictionary has a single key "model"
-        model_data = data.get("model", {})
-        models = {role: Model.from_dict(model_info) for role, model_info in model_data.items()}
+        models = {role: Model.from_dict(model_info) for role, model_info in data.items() if model_info is not None}
         return cls(models=models)
     
     def get_metadata(self) -> Dict[str, Any]:
         configs = {}
         for model in self.models.values():
-            configs[model.model_role] = {"metadata": model.get_metadata(), }
+            configs[model.model_role] = model.get_metadata()
         return configs
+
+class ModelSchemaV_2:
+    """Schema for model version 2."""
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> ModelCollection:
+        """Creates a ModelCollection instance from a dictionary."""
+        return ModelCollection.from_dict(data)
+    
+    @staticmethod
+    def get_metadata(model_collection: ModelCollection) -> Dict[str, Any]:
+        """Returns the metadata of the model collection."""
+        return model_collection.get_metadata()

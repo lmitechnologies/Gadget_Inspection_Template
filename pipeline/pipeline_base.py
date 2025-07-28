@@ -4,7 +4,7 @@ import logging
 import traceback
 from abc import ABCMeta, abstractmethod
 import json
-from core.schemas.schema_2_4 import ModelCollection
+from core.schemas.schema_2 import ModelSchemaV_2
 from od_core.object_detector import ObjectDetector
 from ad_core.anomaly_detector import AnomalyDetector
 from dataset_utils.representations import Box, Polygon, Mask, Point2d, AnnotationType, Annotation
@@ -35,10 +35,10 @@ class PipelineBase(metaclass=ABCMeta):
         }
     }
     _CONFIG_HANDLERS = {
-        '2.3': None,  # currently handled by the base class
-        '2.4': ModelCollection.from_dict,
-    }    
-    
+        '1': None,  # currently handled by the base class
+        '2': ModelSchemaV_2.from_dict,
+    }
+
     def __init__(self, **kwargs):
         """
         init the pipeline.
@@ -47,7 +47,7 @@ class PipelineBase(metaclass=ABCMeta):
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
         """
         self.models = collections.OrderedDict()
-        self.version = kwargs.get('version', '2.3')
+        self.version = kwargs.get('version')
         self.init_results()
         
     def _load_model(self, model_name:str, metadata:dict, **kwargs):
@@ -96,8 +96,8 @@ class PipelineBase(metaclass=ABCMeta):
             configs (dict): the configs from pipeline definition json file.
             filter (str, optional): a model filter. Defaults to '-model'.
         """
-        self.logger.info(f'Model Roles: {model_roles}\n')
-        configs = self._configs_by_version(configs, **kwargs)
+        parsed_model_roles = self._configs_by_version(model_roles, **kwargs)
+        self.logger.info(f'Model Roles: {parsed_model_roles}\n')
         model_config_keys = [k for k in configs.keys() if f'{filter}' in k]
         for model_key in model_config_keys:
             model_config = configs[model_key]
@@ -108,12 +108,13 @@ class PipelineBase(metaclass=ABCMeta):
             
             can_use_factory_role = (
                 use_factory and
-                model_key in model_roles and
-                model_roles[model_key].get('model_type') is not None
+                model_key in parsed_model_roles and
+                parsed_model_roles[model_key] is not None and
+                parsed_model_roles[model_key].get('model_type') is not None
             )
             
             if can_use_factory_role:
-                config_to_use = model_roles[model_key]
+                config_to_use = parsed_model_roles[model_key]
                 model_source = "GoFactory"
                 # temporary solution: copy tiling configs to model_roles if not exist
                 keys_to_inherit = ['tile_size', 'stride']
@@ -306,11 +307,11 @@ class PipelineBase(metaclass=ABCMeta):
             self.results['automation_keys'].append(key)
             
     
-    def check_return_types(self, check_sub_keys=['labels']) -> bool:
+    def check_return_types(self, check_sub_keys=[]) -> bool:
         """check if the result dictionary is json serializable
         
         Args:
-            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to ['labels'].
+            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to [].
         """
         def is_json_serializable(obj, key):
             """Check if an object can be serialized to JSON."""
@@ -321,11 +322,14 @@ class PipelineBase(metaclass=ABCMeta):
                 self.logger.error(f'{key} is not json serializable.')
                 return False
         
-        for k,v in self.results.items():
+        # check the default subkey in 'outputs', i.e., 'labels'
+        DEFAULT_SUB_KEY = 'labels'
+        for k, v in self.results.items():
             if k == 'outputs':
-                for sub_key in check_sub_keys:
+                for sub_key in set(check_sub_keys + [DEFAULT_SUB_KEY]):
                     if sub_key not in v:
-                        self.logger.warning(f'{sub_key} is not found in outputs, skip checking it')
+                        if sub_key != DEFAULT_SUB_KEY:
+                            self.logger.warning(f'{sub_key} is not found in outputs, skip checking it')
                     elif not is_json_serializable(v[sub_key], f'"{sub_key}" in "outputs"'):
                         return False
             else:
