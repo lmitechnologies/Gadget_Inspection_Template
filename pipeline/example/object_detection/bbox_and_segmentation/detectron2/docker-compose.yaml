@@ -9,6 +9,7 @@ services:
       - ./outputs:/home/gadget/outputs/
       - ./pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
       - ./pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
+      - ../../../../core:/home/gadget/pipeline/core/
       - ../../../../pipeline_base.py:/home/gadget/pipeline/pipeline_base.py
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
     ipc: host

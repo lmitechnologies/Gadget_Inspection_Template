@@ -4,6 +4,7 @@ import logging
 import traceback
 from abc import ABCMeta, abstractmethod
 import json
+from core.schemas.schema_2 import ModelSchemaV_2
 from od_core.object_detector import ObjectDetector
 from ad_core.anomaly_detector import AnomalyDetector
 from dataset_utils.representations import Box, Polygon, Mask, Point2d, AnnotationType, Annotation
@@ -33,8 +34,12 @@ class PipelineBase(metaclass=ABCMeta):
             'type': AnnotationType.KEYPOINT.value
         }
     }
-    
-    def __init__(self):
+    _CONFIG_HANDLERS = {
+        '1': None,  # currently handled by the base class
+        '2': ModelSchemaV_2.from_dict,
+    }
+
+    def __init__(self, **kwargs):
         """
         init the pipeline.
         it has the following attributes:
@@ -42,9 +47,9 @@ class PipelineBase(metaclass=ABCMeta):
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
         """
         self.models = collections.OrderedDict()
+        self.version = kwargs.get('version', '1')
         self.init_results()
         
-    
     def _load_model(self, model_name:str, metadata:dict, **kwargs):
         """ load a model with the given metadata.
         
@@ -73,6 +78,15 @@ class PipelineBase(metaclass=ABCMeta):
         else:
             raise ValueError(f'model_type {metadata.get("model_type", "")} is not supported')
         
+    def _configs_by_version(self, configs: dict, **kwargs):
+        version = kwargs.get('version', self.version)
+        if version not in self._CONFIG_HANDLERS:
+            raise ValueError(f'Unsupported version: {version}. Supported versions are: {list(self._CONFIG_HANDLERS.keys())}')
+        handler = self._CONFIG_HANDLERS[version]
+        if handler is None:
+            return configs
+        else:
+            return handler(configs).get_metadata()
         
     def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', **kwargs):
         """load models based on the provided model roles and configurations.
@@ -82,7 +96,8 @@ class PipelineBase(metaclass=ABCMeta):
             configs (dict): the configs from pipeline definition json file.
             filter (str, optional): a model filter. Defaults to '-model'.
         """
-        self.logger.info(f'Model Roles: {model_roles}\n')
+        parsed_model_roles = self._configs_by_version(model_roles, **kwargs)
+        self.logger.info(f'Model Roles: {parsed_model_roles}\n')
         model_config_keys = [k for k in configs.keys() if f'{filter}' in k]
         for model_key in model_config_keys:
             model_config = configs[model_key]
@@ -93,13 +108,13 @@ class PipelineBase(metaclass=ABCMeta):
             
             can_use_factory_role = (
                 use_factory and
-                model_key in model_roles and
-                model_roles[model_key] is not None and
-                model_roles[model_key].get('model_type') is not None
+                model_key in parsed_model_roles and
+                parsed_model_roles[model_key] is not None and
+                parsed_model_roles[model_key].get('model_type') is not None
             )
             
             if can_use_factory_role:
-                config_to_use = model_roles[model_key]
+                config_to_use = parsed_model_roles[model_key]
                 model_source = "GoFactory"
                 # temporary solution: copy tiling configs to model_roles if not exist
                 keys_to_inherit = ['tile_size', 'stride']
@@ -296,7 +311,7 @@ class PipelineBase(metaclass=ABCMeta):
         """check if the result dictionary is json serializable
         
         Args:
-            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to [].
+            check_sub_keys (list, optional): a list of sub keys to check in 'outputs'. Defaults to []. It checks the default sub key 'labels' anyway.
         """
         def is_json_serializable(obj, key):
             """Check if an object can be serialized to JSON."""
