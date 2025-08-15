@@ -158,6 +158,7 @@ class PipelineBase(metaclass=ABCMeta):
         #         }
         #     }
         # }
+        # the expected format is used in the pipeline_def.json. 
         
         # parse model_roles to match the required format for initializing models
         parsed_model_roles = self._parse_model_roles(model_roles, **kwargs)
