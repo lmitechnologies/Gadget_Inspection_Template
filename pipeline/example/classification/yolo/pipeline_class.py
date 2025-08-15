@@ -32,7 +32,8 @@ class ModelPipeline(Base):
         Args:
             kwargs: configs defined in the pipeline_def.json
         """
-        super().__init__()
+        super().__init__(**kwargs)
+        self.logger.info(f'gadget version: {self.version}')
         
     
     @Base.track_exception(logger)

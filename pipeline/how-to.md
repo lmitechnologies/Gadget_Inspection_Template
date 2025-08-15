@@ -26,7 +26,7 @@ self.models['pose_model'] = your_model_object.
 # The Pipeline Class API
 You must implement the following four methods in your `ModelPipeline` class. It is highly recommended to decorate each one with the `@Base.track_exception(logger)` decorator to ensure errors are caught and logged correctly.
 
-1. `__init__(self, **kwargs)`: The class constructor. Its primary job is to call the parent `super().__init__()`.  
+1. `__init__(self, **kwargs)`: The class constructor. Its primary job is to call the parent `super().__init__(**kwargs)`.  
 2. `load(self, model_roles, configs)`: Loads your AI models and any other required assets into the `self.models` dictionary.  
 3. `warm_up(self, configs)`: Performs a "dry run" of your models to avoid latency on the first real prediction.  
 4. `predict(self, configs, inputs)`: The core inference method. It takes input data (e.g., an image), runs the model(s), and produces a result dictionary.
@@ -99,7 +99,7 @@ class ModelPipeline(Base):
         """
         Initialize the pipeline. Always call the parent constructor first.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         # You can add other pipeline-specific initializations here if needed.
 
 ```

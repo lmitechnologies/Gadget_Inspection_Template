@@ -23,7 +23,8 @@ class ModelPipeline(Base):
     
     @Base.track_exception(logger)
     def __init__(self, **kwargs) -> None:
-        super().__init__()
+        super().__init__(**kwargs)
+        self.logger.info(f'gadget version: {self.version}')
         
     
     @Base.track_exception(logger)

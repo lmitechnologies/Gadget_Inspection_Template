@@ -4,7 +4,11 @@ import logging
 import traceback
 from abc import ABCMeta, abstractmethod
 import json
+
+# handle different model_roles schema according to gadget version
 from core.schemas.schema_2 import ModelSchemaV_2
+
+# LMI AIS repo's modules
 from od_core.object_detector import ObjectDetector
 from ad_core.anomaly_detector import AnomalyDetector
 from dataset_utils.representations import Box, Polygon, Mask, Point2d, AnnotationType, Annotation
@@ -15,6 +19,7 @@ class PipelineBase(metaclass=ABCMeta):
     logger = logging.getLogger(__name__)
     models: collections.OrderedDict
     results: dict
+    
     # Maps prediction keys to the specific classes and types needed for annotation.
     _PREDICTION_HANDLERS = {
         'boxes': {
@@ -34,21 +39,27 @@ class PipelineBase(metaclass=ABCMeta):
             'type': AnnotationType.KEYPOINT.value
         }
     }
-    _CONFIG_HANDLERS = {
+    
+    # Maps gadget version to model_roles handler
+    _MODEL_ROLES_HANDLERS = {
         '1': None,  # currently handled by the base class
         '2': ModelSchemaV_2.from_dict,
     }
-
+    
+    
     def __init__(self, **kwargs):
         """
-        init the pipeline.
+        init the pipeline.  
         it has the following attributes:
+        
             models: a dictionary of model instances, e.g., {model_name: model_instance}
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
+            version: the gadget version. It determines the config handler to be used.
         """
         self.models = collections.OrderedDict()
         self.version = kwargs.get('version', '1')
         self.init_results()
+        
         
     def _load_model(self, model_name:str, metadata:dict, **kwargs):
         """ load a model with the given metadata.
@@ -78,45 +89,101 @@ class PipelineBase(metaclass=ABCMeta):
         else:
             raise ValueError(f'model_type {metadata.get("model_type", "")} is not supported')
         
-    def _configs_by_version(self, configs: dict, **kwargs):
+        
+    def _parse_model_roles(self, model_roles: dict, **kwargs):
+        """parse the model roles by version.
+
+        Args:
+            model_roles (dict): the model roles to parse.
+
+        Raises:
+            ValueError: If the version is not supported.
+
+        Returns:
+            dict: The parsed model roles.
+        """
         version = kwargs.get('version', self.version)
-        if version not in self._CONFIG_HANDLERS:
-            raise ValueError(f'Unsupported version: {version}. Supported versions are: {list(self._CONFIG_HANDLERS.keys())}')
-        handler = self._CONFIG_HANDLERS[version]
+        if version not in self._MODEL_ROLES_HANDLERS:
+            raise ValueError(f'Unsupported version: {version}. Supported versions are: {list(self._MODEL_ROLES_HANDLERS.keys())}')
+        handler = self._MODEL_ROLES_HANDLERS[version]
         if handler is None:
-            return configs
+            return model_roles
         else:
-            return handler(configs).get_metadata()
+            return handler(model_roles).get_metadata()
+        
         
     def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', **kwargs):
-        """load models based on the provided model roles and configurations.
+        """load models based on the provided model roles and configs.
         
         Args:
-            model_roles (dict): a dictionary from gofactory
-            configs (dict): the configs from pipeline definition json file.
+            model_roles (dict): a dictionary from gofactory or static_models.
+            configs (dict): the configs from pipeline_def.json or the runtime.
             filter (str, optional): a model filter. Defaults to '-model'.
         """
-        parsed_model_roles = self._configs_by_version(model_roles, **kwargs)
-        self.logger.info(f'Model Roles: {parsed_model_roles}\n')
-        model_config_keys = [k for k in configs.keys() if f'{filter}' in k]
-        for model_key in model_config_keys:
+        
+        # the format of model_roles from factory is:
+        # {
+        #     "model_role": "foreground-od",
+        #     "model_type": "ObjectDetection",
+        #     "model_name": "Default",
+        #     "model_version": "Default",
+        #     "details": {
+        #         "model_path": "./model.pt",
+        #         "trainingPackage": "Ultralytics8",
+        #         "trainingAlgorithm": "Yolo",
+        #         "confidenceThreshold": 0.67,
+        #         "imageSize": [
+        #             384,
+        #             384
+        #         ]
+        #     }
+        # },
+        # However, the expected format for initializing models is:
+        # {
+        #     "name": "foreground-od",
+        #     "default_value": {
+        #         "use_factory": false,
+        #         "metadata":{
+        #             "version": "v1",
+        #             "model_name": "yolov8",
+        #             "model_type": "instancesegmentation",
+        #             "framework": "ultralytics",
+        #             "image_size": [640, 640],
+        #             "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt"
+        #         },
+        #         "iou": 0.45,
+        #         "object_configs": {
+        #             "person": {"confidence": 0.5},
+        #             "bicycle": {"confidence": 0.5},
+        #         }
+        #     }
+        # }
+        
+        # parse model_roles to match the required format for initializing models
+        parsed_model_roles = self._parse_model_roles(model_roles, **kwargs)
+        self.logger.info(f'Parsed Model Roles: {parsed_model_roles}\n')
+
+        # filter configs to get target model keys
+        target_model_keys = [k for k in configs.keys() if f'{filter}' in k]
+        for model_key in target_model_keys:
             model_config = configs[model_key]
             use_factory = model_config.get('use_factory', False)
-            # Start with the default configuration.
+            # start with the default configs defined in pipeline_def.json
             config_to_use = model_config['metadata']
             model_source = "default"
             
-            can_use_factory_role = (
+            # check if there exists a model from GoFactory
+            can_use_factory_model = (
                 use_factory and
                 model_key in parsed_model_roles and
                 parsed_model_roles[model_key] is not None and
                 parsed_model_roles[model_key].get('model_type') is not None
             )
             
-            if can_use_factory_role:
+            if can_use_factory_model:
                 config_to_use = parsed_model_roles[model_key]
                 model_source = "GoFactory"
-                # temporary solution: copy tiling configs to model_roles if not exist
+                # temporary solution: copy local tiling configs to model_roles, if these configs are not present
                 keys_to_inherit = ['tile_size', 'stride']
                 for key in keys_to_inherit:
                     if key not in config_to_use and key in model_config['metadata']:
@@ -202,7 +269,7 @@ class PipelineBase(metaclass=ABCMeta):
                     )
                     prediction_list.append(annotation.to_dict())
                     
-
+    
     def init_results(self):
         """
         init the output results
@@ -247,7 +314,7 @@ class PipelineBase(metaclass=ABCMeta):
     @abstractmethod
     def warm_up(self, configs: dict):
         """
-        warmup the pipeline
+        warm up the pipeline
         """
         pass
     
