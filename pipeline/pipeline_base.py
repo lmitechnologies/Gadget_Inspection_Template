@@ -19,9 +19,11 @@ class PipelineBase(metaclass=ABCMeta):
     
     logger = logging.getLogger(__name__)
     models: collections.OrderedDict
+    version: str
     results: dict
     
     # Maps prediction keys to the specific classes and types needed for annotation.
+    # This is used for uploading labels to label studio.
     _PREDICTION_HANDLERS = {
         'boxes': {
             'value_factory': lambda v: Box(x_min=v[0], y_min=v[1], x_max=v[2], y_max=v[3], angle=v[4] if len(v) > 4 else 0),
@@ -55,7 +57,7 @@ class PipelineBase(metaclass=ABCMeta):
         
             models: a dictionary of model instances, e.g., {model_name: model_instance}
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
-            version: the gadget version. It determines the config handler to be used.
+            version: the gadget version. It determines which model_roles handler to be used.
         """
         self.models = collections.OrderedDict()
         self.version = kwargs.get('version', '1')
@@ -63,7 +65,7 @@ class PipelineBase(metaclass=ABCMeta):
         
         
     def _load_model(self, model_name:str, metadata:dict, **kwargs):
-        """ load a model with the given metadata.
+        """ load a model with the given metadata. Set default image size if not provided.
         
         args:
             model_name (str): the name of the model to be loaded.
@@ -75,25 +77,27 @@ class PipelineBase(metaclass=ABCMeta):
         if model_name in self.models:
             self.logger.info(f'{model_name} is already loaded')
         self.logger.info(f"Loading {model_name} from {metadata['model_path']}")
-            
-        if metadata.get('model_type', '').lower() == 'anomalydetection':
-            if 'image_size' in metadata:
-                if metadata['image_size'] is None or metadata['image_size'] == []:
-                    self.logger.warning(f'Image size is not provided for {model_name}, using default [224, 224]')
-                    metadata['image_size'] = [224, 224]
-            self.models[model_name] = AnomalyDetector(
-                metadata, **kwargs
-            )
-        elif metadata.get('model_type', '').lower() in ['objectdetection', 'instancesegmentation', 'pose', 'obb', 'od', 'seg']:
-            self.models[model_name] = ObjectDetector(
-                metadata, **kwargs
-            )
+        
+        # set default image size if it's not provided
+        # set to [224,224] for AD and [640,640] for others
+        model_type = metadata.get('model_type', '').lower()
+        is_ad_model = (model_type == 'anomalydetection')
+        if not metadata.get('image_size'):
+            default_image_size = [224,224] if is_ad_model else [640,640]
+            self.logger.warning(f"Image size not provided for '{model_name}'. Using default {default_image_size}")
+            metadata['image_size'] = default_image_size
+
+        # check model type
+        if is_ad_model:
+            self.models[model_name] = AnomalyDetector(metadata, **kwargs)
+        elif model_type in ['objectdetection', 'instancesegmentation', 'pose', 'obb', 'od', 'seg']:
+            self.models[model_name] = ObjectDetector(metadata, **kwargs)
         else:
-            raise ValueError(f'model_type {metadata.get("model_type", "")} is not supported')
+            raise ValueError(f'model_type {model_type} is not supported')
         
         
     def _parse_model_roles(self, model_roles: dict, **kwargs):
-        """parse the model roles by version.
+        """parse model_roles by version and convert it to match the required format for initializing AIS repo models.
 
         Args:
             model_roles (dict): the model roles to parse.
@@ -125,22 +129,40 @@ class PipelineBase(metaclass=ABCMeta):
         
         # the format of model_roles from factory is:
         # {
-        #     "model_role": "foreground-od",
-        #     "model_type": "ObjectDetection",
-        #     "model_name": "Default",
-        #     "model_version": "Default",
-        #     "details": {
-        #         "model_path": "./model.pt",
-        #         "trainingPackage": "Ultralytics8",
-        #         "trainingAlgorithm": "Yolo",
-        #         "confidenceThreshold": 0.67,
-        #         "imageSize": [
-        #             384,
-        #             384
-        #         ]
+        #     "top-od-model": {
+        #         "format": "pt",
+        #         "configs": {},
+        #         "details": {
+        #             "deployed": "2025-08-18T02:26:53.063Z",
+        #             "baseModel": "yolov8m.pt",
+        #             "trainingPackage": "Ultralytics8",
+        #             "trainingAlgorithm": "Yolo",
+        #             "confidenceThreshold": 0.5,
+        #             "globalPreprocessing": [
+        #                 {
+        #                     "type": "resize",
+        #                     "configuration": {
+        #                         "width": 640,
+        #                         "height": 640,
+        #                         "preserveAspect": true
+        #                     }
+        #                 }
+        #             ]
+        #         },
+        #         "artifacts": {
+        #             "pt": {
+        #                 "imageSize": [],
+        #                 "model_path": "/app/models/top-od-model/ObjectDetection/yolo/1/model.pt"
+        #             }
+        #         },
+        #         "model_name": "yolo",
+        #         "model_role": "top-od-model",
+        #         "model_type": "ObjectDetection",
+        #         "model_version": "1"
         #     }
-        # },
-        # However, the expected format for initializing models is:
+        # }
+        
+        # However, the required format for initializing AIS repo models is:
         # {
         #     "name": "foreground-od",
         #     "default_value": {
@@ -160,10 +182,10 @@ class PipelineBase(metaclass=ABCMeta):
         #         }
         #     }
         # }
-        # the expected format is used in the pipeline_def.json. 
         
-        # parse model_roles to match the required format for initializing models
+        # parse model_roles to match the required format for initializing AIS repo models
         parsed_model_roles = self._parse_model_roles(model_roles, **kwargs)
+        self.logger.info(f'Original Model Roles: {model_roles}\n')
         self.logger.info(f'Parsed Model Roles: {parsed_model_roles}\n')
 
         # filter configs to get target model keys
@@ -202,11 +224,11 @@ class PipelineBase(metaclass=ABCMeta):
                 
             self._load_model(model_key, config_to_use, **kwargs)
             self.logger.info(f'Successfully loaded {model_source} model: {model_key}\n')
-        self.logger.info(f'Final loaded models: {list(self.models.keys())}')
+        self.logger.info(f'Final loaded models: {list(self.models.keys())}\n')
         
     
     def add_prediction(self, pred_type:str, value:object, score:float, label:str, image_height:int, image_width:int, **kwargs):
-        """add a single prediction to results for Label Studio.
+        """add a single prediction to results for uploading to Label Studio.
         
         Args:
             pred_type (str): the type of the predictions to be updated, e.g., 'boxes', 'polygons', 'masks', 'keypoints'.
@@ -230,7 +252,7 @@ class PipelineBase(metaclass=ABCMeta):
         self._add_predictions(predictions, image_height, image_width, **kwargs)
         
         
-    def _add_predictions(self, predictions, image_height:int, image_width:int, key='outputs', sub_key='labels'):
+    def _add_predictions(self, predictions:dict, image_height:int, image_width:int, key='outputs', sub_key='labels'):
         """a helper functiomn to add a batch of predictions to results for Label Studio.
         
         Args:

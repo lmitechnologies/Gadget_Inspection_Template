@@ -46,7 +46,7 @@ The file has two main sections:
 
     - `name`: A string that must match a role from `model_roles`. This is how your Python code will access this specific configuration block.
     - `default_value`: An object containing all the parameters for this model. This typically includes:
-        - `use_factory`: use the model trained using the GoFactory.
+        - `use_factory`: use the model trained using GoFactory.
         - `metadata`: model initialization related metadata.
         - Runtime Parameters: Custom values you need for inference, such as iou thresholds, confidence scores for different classes, or other hyperparameters.
 
