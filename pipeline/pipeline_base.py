@@ -119,8 +119,9 @@ class PipelineBase(metaclass=ABCMeta):
         
         
     def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', **kwargs):
-        """load models based on the provided model roles and configs.
-        
+        """load models based on the provided model_roles and configs.  
+        This function will determine whether to load models from the GoFactory or using local models defined in the pipeline_def.json.
+
         Args:
             model_roles (dict): a dictionary from gofactory or static_models.
             configs (dict): the configs from pipeline_def.json or the runtime.
@@ -206,6 +207,7 @@ class PipelineBase(metaclass=ABCMeta):
             )
             
             if can_use_factory_model:
+                # use the configs from GoFactory
                 config_to_use = parsed_model_roles[model_key]
                 model_source = "GoFactory"
                 # temporary solution: copy local tiling configs to model_roles, if these configs are not present
