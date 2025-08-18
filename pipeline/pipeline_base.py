@@ -5,6 +5,7 @@ import traceback
 from abc import ABCMeta, abstractmethod
 import json
 
+# local module
 # handle different model_roles schema according to gadget version
 from core.schemas.schema_2 import ModelSchemaV_2
 
@@ -77,7 +78,8 @@ class PipelineBase(metaclass=ABCMeta):
             
         if metadata.get('model_type', '').lower() == 'anomalydetection':
             if 'image_size' in metadata:
-                if metadata['image_size'] is None:
+                if metadata['image_size'] is None or metadata['image_size'] == []:
+                    self.logger.warning(f'Image size is not provided for {model_name}, using default [224, 224]')
                     metadata['image_size'] = [224, 224]
             self.models[model_name] = AnomalyDetector(
                 metadata, **kwargs
