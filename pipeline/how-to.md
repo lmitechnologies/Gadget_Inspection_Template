@@ -79,6 +79,68 @@ Here is an example configuration for a pipeline that uses a single pose model:
 }
 ```
 
+### Available metadata for AIS repo models initialization
+The current AIS repo supports the following metadata for model initialization:
+- YOLO v1 models (recommended):
+    ```json
+    "metadata":{
+        "version": "v1", // only 'v1'
+        "model_name": "yolov11", // one of ['yolo', 'yolov8', 'yolov11']
+        "model_type": "instancesegmentation", // one of ['pose', 'obb', 'od', 'seg', 'instancesegmentation', 'objectdetection']
+        "framework": "ultralytics", // one of ['ultralytics', 'ultralytics8']
+        "image_size": [640, 640],
+        "model_path": ""
+    }
+    ```
+
+- YOLO v0 models:
+    ```json
+    "metadata":{
+        "version": "v0", // only 'v0'
+        "model_name": "yolov8", // one of ['yolov8','yolov5']
+        "model_type": "objectdetection", // one of ['od', 'seg', 'instancesegmentation', 'objectdetection']. yolov8 supports two extra types: ['pose', 'obb'] 
+        "framework": "ultralytics", // only 'ultralytics'
+        "image_size": [640, 640],
+        "model_path": ""
+    }
+    ```
+
+- DETECTRON2 v0 models:
+    ```json
+    "metadata":{
+        "version": "v0", // only 'v0'
+        "model_name": "mask_rcnn", // one of ["mask_rcnn", "faster_rcnn"]
+        "model_type": "instancesegmentation", // one of ["od","seg", "instancesegmentation", "objectdetection"]
+        "framework": "detectron2", // only 'detectron2'
+        "image_size": [640, 640],
+        "model_path": ""
+    }
+    ```
+
+- AD v1 models (recommended):
+    ```json
+    "metadata":{
+        "version": "v1", // only 'v1'
+        "model_name": "patchcore", // one of ['patchcore', 'padim', 'efficientad']
+        "model_type": "anomalydetection", // one of ['anomalydetection', 'seg']
+        "framework": "anomalib1", // only 'anomalib1'
+        "image_size": [224, 224],
+        "model_path": ""
+    }
+    ```
+
+- AD v0 models:
+    ```json
+    "metadata":{
+        "version": "v0", // 'v0' or 'v1'
+        "model_name": "patchcore", // one of ['patchcore', 'padim']
+        "model_type": "anomalydetection", // one of ['anomalydetection', 'seg']
+        "framework": "anomalib0", // one of ['anomalib', 'anomalib0']
+        "image_size": [224, 224],
+        "model_path": ""
+    }
+    ```
+
 ## Step 2: Boilerplate and Initialization
 With your configuration set, you can now start writing the Python code. Import necessary libraries, define your class inheriting from `Base`, and implement `__init__`. Some helpful utility functions are imported from the LMI AI Solutions (AIS) repository: https://github.com/lmitechnologies/LMI_AI_Solutions. 
 
