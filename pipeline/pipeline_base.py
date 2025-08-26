@@ -119,13 +119,16 @@ class PipelineBase(metaclass=ABCMeta):
         
         
     def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', **kwargs):
-        """load models based on the provided model_roles and configs.  
-        This function will determine whether to load models from the GoFactory or using local models defined in the pipeline_def.json.
+        """load multiple models based on the provided model_roles, configs and filter.  
+        The model_roles are used for loading models from the GoFactory, while the configs are used for local models.  
+        This function loads models from the GoFactory if their "use_factory" flags are set to true in the configs.  
+        Otherwise, it uses local models defined in the pipeline_def.json.  
+        It also filters out not relevant models based on the provided filter string.
 
         Args:
             model_roles (dict): a dictionary from gofactory or static_models.
             configs (dict): the configs from pipeline_def.json or the runtime.
-            filter (str, optional): a model filter. Defaults to '-model'.
+            filter (str, optional): filter models by name. Defaults to '-model'.
         """
         
         # the format of model_roles from factory is:
