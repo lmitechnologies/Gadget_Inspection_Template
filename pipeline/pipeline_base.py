@@ -4,7 +4,12 @@ import logging
 import traceback
 from abc import ABCMeta, abstractmethod
 import json
+
+# local module
+# handle different model_roles schema according to gadget version
 from core.schemas.schema_2 import ModelSchemaV_2
+
+# LMI AIS repo's modules
 from od_core.object_detector import ObjectDetector
 from ad_core.anomaly_detector import AnomalyDetector
 from dataset_utils.representations import Box, Polygon, Mask, Point2d, AnnotationType, Annotation
@@ -14,8 +19,11 @@ class PipelineBase(metaclass=ABCMeta):
     
     logger = logging.getLogger(__name__)
     models: collections.OrderedDict
+    version: str
     results: dict
+    
     # Maps prediction keys to the specific classes and types needed for annotation.
+    # This is used for uploading labels to label studio.
     _PREDICTION_HANDLERS = {
         'boxes': {
             'value_factory': lambda v: Box(x_min=v[0], y_min=v[1], x_max=v[2], y_max=v[3], angle=v[4] if len(v) > 4 else 0),
@@ -34,24 +42,30 @@ class PipelineBase(metaclass=ABCMeta):
             'type': AnnotationType.KEYPOINT.value
         }
     }
-    _CONFIG_HANDLERS = {
+    
+    # Maps gadget version to model_roles handler
+    _MODEL_ROLES_HANDLERS = {
         '1': None,  # currently handled by the base class
         '2': ModelSchemaV_2.from_dict,
     }
-
+    
+    
     def __init__(self, **kwargs):
         """
-        init the pipeline.
+        init the pipeline.  
         it has the following attributes:
+        
             models: a dictionary of model instances, e.g., {model_name: model_instance}
             results: a dictionary of the results, e.g., {'outputs':{}, 'automation_keys':[], 'factory_keys':[], 'tags':[], 'should_archive':True, 'decision':None}
+            version: the gadget version. It determines which model_roles handler to be used.
         """
         self.models = collections.OrderedDict()
         self.version = kwargs.get('version', '1')
         self.init_results()
         
+        
     def _load_model(self, model_name:str, metadata:dict, **kwargs):
-        """ load a model with the given metadata.
+        """ load a model with the given metadata. Set default image size if not provided.
         
         args:
             model_name (str): the name of the model to be loaded.
@@ -63,60 +77,143 @@ class PipelineBase(metaclass=ABCMeta):
         if model_name in self.models:
             self.logger.info(f'{model_name} is already loaded')
         self.logger.info(f"Loading {model_name} from {metadata['model_path']}")
-            
-        if metadata.get('model_type', '').lower() == 'anomalydetection':
-            if 'image_size' in metadata:
-                if metadata['image_size'] is None:
-                    metadata['image_size'] = [224, 224]
-            self.models[model_name] = AnomalyDetector(
-                metadata, **kwargs
-            )
-        elif metadata.get('model_type', '').lower() in ['objectdetection', 'instancesegmentation', 'pose', 'obb', 'od', 'seg']:
-            self.models[model_name] = ObjectDetector(
-                metadata, **kwargs
-            )
-        else:
-            raise ValueError(f'model_type {metadata.get("model_type", "")} is not supported')
         
-    def _configs_by_version(self, configs: dict, **kwargs):
-        version = kwargs.get('version', self.version)
-        if version not in self._CONFIG_HANDLERS:
-            raise ValueError(f'Unsupported version: {version}. Supported versions are: {list(self._CONFIG_HANDLERS.keys())}')
-        handler = self._CONFIG_HANDLERS[version]
-        if handler is None:
-            return configs
+        # set default image size if it's not provided
+        # set to [224,224] for AD and [640,640] for others
+        model_type = metadata.get('model_type', '').lower()
+        is_ad_model = (model_type == 'anomalydetection')
+        if not metadata.get('image_size'):
+            default_image_size = [224,224] if is_ad_model else [640,640]
+            self.logger.warning(f"Image size not provided for '{model_name}'. Using default {default_image_size}")
+            metadata['image_size'] = default_image_size
+
+        # check model type
+        if is_ad_model:
+            self.models[model_name] = AnomalyDetector(metadata, **kwargs)
+        elif model_type in ['objectdetection', 'instancesegmentation', 'pose', 'obb', 'od', 'seg']:
+            self.models[model_name] = ObjectDetector(metadata, **kwargs)
         else:
-            return handler(configs).get_metadata()
+            raise ValueError(f'model_type {model_type} is not supported')
+        
+        
+    def _parse_model_roles(self, model_roles: dict, **kwargs):
+        """parse model_roles by version and convert it to match the required format for initializing AIS repo models.
+
+        Args:
+            model_roles (dict): the model roles to parse.
+
+        Raises:
+            ValueError: If the version is not supported.
+
+        Returns:
+            dict: The parsed model roles.
+        """
+        version = kwargs.get('version', self.version)
+        if version not in self._MODEL_ROLES_HANDLERS:
+            raise ValueError(f'Unsupported version: {version}. Supported versions are: {list(self._MODEL_ROLES_HANDLERS.keys())}')
+        handler = self._MODEL_ROLES_HANDLERS[version]
+        if handler is None:
+            return model_roles
+        else:
+            return handler(model_roles).get_metadata()
+        
         
     def load_models(self, model_roles: dict, configs: dict, filter: str = '-model', **kwargs):
-        """load models based on the provided model roles and configurations.
-        
+        """load multiple models based on the provided model_roles, configs and filter.  
+        The model_roles are used for loading models from the GoFactory, while the configs are used for local models.  
+        This function loads models from the GoFactory if their "use_factory" flags are set to true in the configs.  
+        Otherwise, it uses local models defined in the pipeline_def.json.  
+        It also filters out not relevant models based on the provided filter string.
+
         Args:
-            model_roles (dict): a dictionary from gofactory
-            configs (dict): the configs from pipeline definition json file.
-            filter (str, optional): a model filter. Defaults to '-model'.
+            model_roles (dict): a dictionary from gofactory or static_models.
+            configs (dict): the configs from pipeline_def.json or the runtime.
+            filter (str, optional): filter models by name. Defaults to '-model'.
         """
-        parsed_model_roles = self._configs_by_version(model_roles, **kwargs)
-        self.logger.info(f'Model Roles: {parsed_model_roles}\n')
-        model_config_keys = [k for k in configs.keys() if f'{filter}' in k]
-        for model_key in model_config_keys:
+        
+        # the format of model_roles from factory is:
+        # {
+        #     "top-od-model": {
+        #         "format": "pt",
+        #         "configs": {},
+        #         "details": {
+        #             "deployed": "2025-08-18T02:26:53.063Z",
+        #             "baseModel": "yolov8m.pt",
+        #             "trainingPackage": "Ultralytics8",
+        #             "trainingAlgorithm": "Yolo",
+        #             "confidenceThreshold": 0.5,
+        #             "globalPreprocessing": [
+        #                 {
+        #                     "type": "resize",
+        #                     "configuration": {
+        #                         "width": 640,
+        #                         "height": 640,
+        #                         "preserveAspect": true
+        #                     }
+        #                 }
+        #             ]
+        #         },
+        #         "artifacts": {
+        #             "pt": {
+        #                 "imageSize": [],
+        #                 "model_path": "/app/models/top-od-model/ObjectDetection/yolo/1/model.pt"
+        #             }
+        #         },
+        #         "model_name": "yolo",
+        #         "model_role": "top-od-model",
+        #         "model_type": "ObjectDetection",
+        #         "model_version": "1"
+        #     }
+        # }
+        
+        # However, the required format for initializing AIS repo models is:
+        # {
+        #     "name": "foreground-od",
+        #     "default_value": {
+        #         "use_factory": false,
+        #         "metadata":{
+        #             "version": "v1",
+        #             "model_name": "yolov8",
+        #             "model_type": "instancesegmentation",
+        #             "framework": "ultralytics",
+        #             "image_size": [640, 640],
+        #             "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-seg.pt"
+        #         },
+        #         "iou": 0.45,
+        #         "object_configs": {
+        #             "person": {"confidence": 0.5},
+        #             "bicycle": {"confidence": 0.5},
+        #         }
+        #     }
+        # }
+        
+        # parse model_roles to match the required format for initializing AIS repo models
+        parsed_model_roles = self._parse_model_roles(model_roles, **kwargs)
+        self.logger.info(f'Original Model Roles: {model_roles}\n')
+        self.logger.info(f'Parsed Model Roles: {parsed_model_roles}\n')
+
+        # filter configs to get target model keys
+        target_model_keys = [k for k in configs.keys() if f'{filter}' in k]
+        for model_key in target_model_keys:
             model_config = configs[model_key]
             use_factory = model_config.get('use_factory', False)
-            # Start with the default configuration.
+            # start with the default configs defined in pipeline_def.json
             config_to_use = model_config['metadata']
             model_source = "default"
             
-            can_use_factory_role = (
+            # check if there exists a model from GoFactory
+            can_use_factory_model = (
                 use_factory and
                 model_key in parsed_model_roles and
                 parsed_model_roles[model_key] is not None and
                 parsed_model_roles[model_key].get('model_type') is not None
             )
             
-            if can_use_factory_role:
+            if can_use_factory_model:
+                # use the configs from GoFactory
                 config_to_use = parsed_model_roles[model_key]
                 model_source = "GoFactory"
-                # temporary solution: copy tiling configs to model_roles if not exist
+                # temporary solution: copy local tiling configs to model_roles, if these configs are not present
                 keys_to_inherit = ['tile_size', 'stride']
                 for key in keys_to_inherit:
                     if key not in config_to_use and key in model_config['metadata']:
@@ -132,11 +229,11 @@ class PipelineBase(metaclass=ABCMeta):
                 
             self._load_model(model_key, config_to_use, **kwargs)
             self.logger.info(f'Successfully loaded {model_source} model: {model_key}\n')
-        self.logger.info(f'Final loaded models: {list(self.models.keys())}')
+        self.logger.info(f'Final loaded models: {list(self.models.keys())}\n')
         
     
     def add_prediction(self, pred_type:str, value:object, score:float, label:str, image_height:int, image_width:int, **kwargs):
-        """add a single prediction to results for Label Studio.
+        """add a single prediction to results for uploading to Label Studio.
         
         Args:
             pred_type (str): the type of the predictions to be updated, e.g., 'boxes', 'polygons', 'masks', 'keypoints'.
@@ -160,7 +257,7 @@ class PipelineBase(metaclass=ABCMeta):
         self._add_predictions(predictions, image_height, image_width, **kwargs)
         
         
-    def _add_predictions(self, predictions, image_height:int, image_width:int, key='outputs', sub_key='labels'):
+    def _add_predictions(self, predictions:dict, image_height:int, image_width:int, key='outputs', sub_key='labels'):
         """a helper functiomn to add a batch of predictions to results for Label Studio.
         
         Args:
@@ -202,7 +299,7 @@ class PipelineBase(metaclass=ABCMeta):
                     )
                     prediction_list.append(annotation.to_dict())
                     
-
+    
     def init_results(self):
         """
         init the output results
@@ -247,7 +344,7 @@ class PipelineBase(metaclass=ABCMeta):
     @abstractmethod
     def warm_up(self, configs: dict):
         """
-        warmup the pipeline
+        warm up the pipeline
         """
         pass
     

@@ -20,9 +20,9 @@ class ModelPipeline(Base):
     @Base.track_exception(logger)
     def __init__(self, **kwargs):
         """
-        init the pipeline with kwargs. To initialize self.results, call super().__init__()
+        init the pipeline with kwargs.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         
         
     @Base.track_exception(logger)

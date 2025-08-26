@@ -26,7 +26,7 @@ self.models['pose_model'] = your_model_object.
 # The Pipeline Class API
 You must implement the following four methods in your `ModelPipeline` class. It is highly recommended to decorate each one with the `@Base.track_exception(logger)` decorator to ensure errors are caught and logged correctly.
 
-1. `__init__(self, **kwargs)`: The class constructor. Its primary job is to call the parent `super().__init__()`.  
+1. `__init__(self, **kwargs)`: The class constructor. Its primary job is to call the parent `super().__init__(**kwargs)`.  
 2. `load(self, model_roles, configs)`: Loads your AI models and any other required assets into the `self.models` dictionary.  
 3. `warm_up(self, configs)`: Performs a "dry run" of your models to avoid latency on the first real prediction.  
 4. `predict(self, configs, inputs)`: The core inference method. It takes input data (e.g., an image), runs the model(s), and produces a result dictionary.
@@ -46,7 +46,7 @@ The file has two main sections:
 
     - `name`: A string that must match a role from `model_roles`. This is how your Python code will access this specific configuration block.
     - `default_value`: An object containing all the parameters for this model. This typically includes:
-        - `use_factory`: use the model trained using the GoFactory.
+        - `use_factory`: use the model trained using GoFactory.
         - `metadata`: model initialization related metadata.
         - Runtime Parameters: Custom values you need for inference, such as iou thresholds, confidence scores for different classes, or other hyperparameters.
 
@@ -79,6 +79,68 @@ Here is an example configuration for a pipeline that uses a single pose model:
 }
 ```
 
+### Available metadata for AIS repo models initialization
+The current AIS repo supports the following metadata for model initialization:
+- YOLO v1 models (recommended):
+    ```json
+    "metadata":{
+        "version": "v1", // only 'v1'
+        "model_name": "yolov11", // one of ['yolo', 'yolov8', 'yolov11']
+        "model_type": "instancesegmentation", // one of ['pose', 'obb', 'od', 'seg', 'instancesegmentation', 'objectdetection']
+        "framework": "ultralytics", // one of ['ultralytics', 'ultralytics8']
+        "image_size": [640, 640],
+        "model_path": ""
+    }
+    ```
+
+- YOLO v0 models:
+    ```json
+    "metadata":{
+        "version": "v0", // only 'v0'
+        "model_name": "yolov8", // one of ['yolov8','yolov5']
+        "model_type": "objectdetection", // one of ['od', 'seg', 'instancesegmentation', 'objectdetection']. yolov8 supports two extra types: ['pose', 'obb'] 
+        "framework": "ultralytics", // only 'ultralytics'
+        "image_size": [640, 640],
+        "model_path": ""
+    }
+    ```
+
+- DETECTRON2 v0 models:
+    ```json
+    "metadata":{
+        "version": "v0", // only 'v0'
+        "model_name": "mask_rcnn", // one of ["mask_rcnn", "faster_rcnn"]
+        "model_type": "instancesegmentation", // one of ["od","seg", "instancesegmentation", "objectdetection"]
+        "framework": "detectron2", // only 'detectron2'
+        "image_size": [640, 640],
+        "model_path": ""
+    }
+    ```
+
+- AD v1 models (recommended):
+    ```json
+    "metadata":{
+        "version": "v1", // only 'v1'
+        "model_name": "patchcore", // one of ['patchcore', 'padim', 'efficientad']
+        "model_type": "anomalydetection", // one of ['anomalydetection', 'seg']
+        "framework": "anomalib1", // only 'anomalib1'
+        "image_size": [224, 224],
+        "model_path": ""
+    }
+    ```
+
+- AD v0 models:
+    ```json
+    "metadata":{
+        "version": "v0", // 'v0' or 'v1'
+        "model_name": "patchcore", // one of ['patchcore', 'padim']
+        "model_type": "anomalydetection", // one of ['anomalydetection', 'seg']
+        "framework": "anomalib0", // one of ['anomalib', 'anomalib0']
+        "image_size": [224, 224],
+        "model_path": ""
+    }
+    ```
+
 ## Step 2: Boilerplate and Initialization
 With your configuration set, you can now start writing the Python code. Import necessary libraries, define your class inheriting from `Base`, and implement `__init__`. Some helpful utility functions are imported from the LMI AI Solutions (AIS) repository: https://github.com/lmitechnologies/LMI_AI_Solutions. 
 
@@ -99,7 +161,7 @@ class ModelPipeline(Base):
         """
         Initialize the pipeline. Always call the parent constructor first.
         """
-        super().__init__()
+        super().__init__(**kwargs)
         # You can add other pipeline-specific initializations here if needed.
 
 ```
