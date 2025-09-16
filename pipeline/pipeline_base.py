@@ -12,6 +12,7 @@ from core.schemas.schema_2 import ModelSchemaV_2
 # LMI AIS repo's modules
 from od_core.object_detector import ObjectDetector
 from ad_core.anomaly_detector import AnomalyDetector
+from cls_core.classifier import Classifier
 from dataset_utils.representations import Box, Polygon, Mask, Point2d, AnnotationType, Annotation
 
 
@@ -92,6 +93,8 @@ class PipelineBase(metaclass=ABCMeta):
             self.models[model_name] = AnomalyDetector(metadata, **kwargs)
         elif model_type in ['objectdetection', 'instancesegmentation', 'pose', 'obb', 'od', 'seg']:
             self.models[model_name] = ObjectDetector(metadata, **kwargs)
+        elif model_type in ['classification']:
+            self.models[model_name] = Classifier(metadata, **kwargs)
         else:
             raise ValueError(f'model_type {model_type} is not supported')
         

@@ -3,8 +3,14 @@
         {
             "name": "cls_model",
             "default_value": {
-                "path": "/home/gadget/pipeline/trt-engines/best.pt",
-                "hw": [224,224]
+                "metadata":{
+                    "version": "v0",
+                    "model_name": "yolov8",
+                    "model_type": "classification",
+                    "framework": "ultralytics",
+                    "image_size": [224, 224],
+                    "model_path": "/home/gadget/pipeline/trt-engines/best.pt"
+                }
             },
             "comment": "none"
         }

@@ -11,7 +11,6 @@ sys.path.append('/home/gadget/LMI_AI_Solutions/classifiers')
 from pipeline_base import PipelineBase as Base
 
 # functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-from yolov8_cls.model import Yolov8_cls
 import gadget_utils.pipeline_utils as pipeline_utils
 
 
@@ -43,7 +42,7 @@ class ModelPipeline(Base):
         Args:
             configs (dict): runtime configs
         """
-        self.models['cls'] = Yolov8_cls(configs['cls_model']['path'])
+        self.load_models(model_roles, configs, "cls_model")
         self.logger.info('models are loaded')
     
     
@@ -55,8 +54,7 @@ class ModelPipeline(Base):
             configs (dict): runtime configs
         """
         t1 = time.time()
-        imgsz = configs['cls_model']['hw']
-        self.models['cls'].warmup(imgsz)
+        self.models['cls_model'].warmup()
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
         
@@ -100,12 +98,10 @@ class ModelPipeline(Base):
         if not self.models:
             raise Exception('failed to load pipeline model(s)')
         
-        # load runtime config
-        hw = configs['cls_model']['hw']
-        
         # run the object detection model
+        hw = self.models['cls_model'].image_size
         processed_im = self.preprocess(image, hw)
-        results_dict, time_info = self.models['cls'].predict(processed_im)
+        results_dict, time_info = self.models['cls_model'].predict(processed_im)
         
         # upload decision to the Gadget automation service
         object_cls = results_dict['classes'][0]
