@@ -4,10 +4,9 @@ import sys
 import cv2
 import logging
 import torch
+import ultralytics # fix empty results issue for ARM
 
-sys.path.append('/home/gadget/pipeline')
-sys.path.append('/home/gadget/LMI_AI_Solutions/classifiers')
-
+# local imports
 from pipeline_base import PipelineBase as Base
 
 # functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
