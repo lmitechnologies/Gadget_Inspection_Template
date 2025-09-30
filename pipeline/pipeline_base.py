@@ -79,17 +79,12 @@ class PipelineBase(metaclass=ABCMeta):
             self.logger.info(f'{model_name} is already loaded')
         self.logger.info(f"Loading {model_name} from {metadata['model_path']}")
         
-        # set default image size if it's not provided
-        # set to [224,224] for AD and [640,640] for others
-        model_type = metadata.get('model_type', '').lower()
-        is_ad_model = (model_type == 'anomalydetection')
         if not metadata.get('image_size'):
-            default_image_size = [224,224] if is_ad_model else [640,640]
-            self.logger.warning(f"Image size not provided for '{model_name}'. Using default {default_image_size}")
-            metadata['image_size'] = default_image_size
+            raise ValueError(f'image_size is required in metadata for model: {model_name}')
 
+        model_type = metadata.get('model_type', '').lower()
         # check model type
-        if is_ad_model:
+        if model_type == 'anomalydetection':
             self.models[model_name] = AnomalyDetector(metadata, **kwargs)
         elif model_type in ['objectdetection', 'instancesegmentation', 'pose', 'obb', 'od', 'seg']:
             self.models[model_name] = ObjectDetector(metadata, **kwargs)
@@ -196,39 +191,18 @@ class PipelineBase(metaclass=ABCMeta):
         self.logger.info(f'Parsed Model Roles: {parsed_model_roles}\n')
 
         # filter configs to get target model keys
-        target_model_keys = [k for k in configs.keys() if f'{filter}' in k]
+        target_model_keys = [k for k in model_roles.keys() if f'{filter}' in k]
         for model_key in target_model_keys:
-            model_config = configs[model_key]
-            use_factory = model_config.get('use_factory', False)
-            # start with the default configs defined in pipeline_def.json
-            config_to_use = model_config['metadata']
-            model_source = "default"
-            
-            # check if there exists a model from GoFactory
-            can_use_factory_model = (
-                use_factory and
-                model_key in parsed_model_roles and
-                parsed_model_roles[model_key] is not None and
-                parsed_model_roles[model_key].get('model_type') is not None
-            )
-            
-            if can_use_factory_model:
-                # use the configs from GoFactory
-                config_to_use = parsed_model_roles[model_key]
-                model_source = "GoFactory"
-                # temporary solution: copy local tiling configs to model_roles, if these configs are not present
-                keys_to_inherit = ['tile_size', 'stride']
-                for key in keys_to_inherit:
-                    if key not in config_to_use and key in model_config['metadata']:
-                        self.logger.warning(
-                            f"'{key}' not found in GoFactory config for '{model_key}'. Inheriting value from local config."
-                        )
-                        config_to_use[key] = model_config['metadata'][key]
-            elif use_factory:
-                self.logger.warning(
-                    f"'{model_key}' was configured to use GoFactory, but its role was invalid or not found. "
-                    "Falling back to default model."
-                )
+            config_to_use = parsed_model_roles[model_key]
+            model_source = "Static" if 'static' in config_to_use['model_path'].split('/') else "GoFactory"
+            # TODO: handle tile configs
+            # keys_to_inherit = ['tile_size', 'stride']
+            # for key in keys_to_inherit:
+            #     if key not in config_to_use and key in configs[model_key]['metadata']:
+            #         self.logger.warning(
+            #             f"'{key}' not found in GoFactory config for '{model_key}'. Inheriting value from local config."
+            #         )
+            #         config_to_use[key] = configs[model_key]['metadata'][key]
                 
             self._load_model(model_key, config_to_use, **kwargs)
             self.logger.info(f'Successfully loaded {model_source} model: {model_key}\n')

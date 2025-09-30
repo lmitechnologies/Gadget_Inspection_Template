@@ -12,13 +12,13 @@ class Artifact:
         """Creates an Artifact instance from a dictionary."""
         return cls(
             model_path=data.get("model_path", ""),
-            image_size=data.get("imageSize", [])
+            image_size=data.get("image_size", [])
         )
 
 @dataclass
 class Details:
     """Contains model information that cannot be updated at runtime."""
-    preprocessing_steps: List[str]
+    global_preprocessing: List[str]
     training_package: str
     training_algorithm: str
     base_model: str
@@ -28,9 +28,9 @@ class Details:
     def from_dict(cls, data: Dict[str, Any]) -> 'Details':
         """Creates a Details instance from a dictionary."""
         return cls(
-            preprocessing_steps=data.get("preprocessing_steps", []),
-            training_package=data.get("trainingPackage", ""),
-            training_algorithm=data.get("trainingAlgorithm", ""),
+            global_preprocessing=data.get("global_preprocessing", []),
+            training_package=data.get("training_package", ""),
+            training_algorithm=data.get("training_algorithm", ""),
             base_model=data.get("base_model", ""),
             defect_class_list=data.get("defect_class_list")
         )
@@ -53,12 +53,12 @@ class Configs:
         Creates a Configs instance from a dictionary, separating known fields
         from dynamic defect confidence scores.
         """
-        known_fields = {"thresholdMin", "thresholdMax"}
+        known_fields = {"threshold_min", "threshold_max"}
         
         # Initialize with known fields
         instance = cls(
-            threshold_min=data.get("thresholdMin"),
-            threshold_max=data.get("thresholdMax")
+            threshold_min=data.get("threshold_min"),
+            threshold_max=data.get("threshold_max")
         )
 
         for key, value in data.items():
@@ -126,7 +126,7 @@ class ModelCollection:
         return configs
 
 class ModelSchemaV_2:
-    """Schema for model version 2."""
+    """Model roles schema for gadget version 2."""
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> ModelCollection:
         """Creates a ModelCollection instance from a dictionary."""
