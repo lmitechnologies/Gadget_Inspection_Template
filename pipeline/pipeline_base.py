@@ -192,6 +192,8 @@ class PipelineBase(metaclass=ABCMeta):
 
         # filter configs to get target model keys
         target_model_keys = [k for k in model_roles.keys() if f'{filter}' in k]
+        
+        # load models
         for model_key in target_model_keys:
             config_to_use = parsed_model_roles[model_key]
             model_source = "Static" if 'static' in config_to_use['model_path'].split('/') else "GoFactory"
