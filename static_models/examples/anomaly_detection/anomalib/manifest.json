@@ -1,0 +1,26 @@
+[
+    {
+        "model_role": "ad_model",
+        "model_type": "AnomalyDetection",
+        "model_name": "Default",
+        "model_version": "Default",
+        "format": "pt",
+        "artifacts": {
+            "pt": {
+                "model_path": "./model_v1.pt",
+                "image_size": [
+                    224,
+                    224
+                ]
+            }
+        },
+        "details": {
+            "training_package": "Anomalib1",
+            "training_algorithm": "PatchCore",
+            "global_preprocessing": [],
+            "anomaly_size": 5,
+            "threshold_max": 30,
+            "threshold_min": 25
+        }
+    }
+]

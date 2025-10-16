@@ -1,0 +1,4 @@
+{
+    "model_role_one": ["object_class_a", "object_class_b"],
+    "model_role_two": ["object_class_c"]
+}   

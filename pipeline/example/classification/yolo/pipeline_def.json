@@ -1,18 +1,6 @@
 {
+    "model_roles": ["cls_model"],
     "configs_def":[
-        {
-            "name": "cls_model",
-            "default_value": {
-                "metadata":{
-                    "version": "v0",
-                    "model_name": "yolov8",
-                    "model_type": "classification",
-                    "framework": "ultralytics",
-                    "image_size": [224, 224],
-                    "model_path": "/home/gadget/pipeline/trt-engines/best.pt"
-                }
-            },
-            "comment": "none"
-        }
+        
     ]
 }

@@ -1,53 +1,73 @@
 [
     {
-
         "model_role": "foreground-od",
         "model_type": "ObjectDetection",
         "model_name": "Default",
         "model_version": "Default",
+        "artifacts": {
+            "pt": {
+                "model_path": "./model.pt",
+                "image_size": [
+                    384,
+                    384
+                ]
+            }
+        },
         "details": {
-            "model_path": "./model.pt",
-            "trainingPackage": "Ultralytics8",
-            "trainingAlgorithm": "Yolo",
-            "confidenceThreshold": 0.67,
-            "imageSize": [
-                384,
-                384
-            ]
+            "training_package": "Ultralytics8",
+            "training_algorithm": "Yolo",
+            "confidence_threshold": 0.67,
+            "object_class": ["object_one", "object_two"],
+            "iou": 0.45,
+            "object_size": 5,
+            "global_preprocessing": []
         }
     },
     {
-
         "model_role": "foreground-od",
         "model_type": "ObjectDetection",
         "model_name": "stuff",
         "model_version": "1",
+        "artifacts": {
+            "pt": {
+                "model_path": "./model.pt",
+                "image_size": [
+                    384,
+                    384
+                ]
+            }
+        },
         "details": {
-            "model_path": "./model.pt",
-            "trainingPackage": "Ultralytics8",
-            "trainingAlgorithm": "Yolo",
-            "confidenceThreshold": 0.67,
-            "imageSize": [
-                384,
-                384
-            ]
+            "training_package": "Ultralytics8",
+            "training_algorithm": "Yolo",
+            "confidence_threshold": 0.67,
+            "object_class": ["object_one", "object_two"],
+            "iou": 0.45,
+            "object_size": 5,
+            "global_preprocessing": []
         }
     },
     {
 
         "model_role": "forecasting-ad",
-        "model_type": "ObjectDetection",
+        "model_type": "AnomalyDetection",
         "model_name": "Default",
         "model_version": "Default",
+        "artifacts": {
+            "pt": {
+                "model_path": "./model.pt",
+                "image_size": [
+                    384,
+                    384
+                ]
+            }
+        },
         "details": {
-            "model_path": "./model.pt",
-            "trainingPackage": "Ultralytics8",
-            "trainingAlgorithm": "Yolo",
-            "confidenceThreshold": 0.67,
-            "imageSize": [
-                384,
-                384
-            ]
+            "training_package": "Anomalib0",
+            "training_algorithm": "PatchCore",
+            "thresholdMin": 3.5,
+            "thresholdMax": 5.5,
+            "global_preprocessing": []
         }
     }
 ]

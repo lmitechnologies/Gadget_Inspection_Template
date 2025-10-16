@@ -1,0 +1,26 @@
+[
+    {
+        "model_role": "cls_model",
+        "model_type": "Classification",
+        "model_name": "Default",
+        "model_version": "Default",
+        "format": "pt",
+        "artifacts": {
+            "pt": {
+                "model_path": "./best.pt",
+                "image_size": [
+                    224,
+                    224
+                ]
+            }
+        },
+        "details": {
+            "training_package": "Ultralytics",
+            "training_algorithm": "Yolov8",
+            "global_preprocessing": [],
+            "confidence_threshold": 0.5,
+            "object_size": 10,
+            "object_class": ["Australian_terrier", "Border_terrier", "Samoyed", "beagle", "Shih-Tzu", "English_foxhound", "Rhodesian_ridgeback", "dingo", "golden_retriever", "Old_English_sheepdog"]
+        }
+    }
+]    

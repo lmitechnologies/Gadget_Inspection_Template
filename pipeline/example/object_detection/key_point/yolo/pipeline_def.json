@@ -3,24 +3,6 @@
         "pose_model"
     ],
     "configs_def":[
-        {
-            "name": "pose_model",
-            "default_value": {
-                "use_factory": false,
-                "metadata":{
-                    "version": "v1",
-                    "model_name": "yolov11",
-                    "model_type": "pose",
-                    "framework": "ultralytics",
-                    "image_size": [640,640],
-                    "model_path": "/home/gadget/pipeline/trt-engines/yolo11n-pose.pt"
-                },
-                "iou": 0.45,
-                "object_configs": {
-                    "person": {"confidence": 0.5}
-                }
-            },
-            "comment": "none"
-        }
+     
     ]
 }

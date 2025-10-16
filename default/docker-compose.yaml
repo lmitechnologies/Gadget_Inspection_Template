@@ -138,6 +138,7 @@ services:
       - model-storage:/app/models
       - ../static_models:/app/static_models
       - ../config_files/automated_ad/automated_ad_config.json:/app/automated_ad_config.json
+      - ../config_files/model_manager/object_class_def.json:/app/object_class_def.json
     depends_on:
       api-gateway: 
         condition: service_healthy

@@ -34,14 +34,14 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, model_roles, configs):
+    def load(self, models, configs):
         """load the model(s)
 
         Args:
+            models (dict): model roles
             configs (dict): runtime configs
         """
-        # self.logger.info(f'registry: {AnomalyDetector._registry.keys()}')
-        self.load_models(model_roles, configs, 'ad_model')
+        self.load_models(models, configs, 'ad_model')
         self.logger.info('models are loaded')
     
     
@@ -83,10 +83,10 @@ class ModelPipeline(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        confs = configs['ad_model']['configs']
-        err_threshold = confs['err_threshold']
-        err_max = confs['err_max']
-        err_size = confs['err_size']
+        confs = configs['models']['ad_model']['configs']
+        err_threshold = confs['threshold_min']
+        err_max = confs['threshold_max']
+        err_size = confs['anomaly_size']
         
         # run the object detection model
         err_map = self.models['ad_model'].predict(image)
@@ -101,6 +101,7 @@ class ModelPipeline(Base):
         cnt = err_map[err_map>err_threshold].sum()
         decision = PASS if cnt<err_size else FAIL
         self.update_results('decision', decision, to_automation=True)
+        self.logger.info(f'decision: {decision}')
         
         # upload tags to GoFactory
         tag = PASS if decision == PASS else FAIL
@@ -114,25 +115,36 @@ class ModelPipeline(Base):
 
 
 if __name__ == '__main__':
+    import shutil
     # unit test
     BATCH_SIZE = 1
     pipeline_def_file = './pipeline/pipeline_def.json'
+    static_manifest_file = '/app/models/static/examples/anomaly_detection/anomalib/manifest.json'
     image_dir = './data'
-    output_dir = './outputs'
+    output_dir = './outputs/anomalib'
     fmt = 'png'
     
     logging.basicConfig()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     
+    # delete contents in the output dir
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    
     # load the pipeline definition
     kwargs = pipeline_utils.load_pipeline_def(pipeline_def_file)
+    
+    # create manifest for static models
+    manifest = pipeline_utils.get_models_from_static_manifest(static_manifest_file)
+    kwargs['models'] = manifest
     
     # initialize the pipeline
     pipeline = ModelPipeline(**kwargs)
     
     # load and warmup the model
-    pipeline.load({},kwargs)
+    pipeline.load(manifest, kwargs)
     pipeline.warm_up(kwargs)
 
     # load test images

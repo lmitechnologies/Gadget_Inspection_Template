@@ -30,14 +30,25 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, model_roles, configs):
-        """load the models"""
-        self.load_models(model_roles, configs, '_model')
+    def load(self, models, configs):
+        """load the model(s)
+
+            Args:
+                models (dict): model roles
+                configs (dict): runtime configs
+        """
+        self.load_models(models, configs, '_model')
         self.logger.info('models are loaded')
     
     
     @Base.track_exception(logger)
     def warm_up(self, configs):
+        """warm up the model for the first time
+
+            Args:
+                models (dict): model roles
+                configs (dict): runtime configs
+        """
         t1 = time.time()
         self.models['pose_model'].warmup()
         t2 = time.time()
@@ -75,14 +86,13 @@ class ModelPipeline(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        iou = configs['pose_model']['iou']
         hw = self.models['pose_model'].image_size
-        class_info = configs['pose_model']['object_configs']
-        confs = {k:v['confidence'] for k,v in class_info.items()}
-        
+        model_configs = configs['models']['pose_model']['configs']
+        confs = {k:v['confidence'] for k,v in model_configs.items() if isinstance(v, dict)}
+                
         # run the object detection model
         processed_im, operators = self.preprocess(image, hw)
-        results_kp, time_info = self.models['pose_model'].predict(processed_im, confs, operators, iou)
+        results_kp, time_info = self.models['pose_model'].predict(processed_im, confs, operators)
         
         # annotate the image using key points
         annotated_image = self.models['pose_model'].annotate_image(results_kp, image)
@@ -125,27 +135,39 @@ class ModelPipeline(Base):
 
 
 if __name__ == '__main__':
+    import shutil
     BATCH_SIZE = 1
     pipeline_def_file = './pipeline/pipeline_def.json'
+    static_manifest_file = '/app/models/static/examples/object_detection/key_point/yolo/manifest.json'
     image_dir = './data'
-    output_dir = './outputs'
-    fmt = 'jpg'
+    output_dir = './outputs/key_point'
+    fmts = ['jpg', 'png']
     
     logging.basicConfig()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     
+    # delete contents in the output dir
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # load the pipeline definition
     kwargs = pipeline_utils.load_pipeline_def(pipeline_def_file)
+    # create manifest for static models
+    manifest = pipeline_utils.get_models_from_static_manifest(static_manifest_file)
+    kwargs['models'] = manifest
+    
     pipeline = ModelPipeline(**kwargs)
     
     logger.info('start loading the pipeline...')
-    pipeline.load({},kwargs)
+    pipeline.load(manifest, kwargs)
     pipeline.warm_up(kwargs)
 
-    image_path_batches = pipeline_utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt=fmt)
-    z_scores = []
-    FOMs = []
-    filenames = []
+    image_path_batches = []
+    for fmt in fmts:
+        image_path_batches += pipeline_utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt=fmt)
+    
     for batch in image_path_batches:
         for image_path in batch:
             fname = os.path.basename(image_path)

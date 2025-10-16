@@ -11,6 +11,7 @@ from pipeline_base import PipelineBase as Base
 
 # functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
 import gadget_utils.pipeline_utils as pipeline_utils
+from image_utils.img_resize import resize_and_pad
 
 
 PASS = 'PASS'
@@ -35,13 +36,14 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, model_roles, configs):
+    def load(self, models, configs):
         """load the model(s)
 
         Args:
+            models (dict): model roles
             configs (dict): runtime configs
         """
-        self.load_models(model_roles, configs, "cls_model")
+        self.load_models(models, configs, "cls_model")
         self.logger.info('models are loaded')
     
     
@@ -69,7 +71,7 @@ class ModelPipeline(Base):
             img (numpy): a resized image
         """
         th,tw = hw
-        img = cv2.resize(image, (tw,th))
+        img = resize_and_pad(image, tw, th, maintain_aspect_ratio=True)
         return img
     
     
@@ -113,7 +115,7 @@ class ModelPipeline(Base):
         cv2.putText(annotated_image, f'{object_cls}: {score:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         
         # add the annotated image to the results
-        self.update_results('outputs',annotated_image, sub_key='annotated')
+        self.update_results('outputs', annotated_image, sub_key='annotated')
         
         # upload tags to GoFactory
         tag = PASS if decision == PASS else FAIL
@@ -130,24 +132,35 @@ class ModelPipeline(Base):
 
 if __name__ == '__main__':
     # unit test
+    import shutil
     BATCH_SIZE = 1
     pipeline_def_file = './pipeline/pipeline_def.json'
+    static_manifest_file = '/app/models/static/examples/classification/yolo/manifest.json'
     image_dir = './data'
-    output_dir = './outputs'
-    fmt = 'jpg'
+    output_dir = './outputs/cls'
+    fmt = 'JPEG'
     
     logging.basicConfig()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     
+    # delete contents in the output dir
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    
     # load the pipeline definition
     kwargs = pipeline_utils.load_pipeline_def(pipeline_def_file)
+    
+    # create manifest for static models
+    manifest = pipeline_utils.get_models_from_static_manifest(static_manifest_file)
+    kwargs['models'] = manifest
     
     # initialize the pipeline
     pipeline = ModelPipeline(**kwargs)
     
     # load and warmup the model
-    pipeline.load({},kwargs)
+    pipeline.load(manifest, kwargs)
     pipeline.warm_up(kwargs)
 
     # load test images

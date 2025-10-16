@@ -35,15 +35,15 @@ class ModelPipeline(Base):
         
     
     @Base.track_exception(logger)
-    def load(self, model_roles, configs):
+    def load(self, models, configs):
         """load the model(s)
 
         Args:
-            model_roles (dict): model roles
+            models (dict): model roles
             configs (dict): runtime configs
         """
         self.class_map = {v['index']:k for k,v in configs['od_model']['object_configs'].items()}
-        self.load_models(model_roles, configs, 'od_model', class_map=self.class_map)
+        self.load_models(models, configs, 'od_model', class_map=self.class_map)
         self.logger.info('models are loaded')
     
     
@@ -103,8 +103,14 @@ class ModelPipeline(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        confs = {k:v['confidence'] for k,v in configs['od_model']['object_configs'].items()} # confidence thresholds
-        
+        # TODO
+        # confs = {k:v['confidence'] for k,v in configs['models']['od_model']['configs'].items()} # confidence thresholds
+        # confs = configs['models']['od_model']['configs']
+        confs = {}
+        for k,v in configs['models']['od_model']['configs'].items():
+            if 'confidence' in k:
+                confs[k] = v
+    
         # run the object detection model
         hw = self.models['od_model'].image_size
         processed_im, operators = self.preprocess(image, hw)
