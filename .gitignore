@@ -7,4 +7,5 @@ models/*
 pipeline/trt-generation/**/*.engine
 custom.env
 pipeline/example/**/*.pt
+static_models/examples/**/*.pt
 pipeline/example/data

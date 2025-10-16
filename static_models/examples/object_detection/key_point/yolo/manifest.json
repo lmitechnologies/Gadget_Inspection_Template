@@ -1,0 +1,32 @@
+[
+    {
+        "model_role": "pose_model",
+        "model_type": "Pose",
+        "model_name": "Default",
+        "model_version": "Default",
+        "format": "pt",
+        "artifacts": {
+            "pt": {
+                "model_path": "./yolo11n-pose.pt",
+                "image_size": [
+                    640,
+                    640
+                ]
+            }
+        },
+        "details": {
+            "training_package": "Ultralytics",
+            "training_algorithm": "Yolo",
+            "base_model": "yolo11n-pose.pt",
+            "confidence_threshold": 0.5,
+            "iou": 0.45,
+            "object_size": 1,
+            "global_preprocessing": [],
+            "object_class": [
+                "person"
+            ]
+        }
+    }
+]    
+
+                    
