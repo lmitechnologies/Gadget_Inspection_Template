@@ -42,7 +42,8 @@ class ModelPipeline(Base):
             models (dict): model roles
             configs (dict): runtime configs
         """
-        self.class_map = {v['index']:k for k,v in configs['od_model']['object_configs'].items()}
+        # assume the order of class names is the same as that in the model configs
+        self.class_map = {i:k for i,k in enumerate(configs['models']['od_model']['configs'].keys())}
         self.load_models(models, configs, 'od_model', class_map=self.class_map)
         self.logger.info('models are loaded')
     
@@ -104,12 +105,7 @@ class ModelPipeline(Base):
         
         # load runtime config
         # TODO
-        # confs = {k:v['confidence'] for k,v in configs['models']['od_model']['configs'].items()} # confidence thresholds
-        # confs = configs['models']['od_model']['configs']
-        confs = {}
-        for k,v in configs['models']['od_model']['configs'].items():
-            if 'confidence' in k:
-                confs[k] = v
+        confs = {k:v['confidence'] for k,v in configs['models']['od_model']['configs'].items() if isinstance(v, dict)} # confidence thresholds
     
         # run the object detection model
         hw = self.models['od_model'].image_size
@@ -160,28 +156,41 @@ class ModelPipeline(Base):
 
 if __name__ == '__main__':
     # unit test
+    import shutil
     BATCH_SIZE = 1
     pipeline_def_file = './pipeline/pipeline_def.json'
+    static_manifest_file = '/app/models/static/examples/object_detection/bbox_and_segmentation/detectron2/manifest.json'
     image_dir = './data'
-    output_dir = './outputs'
-    fmt = 'jpg'
+    output_dir = './outputs/detectron2'
+    fmts = ['jpg', 'png']
     
     logging.basicConfig()
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     
+    # delete contents in the output dir
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+    
     # load the pipeline definition
     kwargs = pipeline_utils.load_pipeline_def(pipeline_def_file)
+    # create manifest for static models
+    manifest = pipeline_utils.get_models_from_static_manifest(static_manifest_file)
+    kwargs['models'] = manifest
     
     # initialize the pipeline
     pipeline = ModelPipeline(**kwargs)
     
     # load and warmup the model
-    pipeline.load({},kwargs)
+    pipeline.load(manifest, kwargs)
     pipeline.warm_up(kwargs)
 
     # load test images
-    image_path_batches = pipeline_utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt=fmt)
+    image_path_batches = []
+    for fmt in fmts:
+        image_path_batches += pipeline_utils.get_img_path_batches(BATCH_SIZE, image_dir, fmt=fmt)
+        
     for batch in image_path_batches:
         for image_path in batch:
             # load a image
