@@ -39,24 +39,24 @@ services:
   #   command: python3 pipeline/pipeline_class.py
 
 
-  example_pipeline_yolo_kpt:
-    build: 
-      context: .
-      dockerfile: x86.dockerfile
-      args:
-        - DOCKER_REPO=${DOCKER_REPO}
-        - PACKAGE_VER=${PACKAGE_VER}
-        - PYPI_SERVER=${PYPI_SERVER}
-    volumes:
-      - ./data/coco:/home/gadget/data/
-      - ./outputs:/home/gadget/outputs/
-      - ../../static_models:/app/models/static
-      - ./object_detection/key_point/yolo/pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
-      - ./object_detection/key_point/yolo/pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
-      - /opt/gadget/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
-    ipc: host
-    runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
-    command: python3 pipeline/pipeline_class.py
+  # example_pipeline_yolo_kpt:
+  #   build: 
+  #     context: .
+  #     dockerfile: x86.dockerfile
+  #     args:
+  #       - DOCKER_REPO=${DOCKER_REPO}
+  #       - PACKAGE_VER=${PACKAGE_VER}
+  #       - PYPI_SERVER=${PYPI_SERVER}
+  #   volumes:
+  #     - ./data/coco:/home/gadget/data/
+  #     - ./outputs:/home/gadget/outputs/
+  #     - ../../static_models:/app/models/static
+  #     - ./object_detection/key_point/yolo/pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
+  #     - ./object_detection/key_point/yolo/pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
+  #     - /opt/gadget/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
+  #   ipc: host
+  #   runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+  #   command: python3 pipeline/pipeline_class.py
 
 
   # example_pipeline_anomalib:
@@ -77,4 +77,23 @@ services:
   #   ipc: host
   #   runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
   #   command: python3 pipeline/pipeline_class.py
-    
+  
+  
+  example_pipeline_detectron2:
+    build: 
+      context: .
+      dockerfile: x86.dockerfile
+      args:
+        - DOCKER_REPO=${DOCKER_REPO}
+        - PACKAGE_VER=${PACKAGE_VER}
+        - PYPI_SERVER=${PYPI_SERVER}
+    volumes:
+      - ./data/coco:/home/gadget/data/
+      - ./outputs:/home/gadget/outputs/
+      - ../../static_models:/app/models/static
+      - ./object_detection/bbox_and_segmentation/detectron2/pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
+      - ./object_detection/bbox_and_segmentation/detectron2/pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
+      - /opt/gadget/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
+    ipc: host
+    runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    command: python3 pipeline/pipeline_class.py
