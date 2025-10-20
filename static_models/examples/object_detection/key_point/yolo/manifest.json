@@ -1,7 +1,7 @@
 [
     {
         "model_role": "pose_model",
-        "model_type": "Pose",
+        "model_type": "KeypointDetection",
         "model_name": "Default",
         "model_version": "Default",
         "format": "pt",

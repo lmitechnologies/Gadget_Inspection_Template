@@ -4,6 +4,7 @@
         "model_type": "ObjectDetection",
         "model_name": "Default",
         "model_version": "Default",
+        "format": "pt",
         "artifacts": {
             "pt": {
                 "model_path": "./model.pt",
@@ -28,6 +29,7 @@
         "model_type": "ObjectDetection",
         "model_name": "stuff",
         "model_version": "1",
+        "format": "pt",
         "artifacts": {
             "pt": {
                 "model_path": "./model.pt",
@@ -53,6 +55,7 @@
         "model_type": "AnomalyDetection",
         "model_name": "Default",
         "model_version": "Default",
+        "format": "pt",
         "artifacts": {
             "pt": {
                 "model_path": "./model.pt",

@@ -161,7 +161,7 @@ if __name__ == '__main__':
     pipeline_def_file = './pipeline/pipeline_def.json'
     static_manifest_file = '/app/models/static/examples/object_detection/bbox_and_segmentation/detectron2/manifest.json'
     image_dir = './data'
-    output_dir = './outputs/detectron2'
+    output_dir = './outputs/bbox_and_seg/detectron2'
     fmts = ['jpg', 'png']
     
     logging.basicConfig()
