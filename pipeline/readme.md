@@ -7,8 +7,8 @@ This pipeline template is designed for deploying AI models on the LMI runtime pl
 1. Read this document.
 2. Learn the pipeline examples in the **example** folder.
 3. Define the **Dockerfile** for your pipeline.
-4. Populate the **pipeline_def.json** with the necessary configurations.
-5. Follow the [how-to tutorial](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md) to implement the required functions for the pipeline class and implement a unit test in the `main` function within **pipeline_class.py**.
+4. Populate the **pipeline_def.json** and **../static_models/manifest.json** with the necessary configurations.
+5. Follow the [how-to tutorial](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md) to implement the required functions and implement a unit test in the `main` function within **pipeline_class.py**.
 7. Run and validate the unit test.
 
 ## Top-level Folder Strcuture
@@ -17,12 +17,9 @@ The pipeline folder consists of the following:
 
 ```plaintext
 .  
-├── how_to_guide.md  
+├── how_to.md  
 ├── example  
-├── trt-engines  
-├── trt-generation  
 ├── __init__.py  
-├── pipeline_base.py  
 ├── pipeline_class.py  
 ├── pipeline_def.json  
 ├── pipeline.dockerfile  
@@ -32,26 +29,28 @@ The pipeline folder consists of the following:
 
 ## Folder Contents
 
-**how_to_guide.md**: a guide showing how to populate the **pipeline_class.py** from scratch.  
+**how_to_guide.md**: a guide showing how to implement the **pipeline_class.py** from scratch.  
 **example**: a folder of examples that illustrate the implementation of pipeline classes for performing inspection tasks using varying AI models including object detection, instance segmentation, keypoint detection, classification and anomaly detection.  
-**trt-engines**: a folder containing the generated TensorRT engines, created from the models in the **trt-generation** folder. These engines are intended for deployment to production edge devices, such as GoMax.  
-**trt-generation**: a folder containing model weights and additional files required for generating TensorRT engines.  
-**pipeline_base.py**: the pipeline base class, which typically does **not** require modification.  
 **pipeline_class.py**: the implementation of the pipeline class. Several required functions must be implemented.  
-**pipeline_def.json**: this file defines the pipeline configurations, such as paths to trained models or confidence thresholds for classes. It must include a `configs_def` and `model_roles` keys. `model_roles` is a list of model role strings. Check more details in the [model role](#model-roles) section. `configs_def` is a list of custom entries to the configs database. Each element is a dictionary containing two required keys: `name` and `default_value`. The value of `default_value` must be of a JSON-serializable type. Check one example at the [how-to tutorial](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md).  
+**pipeline_def.json**: this file defines the pipeline configurations. It must include a `configs_def` and `model_roles` keys. 
+- `model_roles` is a list of model role strings. Check more details in the [model role](#model-roles) section. 
+- `configs_def` is a list of custom entries to the configs database. Each element is a dictionary containing two required keys: 
+  - `name`: The name of a config.
+  - `default_value`: The value of `default_value` must be of a JSON-serializable type.  
+
 **pipeline.dockerfile**: the Dockerfile that defines the pipeline container.  
 **requirements.txt**: this file specifies the Python libraries to be installed in the Docker container.  
 
 ## Pipeline Class API
 
-The Gadget pipeline class, to be implemented in the **pipeline_class.py**, is responsible for loading configurations (e.g., confidence thresholds, paths to trained AI models, model hyperparameters, etc.), loading and warming up models, making predictions, and cleaning up models. The pipeline class inherits from the base class defined in the **pipeline_base.py** to simplify implementation.   
+The Gadget pipeline class, to be implemented in the **pipeline_class.py**, is responsible for loading configurations (e.g., confidence thresholds, paths to trained AI models, model hyperparameters, etc.), loading and warming up models, making predictions, and cleaning up models. The pipeline class inherits from the [base class](https://github.com/lmitechnologies/LMI_AI_Solutions/blob/trevor_dev/lmi_utils/pipeline_base/pipeline_base.py) to simplify implementation.   
 To complete these tasks listed above, the following functions must be implemented in the pipeline class:
 
 1. **def \_\_init\_\_(self, `**kwargs`) -> None:**  
     This function initializes the pipeline class. The `kwargs` argument contains the key-value pairs defined in the **pipeline_def.json**.
-2. **def load(self, `model_roles`: dict, `configs`: dict) -> None:**  
+2. **def load(self, `models`: dict, `configs`: dict) -> None:**  
     This function loads the models and stores them in the `self.models` variable defined in the base class. The `configs` argument contains runtime key-value pairs, where the keys match those in the **pipeline_def.json** and the values may differ. 
-3. **def warm_up(self, `model_roles`: dict, `configs`: dict) -> None:**  
+3. **def warm_up(self, `configs`: dict) -> None:**  
     This function receives the `configs` and runs the models for the first time using dummy inputs.
 4. **def predict(self, `configs`: dict, `inputs`: dict) -> dict:**  
     This function receives the `inputs` and `configs`, makes predictions, adds annotations to the image, and returns the annotated image along with the model results. Refer to the [Pipeline Inputs](#pipeline-inputs) section for the details of `inputs`. This function must return a `self.results` dictionary defined in the base class.  
@@ -67,7 +66,7 @@ Additionally, it is recommended that developers define a unit test in the main f
 A model role is a part of the inspection process that is associated with a AI model. A single inspection might consist of multiple model roles: an anomaly detector and an object detector. Model roles are defined in GoFactory and are associated with a pipeline in the pipeline_def.json using the **model_roles** key. The key's value must be a list of strings. 
 
 ### Loading Models
-Models are loaded through the model manager and selected using the model management page of the GadgetApp. Models are either `static` or from GoFactory. GoFactory models are generated by GoFactory and downloaded by the model manager. `Static` models are defined and stored locally. Static artifacts should be stored in the static_models directory and should be configured in the static models `manifest.json`. More information on static models can be found [here](../static_models/README.md)
+Models are loaded through the model manager and selected using the model management page of the GadgetApp. Models are either `static` or from GoFactory. GoFactory models are generated by GoFactory and downloaded by the model manager. `Static` models are defined and stored locally. Static artifacts should be stored in the `../static_models` directory and should be configured in the static models `manifest.json`. More information on static models can be found [here](../static_models/README.md)
 
 On load, the `models` dictionary is passed to the pipeline class load method. The dictionary contains the selected model for each model role. The dictionary is structured like this:
 
@@ -97,7 +96,7 @@ On load, the `models` dictionary is passed to the pipeline class load method. Th
 }
 ```
 
-The LMI_AI_Solutions repo provides wrappers for several of the most popular model architectures. Those wrappers are designed to consume the models dictionary when loading models. 
+The [LMI_AI_Solutions repo](https://github.com/lmitechnologies/LMI_AI_Solutions) provides wrappers for several of the most popular model architectures. Those wrappers are designed to consume the models dictionary when loading models. 
 
 Example:
 
@@ -110,6 +109,7 @@ The static models
         "model_type": "ObjectDetection",
         "model_name": "stuff",
         "model_version": "1",
+        "format": "pt",
         "artifacts": {
             "pt": {
                 "model_path": "./model.pt",
@@ -135,6 +135,7 @@ The static models
         "model_type": "AnomalyDetection",
         "model_name": "Default",
         "model_version": "Default",
+        "format": "pt",
         "artifacts": {
             "pt": {
                 "model_path": "./model.pt",
@@ -227,25 +228,6 @@ would be sent to the load method like this
     "model_version": "Default"
   }
 }
-```
-
-## Upload Predictions to Label Studio
-
-The Gadget supports uploading model prediction results to [Label Studio](https://labelstud.io) for human labeling enabling dataset expansion and model performance improvement. 
-
-Use the **add_prediction** function defined in the pipeline base class to add prediction data to Label Studio. Here is the example:
-
-```python
-# assume that a model returns the following:
-box = [100,150,450,400] 
-polygon = [[10,3],[11,4],[14,6],[20,9]]
-score = 0.95
-name = 'people'
-h,w = 1024,1204 # height and width of the input image
-
-# add both to label studio
-self.add_prediction('boxes',box,score,name,h,w)
-self.add_prediction('polygons',polygon,score,name,h,w)
 ```
 
 
