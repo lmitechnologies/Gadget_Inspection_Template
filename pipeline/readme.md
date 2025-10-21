@@ -8,7 +8,7 @@ This pipeline template is designed for deploying AI models on the LMI runtime pl
 2. Learn the pipeline examples in the **example** folder.
 3. Define the **Dockerfile** for your pipeline.
 4. Populate the **pipeline_def.json** and **../static_models/manifest.json** with the necessary configurations.
-5. Follow the [how-to tutorial](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md) to implement the required functions and implement a unit test in the `main` function within **pipeline_class.py**.
+5. Follow the [how-to guide](https://github.com/lmitechnologies/Gadget_Inspection_Template/blob/main/pipeline/how-to.md) to implement the required functions and implement a unit test in the `main` function within **pipeline_class.py**.
 7. Run and validate the unit test.
 
 ## Top-level Folder Strcuture
@@ -29,7 +29,7 @@ The pipeline folder consists of the following:
 
 ## Folder Contents
 
-**how_to_guide.md**: a guide showing how to implement the **pipeline_class.py** from scratch.  
+**how_to.md**: a guide showing how to implement the **pipeline_class.py** from scratch.  
 **example**: a folder of examples that illustrate the implementation of pipeline classes for performing inspection tasks using varying AI models including object detection, instance segmentation, keypoint detection, classification and anomaly detection.  
 **pipeline_class.py**: the implementation of the pipeline class. Several required functions must be implemented.  
 **pipeline_def.json**: this file defines the pipeline configurations. It must include a `configs_def` and `model_roles` keys. 

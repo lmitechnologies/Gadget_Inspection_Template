@@ -1,5 +1,5 @@
 # How to Modify the Gadget AI Pipeline
-This guide provides a detailed walkthrough for developers on how to implement the `pipeline_class.py` file. This script is the core of your custom AI logic within the Gadget platform.
+This guide provides a detailed walkthrough for developers on how to implement `pipeline_class.py` file. This script is the core of your custom AI logic within the Gadget platform.
 
 # Overview
 The `pipeline_class.py` file is where you define your pipeline's behavior. It is responsible for:
@@ -9,16 +9,16 @@ The `pipeline_class.py` file is where you define your pipeline's behavior. It is
 3. Execute inference on input data.
 4. Format the results for use by other services like GoFactory and automation controllers.
 
-Your custom class, `ModelPipeline`, will inherit from a [`PipelineBase` class](https://github.com/lmitechnologies/LMI_AI_Solutions/blob/trevor_dev/lmi_utils/pipeline_base/pipeline_base.py), which provides a robust set of helper functions to simplify development.  
+Your custom class, `ModelPipeline`, will inherit from [PipelineBase class](https://github.com/lmitechnologies/LMI_AI_Solutions/blob/trevor_dev/lmi_utils/pipeline_base/pipeline_base.py), which provides a robust set of helper functions to simplify development.  
 In this guide, some helpful utility functions are imported from the [LMI AI Solutions (AIS) repository](https://github.com/lmitechnologies/LMI_AI_Solutions).
 
 # Understanding the Core Components
 Before writing code, you must understand these key components:
 
-- `PipelineBase` Class: The base class for your pipeline. It provides essential tools like model loaders, result formatters, and exception tracking.    
-- `pipeline_def.json`: Your pipeline's main configuration file. The contents of this file are passed as the `configs` dictionary to your pipeline's methods. This allows you to define pipeline related configurations.  
-- `../static_models/manifest.json`: A collection of static models information, such as model paths, model roles, model types, etc. We call it `manifest.json` thoughout this tutorial. 
-- Model Roles: A concept for associating a specific model with a step in the inspection process (e.g., 'anomaly_model', 'detection_model'). These are defined both in `pipeline_def.json` and `manifest.json`, and used by the base class to load the correct model.  
+- PipelineBase Class: The base class for your pipeline. It provides essential tools like model loaders, result formatters, and exception tracking.    
+- `pipeline_def.json`: Your pipeline's main configuration file. The contents of this file are passed as `configs` dictionary to your pipeline's methods. This allows you to define pipeline related configurations.  
+- `../static_models/manifest.json`: A collection of static model configurations, such as model paths, model roles, model types, etc. We call it `manifest.json` unless mentioned otherwise.  
+- Model Roles: A concept for associating a specific model with a step in the inspection process (e.g., 'anomaly_model', 'detection_model'). These are defined both in `pipeline_def.json` and `manifest.json`, and used by the base class to load correct model(s).  
 - `self.models`: An ordered dictionary initialized in the base class. Your `load()` function must populate it using model instances.  
 - `self.results`: A dictionary that holds the output of pipeline prediction. Your `predict()` function must populate and return it.
 
@@ -26,7 +26,7 @@ Before writing code, you must understand these key components:
 # Step-by-Step Implementation Guide
 This section will walk you through implementing each required method.
 
-## Step 1: Configure the `pipeline_def.json`
+## Step 1: Configure `pipeline_def.json`
 Before writing any Python code, you must first define your pipeline's configuration. This file acts as the blueprint for your pipeline, specifying which models to use and what parameters to apply at runtime.
 
 Here is an example configuration for a pipeline that uses a single model:
@@ -46,7 +46,7 @@ Here is an example configuration for a pipeline that uses a single model:
 }
 ```
 
-## Step 2: Configure the `../static_models/manifest.json`
+## Step 2: Configure `../static_models/manifest.json`
 You need to define the static model manifest file, which consists of a list of static model configurations. Below is an example of using a single model:
 ```json
 [
@@ -106,7 +106,7 @@ class ModelPipeline(Base):
 ```
 
 ## Step 4: Implementing `load()`
-The goal of `load()` is to populate the `self.models` dictionary. The example below uses the `self.load_models()` helper method from the base class. It uses the `filter` argument to select which model(s) to load. For example, a `filter` of `"-model"` would match configurations named both `"pose-model"` and `"detection-model"`.
+The goal of `load()` is to populate `self.models` dictionary. The example below uses `self.load_models()` helper method from the base class. It uses `filter` argument to select which model(s) to load. For example, a `filter` of `"-model"` would match configurations named both `"pose-model"` and `"detection-model"`.
 
 ### 4.1 Basic Example
 This call finds the configuration named `"pose_model"` from `manifest.json` and loads the corresponding model into `self.models['pose_model']`.
@@ -115,13 +115,13 @@ This call finds the configuration named `"pose_model"` from `manifest.json` and 
     @Base.track_exception(logger)
     def load(self, models, configs):
         """Load the pose model."""
-        # '_model' is the filter that matches the model_role in `manifest.json` and match that in model_roles within `pipeline_def.json`
-        self.load_models(models, configs, '_model')
+        # '_model' is the filter that matches the model_role in `manifest.json` and in `pipeline_def.json`
+        self.load_models(models, configs, filter='_model')
         self.logger.info('Models are loaded')
 ```
 
 ### 4.2 Advanced Example
-You can also perform custom setup and pass additional keyword arguments to your model's constructor through `load_models`. Here, a `class_map` is created and passed along to the model during its initialization.
+You can also perform custom setup and pass additional keyword arguments to your model's constructor through `load_models`. Here, an additional keyword `class_map` is passed along during its initialization.
 
 ```python
     @Base.track_exception(logger)
@@ -151,7 +151,7 @@ Here, you access each model you loaded into `self.models` and call its `warmup()
 This is the most involved method. It follows a clear sequence: initialize, get data, predict, and format results.
 
 ### 6.1. Initialize and Get Inputs
-Always start by calling `self.init_results()` to get a clean result dictionary for the current run. Then, extract your image data from the `inputs` dictionary.
+Always start by calling `self.init_results()` to get a clean result dictionary for the current run. Then, extract your image data from `inputs` dictionary.
 
 ```python
     @torch.inference_mode()
@@ -165,24 +165,24 @@ Always start by calling `self.init_results()` to get a clean result dictionary f
 ```
 
 ### 6.2. Get Runtime Configurations
-Extract any necessary parameters (like confidence or IoU thresholds) from the `configs['models']` dictionary, which has all the model related configurations.
+Extract any necessary parameters (like confidence or IoU thresholds) from `configs['models']` dictionary, which has all the model related configurations.
 
 ```python
-        # Get runtime parameters from the configs dictionary.
+        # Get runtime parameters from configs dictionary.
         confs = configs['models']['pose_model']['configs']
         iou_threshold = confs['iou']
         confidence_thresholds = {k:v['confidence'] for k,v in model_configs.items() if isinstance(v, dict)}
 ```
 
 ### 6.3. Run Inference
-This part is specific to your model. Call the `predict` method of your model object, which you access from `self.models`.
+This part is specific to your model. Call `predict` method of your model object.
 
 ```python
         model_results = self.models['pose_model'].predict(image, confidence_thresholds, iou=iou_threshold)
 ```
 
 ### 6.4. Format and Return Results
-Use the `update_results()` and `add_prediction()` helper methods to correctly populate the `self.results` dictionary.
+Use `update_results()` and `add_prediction()` helper methods to correctly populate `self.results`.
 
 - `update_results()`: Use this for updating results.  
     - To add the annotated image for display: `self.update_results('outputs', annotated_image, sub_key='annotated')`
@@ -194,7 +194,7 @@ Use the `update_results()` and `add_prediction()` helper methods to correctly po
 ```python
         # Populate the results dictionary using base class helpers.
         
-        # Add the annotated image to the 'outputs' dictionary for display in Gadget.
+        # Add the annotated image to 'outputs' dictionary for display in Gadget.
         annotated_image = self.models['pose_model'].annotate_image(model_results, image)
         self.update_results('outputs', annotated_image, sub_key='annotated')
         
@@ -221,16 +221,16 @@ Use the `update_results()` and `add_prediction()` helper methods to correctly po
 
 # How to Write a Unit Test
 
-Implementing a unit test in the if `__name__ == '__main__'`: block is mandatory for validating your pipeline locally before deployment.
+Implementing a unit test in `if __name__ == '__main__':` block is mandatory for validating your pipeline locally before deployment.
 
 Your test should follow this structure:
 
 1. Setup: Define paths and configure logging.
-2. Load Configs: Load the `pipeline_def.json` file using the provided utility.
-3. Load manifest for static models in the `../static_models` folder.
+2. Load Configs: Load `pipeline_def.json` file using the provided utility.
+3. Load manifest for static models in `../static_models` folder.
 4. Instantiate Pipeline: Create an instance of your `ModelPipeline`.
-5. Load & Warmup: Call `pipeline.load()` and `pipeline.warm_up()`. Note: For local testing, pass an empty dictionary {} for the `model_roles` argument.
-6. Run Prediction: Loop through test images, prepare the inputs dictionary in the correct format, and call `pipeline.predict()`.
+5. Load & Warmup: Call `pipeline.load()` and `pipeline.warm_up()`. Note: For local testing, pass an empty dictionary {} for `model_roles` argument.
+6. Run Prediction: Loop through test images, prepare the inputs dictionary, and call `pipeline.predict()`.
 7. Validate & Save: Use `pipeline.check_return_types()` to ensure the result is correctly formatted. Save the annotated image to visually inspect the output.
 8. Cleanup: Call `pipeline.clean_up()` to release resources.
 
