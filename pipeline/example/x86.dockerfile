@@ -12,7 +12,7 @@ WORKDIR /home/gadget
 
 # Install detectron2
 RUN git clone https://github.com/facebookresearch/detectron2 detectron2
-RUN pip install -e detectron2
+RUN pip install --no-build-isolation -e detectron2
 RUN pip install scikit-learn
 RUN pip install tensorboard
 RUN pip install numba
