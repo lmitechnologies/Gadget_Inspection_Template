@@ -29,7 +29,7 @@ RUN anomalib install --option core
 RUN pip install onnx
 
 # clone LMI AI Solutions repository
-RUN git clone -b trevor_dev https://github.com/lmitechnologies/LMI_AI_Solutions.git
+RUN git clone -b v1.1.0 https://github.com/lmitechnologies/LMI_AI_Solutions.git
 RUN cd LMI_AI_Solutions && git submodule update --init object_detectors/submodules/yolov5
 RUN cd LMI_AI_Solutions && pip3 install -e object_detectors && pip3 install -e anomaly_detectors && pip3 install -e lmi_utils && pip3 install -e classifiers
 
