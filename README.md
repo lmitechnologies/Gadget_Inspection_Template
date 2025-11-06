@@ -378,11 +378,12 @@ make up
 ---
 
 ### 6. `down`
-Stop and remove containers using the resolved Docker Compose file.
+Stop and remove containers using the resolved Docker Compose file. Option to delete volumes as well.
 
 **Usage:**
 ```bash
 make down
+make down VOLUMES=y
 ```
 
 ---
