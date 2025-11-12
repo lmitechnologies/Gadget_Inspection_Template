@@ -17,7 +17,7 @@ The automation server API is a list of methods that the automation class must im
 - def send_action(self, action: str, aux_info: List[str]) -> List[str]:
   - Sends the action to the automation machine. It takes the result of decision_mapping as its arguments, a string representing the action and a list of strings representing any metadata. Optionally returns list of tags to send to GoFactory
 
-## Configs JSON File
+## Automation Definition JSON File
 
 In addition to custom code, the automation server expects a JSON file the defines any configs to be stored in the database. The JSON file must include at least the keys *configs_def* and *configs_with_handlers* which both go to a list of objects.
 
@@ -66,6 +66,15 @@ The value associated with the key *handler* must be a method defined in the auto
             }
         ]
     }
+
+An aditional optional key is *custom_tasks*. The value of which must be a list of objects. This how the designer of a automation class can define custom tasks to be added to the event loop. The objects in the list must be in this format:
+
+    {
+        "name": "method_name",  //Name of the method
+        "args": {}              // Arguments that are passed to the method
+    }
+
+The method must be an instance method of the Automation class and it must be an async method. 
 
 ## Dockerfile
 
