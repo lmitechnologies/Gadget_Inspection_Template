@@ -1,4 +1,4 @@
-# Gadget_Inspection_Template
+# Gadget Inspection Template
 
 The gadget is made up of several docker containers. To run it you will need to have docker and docker-compose installed on your machine.
 
@@ -79,7 +79,7 @@ By default the Gadget services expect the it the use the host **api-gateway** an
     database-api:
         container_name: gadget-database-api
         image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/database_api:${PACKAGE_VER}
-        restart: unless-stopped**DATA_BROKER_SUB_PORT**, and **DATA_BROKER_PUB_PORT**
+        restart: unless-stopped
             
     api-gateway:
         container_name: gadget-api-gateway
@@ -260,8 +260,8 @@ This file must be a list of dictionary objects, each following this pattern:
     "model_version": "Default",
     "info": {
         "model_path": "default/model.pt",
-        "trainingPackage": "",
-        "trainingAlgorithm": ""
+        "training_package": "",
+        "training_algorithm": ""
     }
 }
 ```
@@ -320,7 +320,7 @@ Include the flag -v after down to also delete the volumes, including the databas
 
 ## Variables
 - **`LINE`**: Specifies the configuration line to use from `YAML_FILE`. Default: `default`.
-- **`NO-CACHE`**: Specifies whether to use Docker's `--no-cache` during builds. Accepts `y` for no-cache, defaults to `n`.
+- **`NO_CACHE`**: Specifies whether to use Docker's `--no-cache` during builds. Accepts `y` for no-cache, defaults to `n`.
 - **`SERVICE`**: Optional variable for `restart` to specify a single service to restart.
 
 ## Targets
