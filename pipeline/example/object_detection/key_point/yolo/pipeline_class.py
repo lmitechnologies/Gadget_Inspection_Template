@@ -88,7 +88,7 @@ class ModelPipeline(Base):
         # load runtime config
         hw = self.models['pose_model'].image_size
         model_configs = configs['models']['pose_model']['configs']
-        confs = {k:v['confidence'] for k,v in model_configs.items() if isinstance(v, dict)}
+        confs = model_configs['confidence']
                 
         # run the object detection model
         processed_im, operators = self.preprocess(image, hw)

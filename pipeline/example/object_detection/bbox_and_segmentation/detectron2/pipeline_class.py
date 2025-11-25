@@ -43,7 +43,7 @@ class ModelPipeline(Base):
             configs (dict): runtime configs
         """
         # assume the order of class names is the same as that in the model configs
-        self.class_map = {i:k for i,k in enumerate(configs['models']['od_model']['configs'].keys())}
+        self.class_map = {i:k for i,k in enumerate(configs['models']['od_model']['configs']['confidence'].keys())}
         self.load_models(models, configs, 'od_model', class_map=self.class_map)
         self.logger.info('models are loaded')
     
@@ -104,8 +104,7 @@ class ModelPipeline(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        # TODO
-        confs = {k:v['confidence'] for k,v in configs['models']['od_model']['configs'].items() if isinstance(v, dict)} # confidence thresholds
+        confs = configs['models']['od_model']['configs']['confidence'] # confidence thresholds
     
         # run the object detection model
         hw = self.models['od_model'].image_size

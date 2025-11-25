@@ -76,9 +76,8 @@ class ModelPipeline(Base):
         # load runtime config
         hw = self.models['seg_model'].image_size
         model_configs = configs['models']['seg_model']['configs']
-        # TODO
-        iou = model_configs.get('iou', 0.5)
-        confs = {k:v['confidence'] for k,v in model_configs.items() if isinstance(v, dict)}
+        iou = model_configs['iou']
+        confs = model_configs['confidence']
         # run the object detection model
         processed_im, operators = self.preprocess(image, hw)
         results_dict, time_info = self.models['seg_model'].predict(processed_im, confs, operators)
