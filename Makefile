@@ -1,9 +1,18 @@
+include .env
+export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' .env)
+
 YAML_FILE = line_config.yaml
 ENV_FILE = custom.env
 LINE ?= default
 NO_CACHE ?= n
 
-.PHONY: init build up down restart help
+DEV_HOSTNAME := $(shell hostname | sed 's/.*\(......\)/\1/')
+DEV_HOSTNAME_OCTAL := $(shell echo -n ${DEV_HOSTNAME} | od -A n -t o1 | sed -r 's/\s+//g')
+INSPECTION_VERSION ?= dev-${DEV_HOSTNAME_OCTAL}
+
+LATEST ?= false
+
+.PHONY: init build up down restart auth help
 
 init:
 	@if [ -z "$(LINE)" ]; then \
@@ -64,7 +73,7 @@ build: check_file
 		exit 1; \
 	fi; \
 	echo "Using $$DOCKER_COMPOSE_FILE"; \
-	docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE build $(no_cache) 
+	INSPECTION_VERSION=$(INSPECTION_VERSION) docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE build $(no_cache)
 
 pull: check_file
 	@DOCKER_COMPOSE_FILE=$(resolve_compose_file); \
@@ -74,6 +83,51 @@ pull: check_file
 	fi; \
 	echo "Using $$DOCKER_COMPOSE_FILE"; \
 	docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE pull
+
+push: check_file
+	@DOCKER_COMPOSE_FILE=$(resolve_compose_file); \
+	if [ ! -f "$$DOCKER_COMPOSE_FILE" ]; then \
+		echo "Error: Docker Compose file not found at $$DOCKER_COMPOSE_FILE."; \
+		exit 1; \
+	fi; \
+	echo "Using $$DOCKER_COMPOSE_FILE"; \
+	\
+	BV="$(INSPECTION_VERSION)"; \
+	if [ -z "$$BV" ]; then \
+		echo "Error: INSPECTION_VERSION is not set"; \
+		exit 1; \
+	fi; \
+	echo "INSPECTION_VERSION=$$BV"; \
+	\
+	echo ""; \
+	echo "Discovering images with tag :$$BV ..."; \
+	\
+	INSPECTION_VERSION=$(INSPECTION_VERSION) docker compose \
+		--env-file .env \
+		--env-file $(ENV_FILE) \
+		-f "$$DOCKER_COMPOSE_FILE" \
+		config | \
+		sed -n 's/^[[:space:]]*image:[[:space:]]*\(.*\)/\1/p' | \
+		sort -u | \
+		while read -r img; do \
+			if [ -z "$$img" ]; then continue; fi; \
+			case "$$img" in \
+				*:"$$BV") \
+					echo ""; \
+					echo ">>> Pushing versioned image: $$img"; \
+					docker push "$$img"; \
+					if [ "$(LATEST)" = "true" ]; then \
+						base=$${img%:*}; \
+						echo "Tagging $$img as $$base:latest"; \
+						docker tag "$$img" "$$base:latest"; \
+						echo "Pushing $$base:latest"; \
+						docker push "$$base:latest"; \
+					fi; \
+					;; \
+				*) \
+					;; \
+			esac; \
+		done;
 
 up: check_file
 	@DOCKER_COMPOSE_FILE=$(resolve_compose_file); \
@@ -109,11 +163,25 @@ restart: check_file
 		docker compose --env-file .env --env-file $(ENV_FILE) -f $$DOCKER_COMPOSE_FILE restart $(SERVICE); \
 	fi
 
+REGISTRY_HOST="$(REGION)-docker.pkg.dev"
+auth: check_file
+	@printf "\nContainer Registry Host: %s\n" "$(REGISTRY_HOST)"
+	@printf "Authenticating to container registry...\n"
+	@printf "Enter authentication token: "
+
+	@read TOKEN; \
+	echo "$$TOKEN" | docker login \
+	    -u oauth2accesstoken \
+	    --password-stdin "https://$(REGISTRY_HOST)"
+
+		
 help:
 	@echo "Available targets:"
 	@echo "  init      - Generate an .env file based on LINE from YAML_FILE"
 	@echo "  build     - Build Docker images using the resolved compose file"
 	@echo "  pull      - Pull images defined in the compose file"
+	@echo "  push      - Push images defined in the compose file"
 	@echo "  up        - Start the services defined in the compose file"
 	@echo "  down      - Stop and remove containers"
 	@echo "  restart   - Restart services"
+	@echo "  auth      - Authenticate with GCP Container Registry"

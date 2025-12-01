@@ -1,5 +1,6 @@
 default:
   DOCKER_PLATFORM: linux/amd64  # Options: linux/amd64, linux/arm64/v8
+  INSPECTION_VERSION: latest
   FACTORY_CLIENT_ID:
   GADGET_DEVICE_ID:
   VAULT_CREDENTIAL:

@@ -1,0 +1,70 @@
+name: Generate GCP Access Token
+
+on:
+  workflow_dispatch:
+
+  workflow_call:
+    outputs:
+      project_id:
+        description: "Computed GCP project id"
+        value: ${{ jobs.generate-token.outputs.project_id }}
+      access_token:
+        description: "GCP access token"
+        value: ${{ jobs.generate-token.outputs.access_token }}
+
+jobs:
+  generate-token:
+    runs-on: ubuntu-latest
+
+    outputs:
+      project_id: ${{ steps.proj.outputs.project_id }}
+      access_token: ${{ steps.token.outputs.access_token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute GCP Project ID from repo name
+        id: proj
+        run: |
+          # GITHUB_REPOSITORY is "owner/factorysmart-dev-1-gadget"
+          REPO="${GITHUB_REPOSITORY##*/}"      # -> "factorysmart-dev-1-gadget"
+          PROJECT="${REPO%-gadget}"            # -> "factorysmart-dev-1"
+          echo "project_id=$PROJECT" >> "$GITHUB_OUTPUT"
+          echo "Using project: $PROJECT"
+
+      - name: Write service account key to file
+        run: |
+          echo '${{ secrets.SA_KEY }}' > sa-key.json
+          chmod 600 sa-key.json
+
+      - name: Install gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ steps.proj.outputs.project_id }}
+
+      - name: Activate service account (same as local)
+        run: |
+          gcloud auth activate-service-account \
+            --key-file=sa-key.json \
+            --project=${{ steps.proj.outputs.project_id }}
+
+      - name: Generate access token
+        id: token
+        run: |
+          TOKEN=$(gcloud auth print-access-token)
+
+          # expose as step output (for reusable workflow callers)
+          echo "access_token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+          # optional: still print it for manual runs
+          echo "Access token for project: ${{ steps.proj.outputs.project_id }}"
+          echo ""
+          echo "================ ACCESS TOKEN ================"
+          echo "$TOKEN"
+          echo "================================================"
+          echo ""
+
+      - name: Clean up
+        run: |
+          rm sa-key.json

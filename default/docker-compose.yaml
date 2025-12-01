@@ -154,7 +154,8 @@ services:
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
       dockerfile: pipeline.dockerfile
-    image: pipeline:${PACKAGE_VER}
+    image: ${REGION}-docker.pkg.dev/${CLOUD_PROJECT_ID}/artifact-repo/${DOCKER_PLATFORM}/pipeline:${INSPECTION_VERSION}
+    platform: ${DOCKER_PLATFORM:-}
     restart: unless-stopped
     environment:
       - SERVICE_TYPE=pipeline
@@ -187,7 +188,8 @@ services:
       args:
         PACKAGE_VER: ${PACKAGE_VER}
         PYPI_SERVER: ${PYPI_SERVER}
-    image: automation:${PACKAGE_VER}
+    image: ${REGION}-docker.pkg.dev/${CLOUD_PROJECT_ID}/artifact-repo/${DOCKER_PLATFORM}/automation:${INSPECTION_VERSION}
+    platform: ${DOCKER_PLATFORM:-}
     restart: unless-stopped
     environment:
       - SERVICE_NAME=automation

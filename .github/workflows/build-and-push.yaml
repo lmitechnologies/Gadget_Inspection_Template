@@ -1,0 +1,82 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      line:
+        description: "Optional line parameter for make init"
+        required: false
+        default: "default"
+
+jobs:
+  token:
+    uses: ./.github/workflows/generate-access-token.yaml
+    secrets: inherit
+
+  build-and-push:
+    needs: token
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load .env and export REGION
+        run: |
+          set -o allexport
+          source .env
+          set +o allexport
+          echo "REGION=$REGION" >> "$GITHUB_ENV"
+
+      - name: Run init
+        run: make init LINE=${{ github.event.inputs.line }}
+
+      - name: Load DOCKER_PLATFORM from custom.env
+        run: |
+          if [ -f custom.env ]; then
+            set -o allexport
+            source custom.env
+            set +o allexport
+            : "${DOCKER_PLATFORM:=linux/amd64}"
+          else
+            echo "custom.env not found, defaulting DOCKER_PLATFORM=linux/amd64"
+            DOCKER_PLATFORM=linux/amd64
+          fi
+
+          echo "Using DOCKER_PLATFORM=$DOCKER_PLATFORM"
+          echo "DOCKER_PLATFORM=$DOCKER_PLATFORM" >> "$GITHUB_ENV"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Show version / token source
+        run: |
+          echo "Project: ${{ needs.token.outputs.project_id }}"
+          echo "Region: $REGION"
+          echo "DOCKER_PLATFORM: $DOCKER_PLATFORM"
+
+      - name: Export access token to env
+        run: |
+          echo "ACCESS_TOKEN=${{ needs.token.outputs.access_token }}" >> "$GITHUB_ENV"
+
+      - name: Run build (Buildx / DOCKER_PLATFORM)
+        run: |
+          echo "Building for platform: $DOCKER_PLATFORM"
+          make build \
+            INSPECTION_VERSION="dev-${{ github.run_number }}" \
+            DOCKER_PLATFORM="$DOCKER_PLATFORM"
+
+      - name: Login to Artifact Registry and push
+        run: |
+          REGISTRY_HOST="${REGION}-docker.pkg.dev"
+
+          echo "$ACCESS_TOKEN" | docker login \
+            -u oauth2accesstoken \
+            --password-stdin "https://$REGISTRY_HOST"
+
+          echo "Pushing images built for $DOCKER_PLATFORM ..."
+          make push \
+            INSPECTION_VERSION="dev-${{ github.run_number }}" \
+            LATEST=true
