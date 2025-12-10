@@ -2,13 +2,10 @@
     "version": 1,
     "configForms": {
         "sensor": {
-            "configs": []
         },
         "pipeline": {
-            "configs": []
         },
         "automation": {
-            "configs": []
         }
     },
     "body": [
