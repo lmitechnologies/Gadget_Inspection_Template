@@ -7,7 +7,7 @@
         "format": "pt",
         "artifacts": {
             "pt": {
-                "model_path": "./model_v1.pt",
+                "model_path": "./model_v1_ts.pt",
                 "image_size": [
                     224,
                     224

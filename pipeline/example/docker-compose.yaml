@@ -9,9 +9,9 @@ services:
         - PACKAGE_VER=${PACKAGE_VER}
         - PYPI_SERVER=${PYPI_SERVER}
     volumes:
-      - ./data/imagenet:/home/gadget/data/
-      - ./outputs:/home/gadget/outputs/
-      - ../../static_models:/app/models/static
+      - ../../../../data/imagenet:/home/gadget/data/
+      - ../../../../outputs:/home/gadget/outputs/
+      - ../../../../static_models:/app/models/static
       - ./classification/yolo/pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
       - ./classification/yolo/pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
@@ -32,9 +32,9 @@ services:
         - PACKAGE_VER=${PACKAGE_VER}
         - PYPI_SERVER=${PYPI_SERVER}
     volumes:
-      - ./data/coco:/home/gadget/data/
-      - ./outputs:/home/gadget/outputs/
-      - ../../static_models:/app/models/static
+      - ../../../../data/coco:/home/gadget/data/
+      - ../../../../outputs:/home/gadget/outputs/
+      - ../../../../static_models:/app/models/static
       - ./object_detection/bbox_and_segmentation/yolo/pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
       - ./object_detection/bbox_and_segmentation/yolo/pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
@@ -55,9 +55,9 @@ services:
         - PACKAGE_VER=${PACKAGE_VER}
         - PYPI_SERVER=${PYPI_SERVER}
     volumes:
-      - ./data/coco:/home/gadget/data/
-      - ./outputs:/home/gadget/outputs/
-      - ../../static_models:/app/models/static
+      - ../../../../data/coco:/home/gadget/data/
+      - ../../../../outputs:/home/gadget/outputs/
+      - ../../../../static_models:/app/models/static
       - ./object_detection/key_point/yolo/pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
       - ./object_detection/key_point/yolo/pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
@@ -78,9 +78,9 @@ services:
         - PACKAGE_VER=${PACKAGE_VER}
         - PYPI_SERVER=${PYPI_SERVER}
     volumes:
-      - ./data/toothbrush:/home/gadget/data/
-      - ./outputs:/home/gadget/outputs/
-      - ../../static_models:/app/models/static
+      - ../../../../data/toothbrush:/home/gadget/data/
+      - ../../../../outputs:/home/gadget/outputs/
+      - ../../../../static_models:/app/models/static
       - ./anomaly_detection/anomalib/pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
       - ./anomaly_detection/anomalib/pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
@@ -101,9 +101,9 @@ services:
         - PACKAGE_VER=${PACKAGE_VER}
         - PYPI_SERVER=${PYPI_SERVER}
     volumes:
-      - ./data/coco:/home/gadget/data/
-      - ./outputs:/home/gadget/outputs/
-      - ../../static_models:/app/models/static
+      - ../../../../data/coco:/home/gadget/data/
+      - ../../../../outputs:/home/gadget/outputs/
+      - ../../../../static_models:/app/models/static
       - ./object_detection/bbox_and_segmentation/detectron2/pipeline_class.py:/home/gadget/pipeline/pipeline_class.py
       - ./object_detection/bbox_and_segmentation/detectron2/pipeline_def.json:/home/gadget/pipeline/pipeline_def.json
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
