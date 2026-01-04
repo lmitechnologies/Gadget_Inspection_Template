@@ -23,19 +23,8 @@ ARG PYPI_SERVER
 
 WORKDIR /home/gadget/workspace
 
-# Copy Python 3.12 from builder stage
-COPY --from=python-builder /opt/python3.12 /opt/python3.12
-
-# Create symlinks for Python 3.12
-RUN ln -sf /opt/python3.12/bin/python3.12 /usr/local/bin/python3.12 && \
-    ln -sf /opt/python3.12/bin/pip3.12 /usr/local/bin/pip3.12
-
 # Set environment for Python 3.8 (scikit-learn fix)
 ENV LD_PRELOAD=/usr/local/lib/python3.8/dist-packages/sklearn/__check_build/../../scikit_learn.libs/libgomp-d22c30c5.so.1.0.0
-
-# ============================================
-# Python 3.8 Setup (AI/ML Dependencies)
-# ============================================
 
 # Upgrade pip
 RUN pip3 install --no-cache-dir --upgrade pip
@@ -52,8 +41,8 @@ RUN pip3 install --no-cache-dir --ignore-installed "PyYAML>=5.3.1" && \
 
 # Clone and install LMI AI Solutions
 RUN git clone -b v1.5.1 https://github.com/lmitechnologies/LMI_AI_Solutions.git && \
-    cd LMI_AI_Solutions/anomaly_detectors && git submodule update --init submodules/anomalib && \
-    cd submodules/anomalib && pip3 install --no-cache-dir -e . && \
+    cd LMI_AI_Solutions && git submodule update --init anomaly_detectors/submodules object_detectors/submodules && \
+    cd anomaly_detectors/submodules/anomalib && pip3 install --no-cache-dir -e . && \
     cd /home/gadget/workspace/LMI_AI_Solutions && \
     pip3 install --no-cache-dir -e lmi_utils -e object_detectors -e anomaly_detectors -e classifiers
 
@@ -71,6 +60,13 @@ RUN pip3 install --no-cache-dir numpy==1.23.5
 # Python 3.12 Setup (Pipeline Server)
 # ============================================
 
+# Copy Python 3.12 from builder stage
+COPY --from=python-builder /opt/python3.12 /opt/python3.12
+
+# Create symlinks for Python 3.12
+RUN ln -sf /opt/python3.12/bin/python3.12 /usr/local/bin/python3.12 && \
+    ln -sf /opt/python3.12/bin/pip3.12 /usr/local/bin/pip3.12
+
 # Install pip for Python 3.12
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
 
@@ -79,10 +75,6 @@ ENV PATH="/opt/python3.12/bin:${PATH}"
 
 # Install gadget pipeline server for Python 3.12
 RUN python3.12 -m pip install --no-cache-dir gadget_pipeline_server==$PACKAGE_VER --extra-index-url $PYPI_SERVER
-
-# ============================================
-# Runtime Configuration
-# ============================================
 
 # Default to Python 3.8 for the "python" command (for legacy scripts)
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
