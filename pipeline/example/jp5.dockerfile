@@ -70,8 +70,8 @@ RUN ln -sf /opt/python3.12/bin/python3.12 /usr/local/bin/python3.12 && \
 # Install pip for Python 3.12
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
 
-# Add Python 3.12 to PATH
-ENV PATH="/opt/python3.12/bin:${PATH}"
+# Append Python 3.12 to PATH
+ENV PATH="${PATH}:/opt/python3.12/bin"
 
 # Install gadget pipeline server for Python 3.12
 RUN python3.12 -m pip install --no-cache-dir gadget_pipeline_server==$PACKAGE_VER --extra-index-url $PYPI_SERVER

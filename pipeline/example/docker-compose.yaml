@@ -17,6 +17,7 @@ services:
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
     ipc: host
     runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    working_dir: /home/gadget
     command: python3 pipeline/pipeline_class.py
 
   
@@ -40,6 +41,7 @@ services:
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
     ipc: host
     runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    working_dir: /home/gadget
     command: python3 pipeline/pipeline_class.py
 
 
@@ -63,6 +65,7 @@ services:
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
     ipc: host
     runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    working_dir: /home/gadget
     command: python3 pipeline/pipeline_class.py
 
 
@@ -86,6 +89,7 @@ services:
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
     ipc: host
     runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    working_dir: /home/gadget
     command: python3 pipeline/pipeline_class.py
   
   
@@ -109,4 +113,5 @@ services:
       # - ~/projects/LMI_AI_Solutions:/home/gadget/LMI_AI_Solutions
     ipc: host
     runtime: nvidia # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    working_dir: /home/gadget
     command: python3 pipeline/pipeline_class.py
