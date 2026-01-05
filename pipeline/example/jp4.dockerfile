@@ -1,5 +1,5 @@
 # Define base image once
-ARG BASE_IMAGE=nvcr.io/nvidia/l4t-ml:r35.2.1-py3
+ARG BASE_IMAGE=ultralytics/ultralytics:latest-jetson-jetpack4
 
 # --- Stage 1: Build Python 3.12 ---
 FROM ${BASE_IMAGE} AS python-builder
@@ -26,20 +26,15 @@ WORKDIR /home/gadget/workspace
 # Upgrade pip
 RUN pip3 install --no-cache-dir --upgrade pip
 
-# Download and install PyTorch wheels for Jetpack 5
-RUN wget -q https://github.com/lmitechnologies/lmi-ais-assets/releases/download/jp5/torch-2.2.0-cp38-cp38-linux_aarch64.whl && \
-    wget -q https://github.com/lmitechnologies/lmi-ais-assets/releases/download/jp5/torchvision-0.17.2+c1d70fe-cp38-cp38-linux_aarch64.whl && \
-    pip3 install --no-cache-dir torch-2.2.0-cp38-cp38-linux_aarch64.whl torchvision-0.17.2+c1d70fe-cp38-cp38-linux_aarch64.whl && \
-    rm -f *.whl
-
 # Install core AI/ML packages (install PyYAML first with --ignore-installed to avoid conflicts)
 RUN pip3 install --no-cache-dir --ignore-installed "PyYAML>=5.3.1" && \
-    pip3 install --no-cache-dir ultralytics scikit-guess scipy pycocotools
+    pip3 install --no-cache-dir ultralytics scikit-guess scipy pycocotools numba pandas
 
 # Clone and install LMI AI Solutions
+# Note: only support YOLO models
 RUN git clone -b v1.5.1 https://github.com/lmitechnologies/LMI_AI_Solutions.git && \
     cd LMI_AI_Solutions && git submodule update --init anomaly_detectors/submodules object_detectors/submodules && \
-    cd anomaly_detectors/submodules/anomalib && pip3 install --no-cache-dir -e . && \
+    # cd anomaly_detectors/submodules/anomalib && pip3 install --no-cache-dir -e . && \
     cd /home/gadget/workspace/LMI_AI_Solutions && \
     pip3 install --no-cache-dir -e lmi_utils -e object_detectors -e anomaly_detectors -e classifiers
 
