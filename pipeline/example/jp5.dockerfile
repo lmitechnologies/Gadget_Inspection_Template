@@ -37,7 +37,7 @@ RUN pip3 install --no-cache-dir --ignore-installed "PyYAML>=5.3.1" && \
     pip3 install --no-cache-dir ultralytics scikit-guess scipy pycocotools
 
 # Clone and install LMI AI Solutions
-RUN git clone -b v1.5.1 https://github.com/lmitechnologies/LMI_AI_Solutions.git && \
+RUN git clone -b v1.5.2 https://github.com/lmitechnologies/LMI_AI_Solutions.git && \
     cd LMI_AI_Solutions && git submodule update --init anomaly_detectors/submodules object_detectors/submodules && \
     cd anomaly_detectors/submodules/anomalib && pip3 install --no-cache-dir -e . && \
     cd /home/gadget/workspace/LMI_AI_Solutions && \
@@ -52,6 +52,9 @@ RUN pip3 install --no-cache-dir gadget_pipeline_adapter==$PACKAGE_VER gadget_con
 
 # Fix numpy version conflicts
 RUN pip3 install --no-cache-dir numpy==1.23.5
+
+# Add TensorRT to PATH
+ENV PATH="${PATH}:/usr/src/tensorrt/bin"
 
 # ============================================
 # Python 3.12 Setup (Pipeline Server)
