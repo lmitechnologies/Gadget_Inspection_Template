@@ -34,7 +34,7 @@ RUN wget -q https://github.com/lmitechnologies/lmi-ais-assets/releases/download/
 
 # Install core AI/ML packages (install PyYAML first with --ignore-installed to avoid conflicts)
 RUN pip3 install --no-cache-dir --ignore-installed "PyYAML>=5.3.1" && \
-    pip3 install --no-cache-dir ultralytics scikit-guess scipy pycocotools
+    pip3 install --no-cache-dir 'ultralytics<8.4' scikit-guess scipy pycocotools
 
 # Clone and install LMI AI Solutions
 RUN git clone -b v1.5.2 https://github.com/lmitechnologies/LMI_AI_Solutions.git && \

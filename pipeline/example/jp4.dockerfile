@@ -1,5 +1,5 @@
 # Define base image once
-ARG BASE_IMAGE=ultralytics/ultralytics:latest-jetson-jetpack4
+ARG BASE_IMAGE=ultralytics/ultralytics:8.3.253-jetson-jetpack4
 
 # --- Stage 1: Build Python 3.12 ---
 FROM ${BASE_IMAGE} AS python-builder
@@ -28,7 +28,7 @@ RUN pip3 install --no-cache-dir --upgrade pip
 
 # Install core AI/ML packages (install PyYAML first with --ignore-installed to avoid conflicts)
 RUN pip3 install --no-cache-dir --ignore-installed "PyYAML>=5.3.1" && \
-    pip3 install --no-cache-dir ultralytics scikit-guess scipy pycocotools numba pandas
+    pip3 install --no-cache-dir scikit-guess scipy pycocotools numba pandas
 
 # Clone and install LMI AI Solutions
 # Note: only support YOLO models
