@@ -81,6 +81,7 @@ services:
     ports:
       - 5000:5000
       - 5001:5001
+      - 6000:6000
     environment:
       - HOST=0.0.0.0
       - OUT_PORT=5001
