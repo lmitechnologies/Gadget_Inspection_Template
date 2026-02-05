@@ -267,7 +267,6 @@ The pipeline's **predict** function returns a dictionary following this structur
     },
     "automation_keys": list,
     "factory_keys": list,
-    "tags":list,
     "should_archive":bool,
 
     # Custom
@@ -284,8 +283,8 @@ For the **Required** key-value pairs,
 
 - The `outputs` value is a dictionary that must include an `annotated` key, with its corresponding value being a NumPy array or None. It may also contain additional key-value pairs.
 - The `automation_keys` value is a list of strings, which are a subset of **Custom** keys. These keys are sent to the automation service to interact with automation devices, such as PLCs.
-- The `factory_keys` value is a list of strings, which are a subset of **Custom** keys consumed by GoFactory. These keys should represent values that are genuinely useful in GoFactory and do not unnecessarily inflate the database size. The values in `factory_keys` populate Grafana dashboards and appear when hovering over a thumbnail on the inspections page.
-- The `tags` value should be a list of strings. These tags appear at the top of an event column on the inspections page and can be used to filter results. Ensure `factory_keys` includes `tags` so that this information is also sent to GoFactory.
+- The `factory_keys` value is a list of strings, which are a subset of **Custom** keys consumed by GoFactory. These keys should represent values that are genuinely useful in GoFactory and must be strings or numbers. The values in `factory_keys` populate Grafana dashboards and are associated with the events in the inspection page.
+
 - The `should_archive` value is a boolean indicating whether to archive the current input. Archiving an image instructs the data manager to move the image from inline storage to offline storage, where it is retained for a longer period.
 
 For the **Custom** key-value pairs, some keys will be used as values for the **Required** keys. The remaining pairs will be saved directly to the database.

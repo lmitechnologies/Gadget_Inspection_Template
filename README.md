@@ -29,14 +29,8 @@ The containers definition and configuration is done in a docker-compose yaml fil
   - Automation
     - Custom container that implements any connection to the outside world needed for an application. See automation/README.md for more information
 - GoFactory
-  - MQTT Bridge
-    - Main connection between the gadget and GoFactory
-  - Vault Client
-    - Connects to secret manager
-  - S3 Integrator
-    - Moves files from the Gadget to GoFactory
-  - Log Collector
-    - Aggregates system logs to send to GoFactory
+  - Factory Connection
+    - Interface between the Gadget and GoFactory
 
 ## Communication
 

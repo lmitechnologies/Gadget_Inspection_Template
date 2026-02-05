@@ -222,51 +222,22 @@ services:
         condition: service_healthy
 
   # ---------- gofactory ----------   
-  vault-client:
-    container_name: gadget-vault-client
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/vault_client:${PACKAGE_VER}
+  factory-connection:
+    container_name: gadget-factory-connection
+    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/factory_connection:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - PROJECT_ID=${CLOUD_PROJECT_ID}
-      - CLIENT_ID=${GADGET_DEVICE_ID}
-      - INITIAL_CREDENTIAL=${VAULT_CREDENTIAL}
-    volumes:
-      - vault-storage:/app/data
-
-  mqtt-bridge:
-    container_name: gadget-mqtt-bridge
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/mqtt_bridge:${PACKAGE_VER}
-    restart: unless-stopped
-    environment:
-      - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
-      - CLIENT_ID=${FACTORY_CLIENT_ID}
-      - BROKER_HOSTNAME=${FACTORY_HOST}
+      - FACTORY_HOST=${FACTORY_HOST}
+      - API_KEY=${FACTORY_API_KEY}
     volumes:
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline
-      - transfer-storage:/app/data/transfer
+      - model-storage:/app/models
+      - /var/log/journal:/var/log/hostjournal:ro
     depends_on: 
       api-gateway:
         condition: service_healthy
 
-  s3-integrator:
-    container_name: gadget-s3-integrator
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/s3_integrator:${PACKAGE_VER}
-    restart: unless-stopped
-    environment:
-      - CLOUD_PROJECT_ID=${CLOUD_PROJECT_ID}
-    volumes:
-      - transfer-storage:/app/data/transfer
-      - model-storage:/app/data/models
-
-  log-collector:
-    container_name: gadget-log-collector
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/utils/log_collector:${PACKAGE_VER}
-    restart: unless-stopped
-    volumes:
-      - transfer-storage:/app/data/transfer
-      - /var/log/journal:/var/log/hostjournal:ro
-  
 volumes:
   data-manager-storage:
   offline-storage:     
