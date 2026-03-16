@@ -29,15 +29,8 @@ The containers definition and configuration is done in a docker-compose yaml fil
   - Automation
     - Custom container that implements any connection to the outside world needed for an application. See automation/README.md for more information
 - GoFactory
-  - MQTT Bridge
-    - Main connection between the gadget and GoFactory
-  - Vault Client
-    - Connects to secret manager
-  - S3 Integrator
-    - Moves files from the Gadget to GoFactory
-  - Log Collector
-    - Aggregates system logs to send to GoFactory
-
+  - Factory Connection
+    - Handles all aspects of connection with GoFactory
 ## Communication
 
 Information is passed between containers in three ways.
@@ -203,20 +196,19 @@ and to the front end like this:
 
 If it is not mounted to that specific location the Gadget App will not work.
 
-**model-storage** is where models are stored on the machine. It needs to be mounted to the s3 integrator, model manager, and all pipelines.
+**model-storage** is where models are stored on the machine. It needs to be mounted to the factory connection, model manager, and all pipelines.
 
-It needs to be mounted to the s3 integrator here:
+It needs to be mounted to the factory connection here:
 
     volumes:
-      - model-storage:/app/data/transfer/models
+      - model-storage:/app/models
 
 Model manager needs it to be mounted to the model root. It defaults to /app/models but can be changed using the env variable MODEL_ROOT
 
     volumes:
       - model-storage:/app/data/models
 
-Pipelines needs it to be mounted to the model root. It defaults to /app/models but can be changed using the env variable MODEL_ROOT.
-
+Pipelines needs it to be mounted to the model root. It defaults to /app/models.
     volumes:
       - model-storage:/app/models
 
@@ -277,7 +269,7 @@ Environment variables can be passed to a container in two ways. They can be defi
     environment:
       - ENVIRONMENT_VARIABLE=value
 
-or the container can be given the path to a .env file that where the variables are defined:
+or the container can be given the path to a .env file where the variables are defined:
 
     env_file:
       - ./sensor/sensor.env

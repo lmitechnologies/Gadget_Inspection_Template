@@ -37,6 +37,7 @@ The pipeline folder consists of the following:
 - `configs_def` is a list of custom entries to the configs database. Each element is a dictionary containing two required keys: 
   - `name`: The name of a config.
   - `default_value`: The value of `default_value` must be of a JSON-serializable type.  
+  - All `configs_def` elements that share a name with a model will be placed together in the admin page.
 
 **pipeline.dockerfile**: the Dockerfile that defines the pipeline container.  
 **requirements.txt**: this file specifies the Python libraries to be installed in the Docker container.  
@@ -84,7 +85,7 @@ On load, the `models` dictionary is passed to the pipeline class load method. Th
         },
         "artifacts": {
             "pt": {
-                "image_size": [int, int], # Hight x Width
+                "image_size": [int, int], # Height x Width
                 "model_path": str # Absolute path to the model
             }
         },
