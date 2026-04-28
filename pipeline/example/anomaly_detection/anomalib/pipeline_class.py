@@ -1,16 +1,11 @@
 import time
 import os
-import sys
 import cv2
 import logging
 import torch
-# import ultralytics # fix empty results issue for ARM
 
-# local imports
-from pipeline_base import PipelineBase as Base
-
-# functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-import gadget_utils.pipeline_utils as pipeline_utils
+from lmi_utils.pipeline_base import PipelineBase as Base
+import lmi_utils.gadget_utils.pipeline_utils as pipeline_utils
 
 
 PASS = 'PASS'
@@ -88,8 +83,15 @@ class ModelPipeline(Base):
         err_max = confs['threshold_max']
         err_size = confs['anomaly_size']
         
-        # run the object detection model
-        err_map = self.models['ad_model'].predict(image)
+        # run global preprocessing: resize and tile
+        tiles, ops = self.preprocess("ad_model", image)
+        for t in tiles:
+            self.logger.info(f'tile shape: {t.shape}')
+
+        err_maps = self.models['ad_model'].predict(tiles)
+        
+        # self.reconsruct returns a list
+        err_map = self.reconstruct(err_maps, ops)[0]
         
         # annotate the image using err_map
         annotated_image = self.models['ad_model'].annotate(image, err_map, err_threshold, err_max)

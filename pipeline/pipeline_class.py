@@ -10,7 +10,7 @@ this pipeline class, needs to have the following methods:
 """
 
 import logging
-from pipeline_base import PipelineBase as Base
+from lmi_utils.pipeline_base import PipelineBase as Base
 
 
 class ModelPipeline(Base):

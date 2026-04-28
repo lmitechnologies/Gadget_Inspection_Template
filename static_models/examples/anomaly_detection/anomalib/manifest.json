@@ -17,7 +17,10 @@
         "details": {
             "training_package": "Anomalib1",
             "training_algorithm": "PatchCore",
-            "global_preprocessing": [],
+            "global_preprocessing": [
+                {"type": "resize", "configuration": {"height": 448, "width": 224, "preserve_aspect": false}},
+                {"type": "tile", "configuration": {"height": 224, "width": 224, "y_stride": 112, "x_stride": 112}}
+            ],
             "anomaly_size": 5,
             "threshold_max": 30,
             "threshold_min": 25

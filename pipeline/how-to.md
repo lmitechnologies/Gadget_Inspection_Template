@@ -86,9 +86,8 @@ With your configuration set, you can now start writing the Python code. Import n
 ```python
 import logging
 import torch
-from pipeline_base import PipelineBase as Base
-# utility functions from LMI AI Solutions repository
-import gadget_utils.pipeline_utils as pipeline_utils
+from lmi_utils.pipeline_base import PipelineBase as Base
+import lmi_utils.gadget_utils.pipeline_utils as pipeline_utils
 
 # It's good practice to get a logger instance for your pipeline
 logger = logging.getLogger(__name__)

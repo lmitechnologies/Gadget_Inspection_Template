@@ -1,16 +1,11 @@
 import time
 import os
-import sys
 import cv2
 import logging
 import torch
-import ultralytics # fix empty results issue for ARM
 
-# local imports
-from pipeline_base import PipelineBase as Base
-
-# functions from LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-import gadget_utils.pipeline_utils as pipeline_utils
+from lmi_utils.pipeline_base import PipelineBase as Base
+import lmi_utils.gadget_utils.pipeline_utils as pipeline_utils
 
 
 PASS = 'PASS'
@@ -78,9 +73,13 @@ class ModelPipeline(Base):
         model_configs = configs['models']['seg_model']['configs']
         iou = model_configs['iou']
         confs = model_configs['confidence']
+
         # run the object detection model
         processed_im, operators = self.preprocess(image, hw)
         results_dict, time_info = self.models['seg_model'].predict(processed_im, confs, operators)
+
+        # remove batch dim
+        results_dict = {k:v[0] for k,v in results_dict.items()}
         
         # annotate the image using polygons
         annotated_image = self.models['seg_model'].annotate_image(results_dict, image)

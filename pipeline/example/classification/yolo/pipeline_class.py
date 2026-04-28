@@ -1,17 +1,12 @@
 import time
 import os
-import sys
 import cv2
 import logging
 import torch
-import ultralytics # fix empty results issue for ARM
 
-# local imports
-from pipeline_base import PipelineBase as Base
-
-# functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-import gadget_utils.pipeline_utils as pipeline_utils
-from image_utils.img_resize import resize_and_pad
+from lmi_utils.pipeline_base import PipelineBase as Base
+import lmi_utils.gadget_utils.pipeline_utils as pipeline_utils
+from lmi_utils.image_utils.img_resize import resize_and_pad
 
 
 PASS = 'PASS'
@@ -71,7 +66,7 @@ class ModelPipeline(Base):
             img (numpy): a resized image
         """
         th,tw = hw
-        img = resize_and_pad(image, tw, th, maintain_aspect_ratio=True)
+        img = resize_and_pad(image, tw, th, preserve_aspect=True)
         return img
     
     
@@ -105,6 +100,7 @@ class ModelPipeline(Base):
         results_dict, time_info = self.models['cls_model'].predict(processed_im)
         
         # upload decision to the Gadget automation service
+        logger.info(f'len of classes: {len(results_dict["classes"])}')
         object_cls = results_dict['classes'][0]
         score = results_dict['scores'][0]
         decision = FAIL if object_cls == FAILED_CLASS else PASS

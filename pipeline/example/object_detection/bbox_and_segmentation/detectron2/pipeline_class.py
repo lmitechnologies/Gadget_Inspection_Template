@@ -1,17 +1,11 @@
 import time
 import os
-import sys
 import cv2
 import logging
 import torch
-import json
-# import ultralytics # fix empty results issue for ARM
 
-# local imports
-from pipeline_base import PipelineBase as Base
-
-# functions from the LMI AI Solutions repo: https://github.com/lmitechnologies/LMI_AI_Solutions
-import gadget_utils.pipeline_utils as pipeline_utils
+from lmi_utils.pipeline_base import PipelineBase as Base
+import lmi_utils.gadget_utils.pipeline_utils as pipeline_utils
 
 
 PASS = 'PASS'
@@ -110,13 +104,13 @@ class ModelPipeline(Base):
         hw = self.models['od_model'].image_size
         processed_im, operators = self.preprocess(image, hw)
         # the results are all in the original image space
-        results_dict = self.models['od_model'].predict(processed_im, confs=confs, operators=operators, return_segments=True)
+        results_dict,_ = self.models['od_model'].predict(processed_im, confs, operators=operators, return_segments=True)
         
-        # annotate the image using bounding boxes
+        # remove batch dim
         results_dict = {k:v[0] for k,v in results_dict.items()}
-        annotated_image = self.models['od_model'].annotate_image(results_dict, image)
         
         # upload annotated image to GadgetAPP and GoFactory
+        annotated_image = self.models['od_model'].annotate_image(results_dict, image)
         self.update_results('outputs', annotated_image, sub_key='annotated')
         
         # grab the results
