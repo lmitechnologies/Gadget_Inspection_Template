@@ -21,7 +21,9 @@
             "confidence_threshold": 0.5,
             "iou": 0.45,
             "object_size": 80,
-            "global_preprocessing": [],
+            "global_preprocessing": [
+                {"type": "resize", "configuration": {"height": 640, "width": 640, "preserve_aspect": false}}
+            ],
             "object_class": [
                 "person",
                 "bicycle",

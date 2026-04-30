@@ -17,7 +17,9 @@
         "details": {
             "training_package": "Ultralytics",
             "training_algorithm": "Yolov8",
-            "global_preprocessing": [],
+            "global_preprocessing": [
+                {"type": "resize", "configuration": {"height": 224, "width": 224, "preserve_aspect": true}}
+            ],
             "confidence_threshold": 0.5,
             "object_size": 10,
             "object_class": ["Australian_terrier", "Border_terrier", "Samoyed", "beagle", "Shih-Tzu", "English_foxhound", "Rhodesian_ridgeback", "dingo", "golden_retriever", "Old_English_sheepdog"]

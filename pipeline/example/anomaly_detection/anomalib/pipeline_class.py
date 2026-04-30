@@ -91,7 +91,7 @@ class ModelPipeline(Base):
         err_maps = self.models['ad_model'].predict(tiles)
         
         # self.reconsruct returns a list
-        err_map = self.reconstruct(err_maps, ops)[0]
+        err_map = self.revert_preprocess(err_maps, ops)[0]
         
         # annotate the image using err_map
         annotated_image = self.models['ad_model'].annotate(image, err_map, err_threshold, err_max)

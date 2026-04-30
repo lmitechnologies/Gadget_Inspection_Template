@@ -48,24 +48,6 @@ class ModelPipeline(Base):
         self.models['pose_model'].warmup()
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
-        
-        
-    def preprocess(self, image, hw):
-        """preprocess the image for object detection
-
-        Args:
-            image (numpy): a numpy array of image
-            hw (list): a list of [height, width]
-
-        Returns:
-            img (numpy): a resized image
-            operators (list): a list of operators used for converting back to original image size
-        """
-        h0,w0 = image.shape[:2]
-        th,tw = hw
-        img = cv2.resize(image, (tw,th))
-        operators = [{'resize':[tw,th,w0,h0]}]
-        return img, operators
     
     
     @torch.inference_mode()
@@ -81,28 +63,28 @@ class ModelPipeline(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        hw = self.models['pose_model'].image_size
         model_configs = configs['models']['pose_model']['configs']
         confs = model_configs['confidence']
                 
         # run the object detection model
-        processed_im, operators = self.preprocess(image, hw)
-        results_kp, time_info = self.models['pose_model'].predict(processed_im, confs, operators)
+        processed_im, ops = self.preprocess('pose_model', image)
+        results_kp, time_info = self.models['pose_model'].predict(processed_im, confs)
+        reverted = self.revert_preprocess(results_kp, ops)
         
         # remove batch dim
-        results_kp = {k:v[0] for k,v in results_kp.items()}
+        dt = {k:v[0] for k,v in reverted.items()}
 
         # annotate the image using key points
-        annotated_image = self.models['pose_model'].annotate_image(results_kp, image)
+        annotated_image = self.models['pose_model'].annotate_image(dt, image)
         
         # upload annotated image to GadgetAPP and GoFactory
         self.update_results('outputs', annotated_image, sub_key='annotated')
         
         # obtain the results
-        pts = results_kp['points'].astype(int)
-        boxes = results_kp['boxes'].astype(int)
-        objects = results_kp['classes']
-        scores = results_kp['scores']
+        pts = dt['points'].astype(int)
+        boxes = dt['boxes'].astype(int)
+        objects = dt['classes']
+        scores = dt['scores']
         
         # upload predictions to GoFactory
         h0,w0 = image.shape[:2]

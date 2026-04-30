@@ -36,24 +36,6 @@ class ModelPipeline(Base):
         self.models['seg_model'].warmup()
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
-        
-        
-    def preprocess(self, image, hw):
-        """preprocess the image for object detection
-
-        Args:
-            image (numpy): a numpy array of image
-            hw (list): a list of [height, width]
-
-        Returns:
-            img (numpy): a resized image
-            operators (list): a list of operators used for converting back to original image size
-        """
-        h0,w0 = image.shape[:2]
-        th,tw = hw
-        img = cv2.resize(image, (tw,th))
-        operators = [{'resize':[tw,th,w0,h0]}]
-        return img, operators
     
     
     @torch.inference_mode()
@@ -69,27 +51,26 @@ class ModelPipeline(Base):
             raise Exception('failed to load pipeline model(s)')
         
         # load runtime config
-        hw = self.models['seg_model'].image_size
         model_configs = configs['models']['seg_model']['configs']
-        iou = model_configs['iou']
         confs = model_configs['confidence']
 
         # run the object detection model
-        processed_im, operators = self.preprocess(image, hw)
-        results_dict, time_info = self.models['seg_model'].predict(processed_im, confs, operators)
+        processed_im, ops = self.preprocess('seg_model', image)
+        results_dict, time_info = self.models['seg_model'].predict(processed_im, confs)
+        reverted = self.revert_preprocess(results_dict, ops)
 
         # remove batch dim
-        results_dict = {k:v[0] for k,v in results_dict.items()}
+        dt = {k:v[0] for k,v in reverted.items()}
         
         # annotate the image using polygons
-        annotated_image = self.models['seg_model'].annotate_image(results_dict, image)
+        annotated_image = self.models['seg_model'].annotate_image(dt, image)
         
         # grab the results
-        masks = results_dict['masks']   # binary masks for instance segmentation
-        segs = results_dict['segments'] # polygons according to the masks
-        boxes = results_dict['boxes']   # bounding boxes
-        scores = results_dict['scores'] # model confidence scores
-        objects = results_dict['classes']   # class labels
+        masks = dt['masks']   # binary masks for instance segmentation
+        segs = dt['segments'] # polygons according to the masks
+        boxes = dt['boxes']   # bounding boxes
+        scores = dt['scores'] # model confidence scores
+        objects = dt['classes']   # class labels
         
         # upload labels to Label Studio and GoFactory
         h0,w0 = image.shape[:2]

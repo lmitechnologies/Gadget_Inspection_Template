@@ -53,24 +53,6 @@ class ModelPipeline(Base):
         self.models['od_model'].warmup()
         t2 = time.time()
         self.logger.info(f'warm up time: {t2-t1:.4f}')
-        
-        
-    def preprocess(self, image, hw):
-        """preprocess the image for object detection
-
-        Args:
-            image (numpy): a numpy array of image
-            hw (list): a list of [height, width]
-
-        Returns:
-            img (numpy): a resized image
-            operators (list): a list of operators for converting back to original image size
-        """
-        h0,w0 = image.shape[:2]
-        th,tw = hw
-        img = cv2.resize(image, (tw,th))
-        operators = [{'resize':[tw,th,w0,h0]}]
-        return img, operators
     
     
     @torch.inference_mode()
@@ -100,25 +82,27 @@ class ModelPipeline(Base):
         # load runtime config
         confs = configs['models']['od_model']['configs']['confidence'] # confidence thresholds
     
-        # run the object detection model
-        hw = self.models['od_model'].image_size
-        processed_im, operators = self.preprocess(image, hw)
-        # the results are all in the original image space
-        results_dict,_ = self.models['od_model'].predict(processed_im, confs, operators=operators, return_segments=True)
+        # global processing
+        processed_im, ops = self.preprocess('od_model', image)
+        
+        results_dict,_ = self.models['od_model'].predict(processed_im, confs, return_segments=True)
+
+        # revert global processing
+        reverted_dict = self.revert_preprocess(results_dict, ops)
         
         # remove batch dim
-        results_dict = {k:v[0] for k,v in results_dict.items()}
+        dt = {k:v[0] for k,v in reverted_dict.items()}
         
         # upload annotated image to GadgetAPP and GoFactory
-        annotated_image = self.models['od_model'].annotate_image(results_dict, image)
+        annotated_image = self.models['od_model'].annotate_image(dt, image)
         self.update_results('outputs', annotated_image, sub_key='annotated')
         
         # grab the results
-        objects = results_dict['classes']       # object names
-        boxes = results_dict['boxes']           # bounding boxes
-        scores = results_dict['scores']         # scores for the bounding boxes
-        masks = results_dict['masks']           # binary masks for instance segmentation
-        segments = results_dict['segments']     # polygons according to the masks
+        objects = dt['classes']       # object names
+        boxes = dt['boxes']           # bounding boxes
+        scores = dt['scores']         # scores for the bounding boxes
+        masks = dt['masks']           # binary masks for instance segmentation
+        segments = dt['segments']     # polygons according to the masks
         
         # upload predictions to GoFactory
         h0,w0 = image.shape[:2]

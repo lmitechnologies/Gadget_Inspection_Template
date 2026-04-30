@@ -55,19 +55,19 @@ class ModelPipeline(Base):
         self.logger.info(f'warm up time: {t2-t1:.4f}')
         
         
-    def preprocess(self, image, hw):
-        """preprocess the image for object detection
+    # def preprocess(self, image, hw):
+    #     """preprocess the image for object detection
 
-        Args:
-            image (numpy): a numpy array of image
-            hw (list): a list of [height, width]
+    #     Args:
+    #         image (numpy): a numpy array of image
+    #         hw (list): a list of [height, width]
 
-        Returns:
-            img (numpy): a resized image
-        """
-        th,tw = hw
-        img = resize_and_pad(image, tw, th, preserve_aspect=True)
-        return img
+    #     Returns:
+    #         img (numpy): a resized image
+    #     """
+    #     th,tw = hw
+    #     img = resize_and_pad(image, tw, th, preserve_aspect=True)
+    #     return img
     
     
     @torch.inference_mode()
@@ -94,13 +94,14 @@ class ModelPipeline(Base):
         if not self.models:
             raise Exception('failed to load pipeline model(s)')
         
-        # run the object detection model
-        hw = self.models['cls_model'].image_size
-        processed_im = self.preprocess(image, hw)
+        # global preprocessing for classification
+        processed_im, ops = self.preprocess('cls_model',image)
+
+        # predict
         results_dict, time_info = self.models['cls_model'].predict(processed_im)
         
         # upload decision to the Gadget automation service
-        logger.info(f'len of classes: {len(results_dict["classes"])}')
+        self.logger.info(f'len of classes: {len(results_dict["classes"])}')
         object_cls = results_dict['classes'][0]
         score = results_dict['scores'][0]
         decision = FAIL if object_cls == FAILED_CLASS else PASS
