@@ -2,7 +2,7 @@ services:
   # ---------- platform ----------   
   db:
     container_name: gadget-postgres
-    image: postgres:12.10-alpine
+    image: ${FSP_REGISTRY}/gadget-postgres${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - POSTGRES_NAME=postgres
@@ -19,7 +19,7 @@ services:
 
   database-api:
     container_name: gadget-database-api
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/database_api:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-database-api${IMAGE_REPO_SUFFIX}:${PACKAGE_VER} 
     restart: unless-stopped
     environment:
       - TZ=utc
@@ -34,7 +34,7 @@ services:
         
   api-gateway:
     container_name: gadget-api-gateway
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/nginx:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-nginx${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     ports:
       - 8080:8080
@@ -49,7 +49,7 @@ services:
 
   app-backend:
     container_name: gadget-app-backend
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_backend:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-app-backend${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     volumes:
       - inline-storage:/app/data
@@ -64,7 +64,7 @@ services:
 
   app-frontend:
     container_name: gadget-app-frontend
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/app_frontend:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-app-frontend${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - GADGET_APP_TITLE=${GADGET_APP_TITLE}
@@ -76,7 +76,7 @@ services:
 
   data-broker:
     container_name: gadget-data-broker
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/zmq_broker:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-zmq-broker${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     ports:
       - 5000:5000
@@ -93,7 +93,7 @@ services:
   
   data-manager:
     container_name: gadget-data-manager
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/data_manager:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-data-manager${IMAGE_REPO_SUFFIX}:${PACKAGE_VER} 
     restart: unless-stopped
     environment:
       - INLINE_CAPACITY_THRESHOLD=0.5 GB
@@ -109,7 +109,7 @@ services:
   
   system-monitor:
     container_name: gadget-system-monitor
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/system_monitor:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-system-monitor${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     network_mode: host
     environment:
@@ -126,7 +126,7 @@ services:
 
   model-manager:
     container_name: gadget-model-manager
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/model_manager:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-model-manager${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     ports:
       - 8000:8000
@@ -207,7 +207,7 @@ services:
     hostname: gadget-sensor-gocator
     container_name: gadget-sensor-gocator
     network_mode: host 
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/sensor_gocator:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-sensor-gocator${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - SERVICE_NAME=profiler
@@ -225,7 +225,7 @@ services:
   # ---------- gofactory ----------   
   factory-connection:
     container_name: gadget-factory-connection
-    image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/factory_connection:${PACKAGE_VER}
+    image: ${FSP_REGISTRY}/gadget-factory-connection${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     environment:
       - FACTORY_HOST=${FACTORY_HOST}

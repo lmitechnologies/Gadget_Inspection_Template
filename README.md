@@ -48,7 +48,7 @@ By default Gadget services expect the data broker to use the host **data-broker*
 
     data-broker:
         container_name: gadget-data-broker
-        image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/zmq_broker:${PACKAGE_VER}
+        image: ${FSP_REGISTRY}/gadget-zmq-broker${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
         restart: unless-stopped
         ports:
         - 5000:5000
@@ -66,17 +66,17 @@ By default the Gadget services expect the it the use the host **api-gateway** an
 
     db:
         container_name: gadget-db
-        image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/postgres:${PACKAGE_VER}
+        image: ${FSP_REGISTRY}/gadget-postgres${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
         restart: unless-stopped
 
     database-api:
         container_name: gadget-database-api
-        image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/database_api:${PACKAGE_VER}
+        image: ${FSP_REGISTRY}/gadget-database-api${IMAGE_REPO_SUFFIX}:${PACKAGE_VER} 
         restart: unless-stopped
             
     api-gateway:
         container_name: gadget-api-gateway
-        image: ${DOCKER_REPO}/${DOCKER_PLATFORM}/gadget/nginx:${PACKAGE_VER}
+        image: ${FSP_REGISTRY}/gadget-nginx${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
         restart: unless-stopped
         ports:
             - 8080:8080
