@@ -43,7 +43,7 @@ class ModelPipeline(Base):
 
 
     @Base.track_exception(logger)
-    def predict(self, configs: dict, inputs: dict) -> dict:
+    def predict(self, configs: dict, inputs: dict, context: dict) -> dict:
         """predict on the inputs
 
         Args:
