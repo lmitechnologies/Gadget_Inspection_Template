@@ -214,6 +214,7 @@ services:
       - START=true
       - EMULATION_ENABLED=true
       - CAM_IP=192.168.1.10
+      - SHOULD_ARCHIVE=true
       - TZ=utc
     volumes:
       - ../test_images:/home/gadget/test_images
@@ -228,12 +229,14 @@ services:
     image: ${FSP_REGISTRY}/gadget-factory-connection${IMAGE_REPO_SUFFIX}:${PACKAGE_VER}
     restart: unless-stopped
     environment:
-      - FACTORY_HOST=${FACTORY_HOST}
-      - API_KEY=${FACTORY_API_KEY}
+      - FACTORY_ENROLLMENT=${FACTORY_ENROLLMENT}
+    extra_hosts:
+      - "${FACTORY_HOST_ALIAS:-gofactory.localhost:host-gateway}"
     volumes:
       - inline-storage:/app/data/inline
       - offline-storage:/app/data/offline
       - model-storage:/app/models
+      - trust-storage:/app/data/trust
       - /var/log/journal:/var/log/hostjournal:ro
     depends_on: 
       api-gateway:
@@ -249,6 +252,7 @@ volumes:
       type: none
       device: /mnt/gadget-inline
   model-storage:
+  trust-storage:
   transfer-storage:
   postgres-db:
   static-volume:

@@ -14,7 +14,7 @@
             "components": [
                 {
                     "componentName": "ImageCanvas",
-                    "topic": "pipeline/pipeline",
+                    "topic": "sensor/profiler",
                     "fileName": "annotated"
                 }
             ]
